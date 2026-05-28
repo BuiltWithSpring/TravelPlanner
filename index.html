@@ -9,109 +9,84 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #eeeaf8;
-      font-family: 'Nunito Sans', sans-serif;
-      color: #1a1640;
-      min-height: 100vh;
-      padding: 2rem 1rem 3rem;
-    }
-    #bws-header {
-      width: 100%;
-      text-align: center;
-      padding-bottom: 1.5rem;
-    }
-    #bws-tagline {
-      font-size: 14px;
-      color: #6b5fa0;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-    #bws-card {
-      background: #fff;
-      border-radius: 20px;
-      max-width: 620px;
-      margin: 0 auto;
-      padding: 2rem 2rem 1.5rem;
-      box-shadow: 0 4px 32px rgba(90, 60, 180, 0.09);
-    }
+    body { background: #eeeaf8; font-family: 'Nunito Sans', sans-serif; color: #1a1640; min-height: 100vh; padding: 2rem 1rem 3rem; }
+    #hdr { text-align: center; padding-bottom: 1.5rem; }
+    #tgl { font-size: 13px; color: #6b5fa0; font-weight: 600; margin-top: 6px; }
+    #card { background: #fff; border-radius: 20px; max-width: 620px; margin: 0 auto; padding: 2rem 2rem 1.5rem; box-shadow: 0 4px 32px rgba(90,60,180,.09); }
     .pbar { display: flex; gap: 6px; margin-bottom: 1.75rem; }
     .pseg { height: 5px; border-radius: 99px; flex: 1; background: #e0d9f5; transition: background .3s; }
     .pseg.on { background: #8b5cf6; }
-    .slabel { font-size: 12px; font-weight: 700; color: #9b87d4; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
-    .stitle { font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 800; color: #1a1640; margin: 0 0 4px; }
+    .slbl { font-size: 12px; font-weight: 700; color: #9b87d4; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .stit { font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 800; color: #1a1640; margin: 0 0 4px; }
     .ssub { font-size: 13px; color: #6b5fa0; margin-bottom: 1.5rem; }
     .fg { margin-bottom: 1.25rem; }
     .fl { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 6px; display: block; }
     .opt { font-weight: 400; color: #9b87d4; font-size: 12px; margin-left: 4px; }
     .req { color: #e74c4c; }
-    .inp {
-      width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px;
-      font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640;
-      background: #f9f7fe; transition: border-color .2s; outline: none;
-    }
+    .inp { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; background: #f9f7fe; transition: border-color .2s; outline: none; }
     .inp:focus { border-color: #8b5cf6; background: #fff; }
     textarea.inp { resize: vertical; line-height: 1.5; }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .cwrap { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
     .cwrap input { accent-color: #8b5cf6; width: 16px; height: 16px; }
     .cwrap span { font-size: 13px; color: #6b5fa0; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-    .chip {
-      padding: 7px 14px; border-radius: 99px; border: 1.5px solid #ddd8f5;
-      font-size: 13px; font-weight: 600; color: #6b5fa0; background: #f9f7fe;
-      cursor: pointer; transition: all .15s; user-select: none;
-    }
+    .chip { padding: 7px 14px; border-radius: 99px; border: 1.5px solid #ddd8f5; font-size: 13px; font-weight: 600; color: #6b5fa0; background: #f9f7fe; cursor: pointer; transition: all .15s; user-select: none; }
     .chip.on { background: #ede9fe; border-color: #8b5cf6; color: #5b21b6; }
     .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
     .g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
-    .card {
-      border: 1.5px solid #ddd8f5; border-radius: 12px; padding: 12px 8px;
-      text-align: center; cursor: pointer; background: #f9f7fe;
-      transition: all .15s; user-select: none;
-    }
-    .card.on { background: #ede9fe; border-color: #8b5cf6; }
-    .card .ci { font-size: 22px; display: block; margin-bottom: 4px; }
-    .card .ct { font-size: 12px; font-weight: 700; color: #1a1640; line-height: 1.3; }
-    .card .cs { font-size: 11px; color: #9b87d4; margin-top: 2px; }
-    .card.on .ct { color: #5b21b6; }
-    .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .ilbl { width: 155px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
-    .islider { flex: 1; accent-color: #8b5cf6; }
-    .ival { width: 36px; text-align: right; font-size: 13px; font-weight: 700; color: #8b5cf6; }
-    .trow { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 4px; }
-    .tbadge { font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 99px; background: #ede9fe; color: #5b21b6; }
-    .tbadge.over { background: #fde8e8; color: #b91c1c; }
-    .tbadge.exact { background: #d1fae5; color: #065f46; }
+    .g5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
+    .sc { border: 1.5px solid #ddd8f5; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
+    .sc.on { background: #ede9fe; border-color: #8b5cf6; }
+    .sc .si { font-size: 20px; display: block; margin-bottom: 4px; }
+    .sc .st { font-size: 12px; font-weight: 700; color: #1a1640; line-height: 1.3; }
+    .sc .ss { font-size: 11px; color: #9b87d4; margin-top: 2px; }
+    .sc.on .st { color: #5b21b6; }
+    .pace-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .pace-card { border: 1.5px solid #ddd8f5; border-radius: 14px; padding: 16px 12px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
+    .pace-card.on { background: #ede9fe; border-color: #8b5cf6; }
+    .pace-card .pc-icon { font-size: 26px; display: block; margin-bottom: 6px; }
+    .pace-card .pc-title { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 3px; }
+    .pace-card.on .pc-title { color: #5b21b6; }
+    .pace-card .pc-sub { font-size: 11px; color: #9b87d4; line-height: 1.4; }
     .hdiv { border: none; border-top: 1.5px solid #ede9fe; margin: 1.5rem 0; }
     .brow { display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; gap: 10px; }
-    .bbk {
-      padding: 11px 22px; border-radius: 10px; border: 1.5px solid #ddd8f5;
-      background: transparent; font-family: 'Nunito', sans-serif; font-size: 14px;
-      font-weight: 700; color: #6b5fa0; cursor: pointer;
-    }
+    .bbk { padding: 11px 22px; border-radius: 10px; border: 1.5px solid #ddd8f5; background: transparent; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #6b5fa0; cursor: pointer; }
     .bbk:hover { background: #f3f0fc; }
-    .bnx {
-      padding: 11px 28px; border-radius: 10px; border: none; background: #8b5cf6;
-      font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
-      color: #fff; cursor: pointer; margin-left: auto;
-    }
+    .bnx { padding: 11px 28px; border-radius: 10px; border: none; background: #8b5cf6; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; margin-left: auto; }
     .bnx:hover { background: #7c3aed; }
     .step { display: none; }
     .step.on { display: block; }
     .cnote { font-size: 12px; color: #9b87d4; margin-top: 5px; display: none; }
     .cnote.on { display: block; }
+    .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1.5px solid #ddd8f5; border-radius: 10px; background: #f9f7fe; min-height: 44px; cursor: text; transition: border-color .2s; }
+    .tag-input-wrap:focus-within { border-color: #8b5cf6; background: #fff; }
+    .tag { display: inline-flex; align-items: center; gap: 5px; background: #ede9fe; border: 1px solid #c4b5fd; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+    .tag-x { cursor: pointer; font-size: 14px; line-height: 1; color: #8b5cf6; }
+    .tag-x:hover { color: #5b21b6; }
+    .tag-inp { border: none; outline: none; background: transparent; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; min-width: 120px; flex: 1; padding: 2px 4px; }
+    .hint { font-size: 11px; color: #b3a8d4; margin-top: 4px; }
+    .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .ilbl { width: 160px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
+    .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
+    .islider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #8b5cf6; }
+    .islider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; }
+    .slider-legend-row { display: flex; margin-bottom: 10px; }
+    .legend-spacer { width: 160px; flex-shrink: 0; margin-right: 10px; }
+    .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: #b3a8d4; font-weight: 600; }
     @media (max-width: 480px) {
-      .row2 { grid-template-columns: 1fr; }
+      .r2 { grid-template-columns: 1fr; }
       .g3 { grid-template-columns: 1fr 1fr; }
+      .g5 { grid-template-columns: 1fr 1fr; }
       .irow { flex-wrap: wrap; }
       .ilbl { width: 100%; }
+      .legend-spacer { display: none; }
     }
   </style>
 </head>
 <body>
 
-  <div id="bws-header">
+  <div id="hdr">
     <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
       <defs>
         <linearGradient id="lg1" x1="30" y1="20" x2="75" y2="85" gradientUnits="userSpaceOnUse">
@@ -125,10 +100,10 @@
       <circle cx="50" cy="56" r="5" fill="rgba(255,255,255,0.5)"/>
       <circle cx="50" cy="68" r="3" fill="rgba(56,189,248,0.7)"/>
     </svg>
-    <div id="bws-tagline">BuiltWithSpring · AI-Powered Travel Planner</div>
+    <div id="tgl">BuiltWithSpring · AI-Powered Travel Planner</div>
   </div>
 
-  <div id="bws-card">
+  <div id="card">
     <div class="pbar">
       <div class="pseg on" id="p1"></div>
       <div class="pseg" id="p2"></div>
@@ -137,8 +112,8 @@
 
     <!-- STEP 1 -->
     <div class="step on" id="step1">
-      <div class="slabel">Step 1 of 3</div>
-      <div class="stitle">Your trip basics</div>
+      <div class="slbl">Step 1 of 3</div>
+      <div class="stit">Your trip basics</div>
       <div class="ssub">Tell us where you're going and when.</div>
 
       <div class="fg">
@@ -146,20 +121,22 @@
         <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Morocco"/>
       </div>
 
-      <div class="row2">
-        <div class="fg">
-          <label class="fl">Arrival city <span class="req">*</span></label>
-          <input class="inp" type="text" id="arrivalCity" placeholder="e.g. Tokyo"/>
-        </div>
-        <div class="fg">
-          <label class="fl">Departure city <span class="req">*</span></label>
-          <input class="inp" type="text" id="departureCity" placeholder="e.g. Osaka"/>
-        </div>
+      <div class="r2">
+        <div class="fg"><label class="fl">Arrival city <span class="req">*</span></label><input class="inp" type="text" id="arrCity" placeholder="e.g. Tokyo"/></div>
+        <div class="fg"><label class="fl">Departure city <span class="req">*</span></label><input class="inp" type="text" id="depCity" placeholder="e.g. Osaka"/></div>
+      </div>
+
+      <div class="r2">
+        <div class="fg"><label class="fl">Arrival date <span class="req">*</span></label><input class="inp" type="date" id="arrDate"/></div>
+        <div class="fg"><label class="fl">Departure date <span class="req">*</span></label><input class="inp" type="date" id="depDate"/></div>
       </div>
 
       <div class="fg">
         <label class="fl">Cities you plan to visit <span class="req" id="cr">*</span><span class="opt" id="co" style="display:none">optional</span></label>
-        <input class="inp" type="text" id="ci" placeholder="e.g. Kyoto, Hiroshima, Nara"/>
+        <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
+          <input class="tag-inp" id="tagInp" placeholder="Type a city and press Enter or comma..."/>
+        </div>
+        <div class="hint">Press Enter or comma after each city to add it as a tag</div>
         <div class="cnote" id="cn">You can still add cities above — AI will fill in the rest around your picks.</div>
         <label class="cwrap">
           <input type="checkbox" id="aic" onchange="toggleCities()"/>
@@ -167,29 +144,20 @@
         </label>
       </div>
 
-      <div class="row2">
-        <div class="fg">
-          <label class="fl">Arrival date <span class="req">*</span></label>
-          <input class="inp" type="date" id="arrivalDate"/>
-        </div>
-        <div class="fg">
-          <label class="fl">Departure date <span class="req">*</span></label>
-          <input class="inp" type="date" id="departureDate"/>
-        </div>
-      </div>
-
       <div class="fg">
         <label class="fl">Travel party <span class="req">*</span></label>
-        <div class="g3" id="pg">
-          <div class="card" onclick="pick('pg',this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
-          <div class="card" onclick="pick('pg',this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
-          <div class="card" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👧‍👦</span><div class="ct">Group</div></div>
+        <div class="g5" id="pg">
+          <div class="sc" onclick="pick('pg',this,true)"><span class="si">🧍</span><div class="st">Solo</div></div>
+          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👫</span><div class="st">Couple</div></div>
+          <div class="sc" onclick="pick('pg',this,true)"><span class="si">🎉</span><div class="st">Friends group</div></div>
+          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👧</span><div class="st">Family with kids</div></div>
+          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👦‍👦</span><div class="st">Family no kids</div></div>
         </div>
       </div>
 
       <div class="fg" id="gsw" style="display:none">
         <label class="fl">Number of people</label>
-        <input class="inp" type="number" id="groupSize" min="3" max="50" placeholder="How many people?"/>
+        <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="How many people?"/>
       </div>
 
       <div class="fg">
@@ -197,63 +165,57 @@
         <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
       </div>
 
-      <div class="brow">
-        <button class="bnx" onclick="go(2)">Continue →</button>
-      </div>
+      <div class="brow"><button class="bnx" onclick="go(2)">Continue →</button></div>
     </div>
 
     <!-- STEP 2 -->
     <div class="step" id="step2">
-      <div class="slabel">Step 2 of 3</div>
-      <div class="stitle">Your travel style</div>
+      <div class="slbl">Step 2 of 3</div>
+      <div class="stit">Your travel style</div>
       <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Transport preference <span class="opt">optional</span></label>
+        <label class="fl">Pace of travel <span class="opt">optional</span></label>
+        <div class="pace-wrap" id="paceGrid">
+          <div class="pace-card" onclick="pickPace(this)">
+            <span class="pc-icon">🏃</span>
+            <div class="pc-title">Pack it in</div>
+            <div class="pc-sub">More cities, more activities, full days</div>
+          </div>
+          <div class="pace-card" onclick="pickPace(this)">
+            <span class="pc-icon">🏘️</span>
+            <div class="pc-title">Less cities, more time</div>
+            <div class="pc-sub">Go deep, not wide — linger longer</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Transportation preference <span class="opt">optional</span></label>
         <div class="g4" id="tg">
-          <div class="card" onclick="pick('tg',this)"><span class="ci">⚡</span><div class="ct">Speed & comfort</div></div>
-          <div class="card" onclick="pick('tg',this)"><span class="ci">⚖️</span><div class="ct">Balanced</div></div>
-          <div class="card" onclick="pick('tg',this)"><span class="ci">💰</span><div class="ct">Budget-friendly</div></div>
-          <div class="card" onclick="pick('tg',this)"><span class="ci">🎲</span><div class="ct">No preference</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">⚡</span><div class="st">Fast & comfortable</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">🌄</span><div class="st">Scenic & relaxed</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">💰</span><div class="st">Budget-friendly</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">🎲</span><div class="st">No preference</div></div>
         </div>
       </div>
 
       <div class="fg">
         <label class="fl">Budget tier <span class="opt">optional</span></label>
         <div class="g3" id="bg">
-          <div class="card" onclick="pick('bg',this)"><span class="ci">🎒</span><div class="ct">Budget</div><div class="cs">~$50–100/day</div></div>
-          <div class="card" onclick="pick('bg',this)"><span class="ci">🧳</span><div class="ct">Mid-range</div><div class="cs">~$100–250/day</div></div>
-          <div class="card" onclick="pick('bg',this)"><span class="ci">💼</span><div class="ct">Luxury</div><div class="cs">$250+/day</div></div>
+          <div class="sc" onclick="pick('bg',this)"><span class="si">🎒</span><div class="st">Budget</div><div class="ss">~$50–100/day</div></div>
+          <div class="sc" onclick="pick('bg',this)"><span class="si">🧳</span><div class="st">Mid-range</div><div class="ss">~$100–250/day</div></div>
+          <div class="sc" onclick="pick('bg',this)"><span class="si">💼</span><div class="st">Luxury</div><div class="ss">$250+/day</div></div>
         </div>
       </div>
 
       <div class="fg">
         <label class="fl">Accommodation style <span class="opt">optional · pick all that apply</span></label>
         <div class="g4" id="accom">
-          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
-          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏡</span><div class="ct">Airbnb / Rental</div></div>
-          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
-          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏕️</span><div class="ct">Glamping / Unique</div></div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Pace of travel <span class="opt">optional</span></label>
-        <div class="g3" id="paceg">
-          <div class="card" onclick="pick('paceg',this)"><span class="ci">☕</span><div class="ct">Relaxed</div><div class="cs">Fewer stops, linger longer</div></div>
-          <div class="card" onclick="pick('paceg',this)"><span class="ci">🗺️</span><div class="ct">Balanced</div><div class="cs">Best of both</div></div>
-          <div class="card" onclick="pick('paceg',this)"><span class="ci">⚡</span><div class="ct">Packed</div><div class="cs">See everything possible</div></div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Trip vibe <span class="opt">optional</span></label>
-        <div class="g4" id="vg">
-          <div class="card" onclick="pick('vg',this)"><span class="ci">🗺️</span><div class="ct">Off the beaten path</div></div>
-          <div class="card" onclick="pick('vg',this)"><span class="ci">📸</span><div class="ct">Popular highlights</div></div>
-          <div class="card" onclick="pick('vg',this)"><span class="ci">🏘️</span><div class="ct">Local immersion</div></div>
-          <div class="card" onclick="pick('vg',this)"><span class="ci">💑</span><div class="ct">Romantic</div></div>
-          <div class="card" onclick="pick('vg',this)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family-friendly</div></div>
+          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏨</span><div class="st">Hotel</div></div>
+          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏡</span><div class="st">Airbnb / Rental</div></div>
+          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🛏️</span><div class="st">Hostel</div></div>
+          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏕️</span><div class="st">Glamping / Unique</div></div>
         </div>
       </div>
 
@@ -265,25 +227,28 @@
 
     <!-- STEP 3 -->
     <div class="step" id="step3">
-      <div class="slabel">Step 3 of 3</div>
-      <div class="stitle">Final details</div>
+      <div class="slbl">Step 3 of 3</div>
+      <div class="stit">Final details</div>
       <div class="ssub">The more you share, the better your itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Your interest mix <span class="opt">optional · allocate up to 100%</span></label>
-        <div style="margin-top:10px">
-          <div class="irow"><span class="ilbl">🏛️ History</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🌿 Nature</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
-          <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+        <label class="fl">Your interest mix <span class="opt">optional</span></label>
+        <div class="slider-legend-row">
+          <div class="legend-spacer"></div>
+          <div class="legend-labels">
+            <span>Not a priority</span>
+            <span>High priority</span>
+          </div>
         </div>
-        <div class="trow">
-          <span style="font-size:12px;color:#9b87d4">Total:</span>
-          <span class="tbadge" id="tb">0%</span>
+        <div id="sliders">
+          <div class="irow"><span class="ilbl">🏛️ History</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🌿 Nature</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
         </div>
       </div>
 
@@ -344,6 +309,39 @@
   </div>
 
   <script>
+    const tags = [];
+    const tagInp = document.getElementById('tagInp');
+    const tagWrap = document.getElementById('tagWrap');
+
+    function addTag(val) {
+      const v = val.trim().replace(/,+$/, '').trim();
+      if (!v || tags.includes(v)) return;
+      tags.push(v);
+      const t = document.createElement('span');
+      t.className = 'tag';
+      t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g, "\\'") + '\')">&times;</span>';
+      tagWrap.insertBefore(t, tagInp);
+      tagInp.value = '';
+      tagInp.placeholder = '';
+    }
+
+    function removeTag(el, val) {
+      const i = tags.indexOf(val);
+      if (i > -1) tags.splice(i, 1);
+      el.parentElement.remove();
+      if (tags.length === 0) tagInp.placeholder = 'Type a city and press Enter or comma...';
+    }
+
+    tagInp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value); }
+      else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+        tagWrap.querySelectorAll('.tag')[tags.length - 1].remove();
+        tags.pop();
+      }
+    });
+    tagInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value); });
+    tagInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value); });
+
     function go(n) {
       for (let i = 1; i <= 4; i++) {
         document.getElementById('step' + i).classList.toggle('on', i === n);
@@ -354,11 +352,17 @@
     }
 
     function pick(gridId, el, isParty) {
-      document.getElementById(gridId).querySelectorAll('.card').forEach(c => c.classList.remove('on'));
+      document.getElementById(gridId).querySelectorAll('.sc').forEach(c => c.classList.remove('on'));
       el.classList.add('on');
       if (isParty) {
-        document.getElementById('gsw').style.display = el.querySelector('.ct').textContent === 'Group' ? 'block' : 'none';
+        const t = el.querySelector('.st').textContent;
+        document.getElementById('gsw').style.display = (t === 'Friends group' || t === 'Family with kids' || t === 'Family no kids') ? 'block' : 'none';
       }
+    }
+
+    function pickPace(el) {
+      document.getElementById('paceGrid').querySelectorAll('.pace-card').forEach(c => c.classList.remove('on'));
+      el.classList.add('on');
     }
 
     function toggleCities() {
@@ -366,69 +370,58 @@
       document.getElementById('cr').style.display = v ? 'none' : 'inline';
       document.getElementById('co').style.display = v ? 'inline' : 'none';
       document.getElementById('cn').classList.toggle('on', v);
-      document.getElementById('ci').placeholder = v
-        ? 'Add any cities you have in mind, or leave blank to let AI decide everything'
-        : 'e.g. Kyoto, Hiroshima, Nara';
+      tagInp.placeholder = v ? 'Add any cities, or leave blank to let AI decide...' : 'Type a city and press Enter or comma...';
     }
 
-    function updInt(s) {
-      s.closest('.irow').querySelector('.ival').textContent = Math.round(s.value) + '%';
-      let t = 0;
-      document.querySelectorAll('.islider').forEach(x => t += parseInt(x.value));
-      const b = document.getElementById('tb');
-      b.textContent = Math.round(t) + '%';
-      b.className = 'tbadge' + (t > 100 ? ' over' : t === 100 ? ' exact' : '');
+    function updSlider(s) {
+      const pct = (parseInt(s.value) / 10) * 100;
+      s.style.background = 'linear-gradient(to right,#8b5cf6 ' + pct + '%,#e0d9f5 ' + pct + '%)';
     }
+
+    document.querySelectorAll('.islider').forEach(s => updSlider(s));
 
     function collectFormData() {
-      const getSelected = (gridId) => {
-        const el = document.querySelector('#' + gridId + ' .card.on .ct');
-        return el ? el.textContent : '';
-      };
-      const getMultiSelected = (gridId) => {
-        return Array.from(document.querySelectorAll('#' + gridId + ' .card.on .ct')).map(e => e.textContent);
-      };
-      const getChips = () => {
-        return Array.from(document.querySelectorAll('.chip.on')).map(e => e.textContent);
-      };
+      const getSelected = id => { const el = document.querySelector('#' + id + ' .sc.on .st'); return el ? el.textContent : ''; };
+      const getMultiSelected = id => Array.from(document.querySelectorAll('#' + id + ' .sc.on .st')).map(e => e.textContent);
+      const getChips = () => Array.from(document.querySelectorAll('.chip.on')).map(e => e.textContent);
+      const getPace = () => { const el = document.querySelector('#paceGrid .pace-card.on .pc-title'); return el ? el.textContent : ''; };
       const getInterests = () => {
-        const rows = document.querySelectorAll('.irow');
         const result = {};
-        rows.forEach(row => {
+        let total = 0;
+        document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
+        if (total === 0) return result;
+        document.querySelectorAll('.irow').forEach(row => {
           const label = row.querySelector('.ilbl').textContent.replace(/^\S+\s/, '');
           const val = parseInt(row.querySelector('.islider').value);
-          if (val > 0) result[label] = val + '%';
+          if (val > 0) result[label] = Math.round((val / total) * 100) + '%';
         });
         return result;
       };
-
       return {
         country: document.getElementById('country').value,
-        arrivalCity: document.getElementById('arrivalCity').value,
-        departureCity: document.getElementById('departureCity').value,
-        citiesToVisit: document.getElementById('ci').value,
+        arrivalCity: document.getElementById('arrCity').value,
+        departureCity: document.getElementById('depCity').value,
+        arrivalDate: document.getElementById('arrDate').value,
+        departureDate: document.getElementById('depDate').value,
+        citiesToVisit: tags,
         aiCityRecommendation: document.getElementById('aic').checked,
-        arrivalDate: document.getElementById('arrivalDate').value,
-        departureDate: document.getElementById('departureDate').value,
-        email: document.getElementById('email').value,
         travelParty: getSelected('pg'),
         groupSize: document.getElementById('groupSize').value || null,
-        transportPreference: getSelected('tg'),
+        email: document.getElementById('email').value,
+        paceOfTravel: getPace(),
+        transportationPreference: getSelected('tg'),
         budgetTier: getSelected('bg'),
         accommodationStyle: getMultiSelected('accom'),
-        paceOfTravel: getSelected('paceg'),
-        tripVibe: getSelected('vg'),
         interests: getInterests(),
         cuisinePreferences: getChips(),
         mustSee: document.getElementById('mustSee').value,
-        extraNotes: document.getElementById('extraNotes').value,
+        extraNotes: document.getElementById('extraNotes').value
       };
     }
 
     function submitForm() {
       const data = collectFormData();
       const WEBHOOK_URL = 'https://hook.us2.make.com/vgf8dodou77vnfrugshreiumvq1vgthm';
-
       fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -439,7 +432,6 @@
         console.error('Submission error:', err);
         alert('Something went wrong. Please try again.');
       });
-
     }
   </script>
 
