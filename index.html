@@ -427,10 +427,8 @@
 
     function submitForm() {
       const data = collectFormData();
-      const WEBHOOK_URL = 'YOUR_MAKE_WEBHOOK_URL_HERE';
+      const WEBHOOK_URL = 'https://hook.us2.make.com/vgf8dodou77vnfrugshreiumvq1vgthm';
 
-      // Uncomment the block below once you have your Make webhook URL:
-      /*
       fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -441,10 +439,7 @@
         console.error('Submission error:', err);
         alert('Something went wrong. Please try again.');
       });
-      */
 
-      // Remove this line once webhook is connected:
-      go(4);
     }
   </script>
 
