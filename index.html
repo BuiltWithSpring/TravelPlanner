@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BuiltWithSpring · AI-Powered Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #eeeaf8;
+      font-family: 'Nunito Sans', sans-serif;
+      color: #1a1640;
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+    }
+    #bws-header {
+      width: 100%;
+      text-align: center;
+      padding-bottom: 1.5rem;
+    }
+    #bws-tagline {
+      font-size: 14px;
+      color: #6b5fa0;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    #bws-card {
+      background: #fff;
+      border-radius: 20px;
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 2rem 2rem 1.5rem;
+      box-shadow: 0 4px 32px rgba(90, 60, 180, 0.09);
+    }
+    .pbar { display: flex; gap: 6px; margin-bottom: 1.75rem; }
+    .pseg { height: 5px; border-radius: 99px; flex: 1; background: #e0d9f5; transition: background .3s; }
+    .pseg.on { background: #8b5cf6; }
+    .slabel { font-size: 12px; font-weight: 700; color: #9b87d4; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .stitle { font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 800; color: #1a1640; margin: 0 0 4px; }
+    .ssub { font-size: 13px; color: #6b5fa0; margin-bottom: 1.5rem; }
+    .fg { margin-bottom: 1.25rem; }
+    .fl { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 6px; display: block; }
+    .opt { font-weight: 400; color: #9b87d4; font-size: 12px; margin-left: 4px; }
+    .req { color: #e74c4c; }
+    .inp {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px;
+      font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640;
+      background: #f9f7fe; transition: border-color .2s; outline: none;
+    }
+    .inp:focus { border-color: #8b5cf6; background: #fff; }
+    textarea.inp { resize: vertical; line-height: 1.5; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .cwrap { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
+    .cwrap input { accent-color: #8b5cf6; width: 16px; height: 16px; }
+    .cwrap span { font-size: 13px; color: #6b5fa0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .chip {
+      padding: 7px 14px; border-radius: 99px; border: 1.5px solid #ddd8f5;
+      font-size: 13px; font-weight: 600; color: #6b5fa0; background: #f9f7fe;
+      cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .chip.on { background: #ede9fe; border-color: #8b5cf6; color: #5b21b6; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
+    .card {
+      border: 1.5px solid #ddd8f5; border-radius: 12px; padding: 12px 8px;
+      text-align: center; cursor: pointer; background: #f9f7fe;
+      transition: all .15s; user-select: none;
+    }
+    .card.on { background: #ede9fe; border-color: #8b5cf6; }
+    .card .ci { font-size: 22px; display: block; margin-bottom: 4px; }
+    .card .ct { font-size: 12px; font-weight: 700; color: #1a1640; line-height: 1.3; }
+    .card .cs { font-size: 11px; color: #9b87d4; margin-top: 2px; }
+    .card.on .ct { color: #5b21b6; }
+    .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .ilbl { width: 155px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
+    .islider { flex: 1; accent-color: #8b5cf6; }
+    .ival { width: 36px; text-align: right; font-size: 13px; font-weight: 700; color: #8b5cf6; }
+    .trow { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 4px; }
+    .tbadge { font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 99px; background: #ede9fe; color: #5b21b6; }
+    .tbadge.over { background: #fde8e8; color: #b91c1c; }
+    .tbadge.exact { background: #d1fae5; color: #065f46; }
+    .hdiv { border: none; border-top: 1.5px solid #ede9fe; margin: 1.5rem 0; }
+    .brow { display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; gap: 10px; }
+    .bbk {
+      padding: 11px 22px; border-radius: 10px; border: 1.5px solid #ddd8f5;
+      background: transparent; font-family: 'Nunito', sans-serif; font-size: 14px;
+      font-weight: 700; color: #6b5fa0; cursor: pointer;
+    }
+    .bbk:hover { background: #f3f0fc; }
+    .bnx {
+      padding: 11px 28px; border-radius: 10px; border: none; background: #8b5cf6;
+      font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+      color: #fff; cursor: pointer; margin-left: auto;
+    }
+    .bnx:hover { background: #7c3aed; }
+    .step { display: none; }
+    .step.on { display: block; }
+    .cnote { font-size: 12px; color: #9b87d4; margin-top: 5px; display: none; }
+    .cnote.on { display: block; }
+    @media (max-width: 480px) {
+      .row2 { grid-template-columns: 1fr; }
+      .g3 { grid-template-columns: 1fr 1fr; }
+      .irow { flex-wrap: wrap; }
+      .ilbl { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="bws-header">
+    <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+      <defs>
+        <linearGradient id="lg1" x1="30" y1="20" x2="75" y2="85" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#a78bfa"/>
+          <stop offset="100%" stop-color="#38bdf8"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="22" fill="#eeeaf8"/>
+      <path d="M50 20C50 20 75 42 75 60C75 73.8 63.8 85 50 85C36.2 85 25 73.8 25 60C25 42 50 20 50 20Z" fill="url(#lg1)"/>
+      <polygon points="50,18 72,30 72,55 50,67 28,55 28,30" fill="none" stroke="#f0a0d0" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="50" cy="56" r="5" fill="rgba(255,255,255,0.5)"/>
+      <circle cx="50" cy="68" r="3" fill="rgba(56,189,248,0.7)"/>
+    </svg>
+    <div id="bws-tagline">BuiltWithSpring · AI-Powered Travel Planner</div>
+  </div>
+
+  <div id="bws-card">
+    <div class="pbar">
+      <div class="pseg on" id="p1"></div>
+      <div class="pseg" id="p2"></div>
+      <div class="pseg" id="p3"></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step on" id="step1">
+      <div class="slabel">Step 1 of 3</div>
+      <div class="stitle">Your trip basics</div>
+      <div class="ssub">Tell us where you're going and when.</div>
+
+      <div class="fg">
+        <label class="fl">Country you're visiting <span class="req">*</span></label>
+        <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Morocco"/>
+      </div>
+
+      <div class="row2">
+        <div class="fg">
+          <label class="fl">Arrival city <span class="req">*</span></label>
+          <input class="inp" type="text" id="arrivalCity" placeholder="e.g. Tokyo"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Departure city <span class="req">*</span></label>
+          <input class="inp" type="text" id="departureCity" placeholder="e.g. Osaka"/>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Cities you plan to visit <span class="req" id="cr">*</span><span class="opt" id="co" style="display:none">optional</span></label>
+        <input class="inp" type="text" id="ci" placeholder="e.g. Kyoto, Hiroshima, Nara"/>
+        <div class="cnote" id="cn">You can still add cities above — AI will fill in the rest around your picks.</div>
+        <label class="cwrap">
+          <input type="checkbox" id="aic" onchange="toggleCities()"/>
+          <span>✨ Let AI recommend the best cities for me</span>
+        </label>
+      </div>
+
+      <div class="row2">
+        <div class="fg">
+          <label class="fl">Arrival date <span class="req">*</span></label>
+          <input class="inp" type="date" id="arrivalDate"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Departure date <span class="req">*</span></label>
+          <input class="inp" type="date" id="departureDate"/>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Travel party <span class="req">*</span></label>
+        <div class="g3" id="pg">
+          <div class="card" onclick="pick('pg',this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
+          <div class="card" onclick="pick('pg',this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
+          <div class="card" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👧‍👦</span><div class="ct">Group</div></div>
+        </div>
+      </div>
+
+      <div class="fg" id="gsw" style="display:none">
+        <label class="fl">Number of people</label>
+        <input class="inp" type="number" id="groupSize" min="3" max="50" placeholder="How many people?"/>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Your email <span class="req">*</span></label>
+        <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
+      </div>
+
+      <div class="brow">
+        <button class="bnx" onclick="go(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="step2">
+      <div class="slabel">Step 2 of 3</div>
+      <div class="stitle">Your travel style</div>
+      <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
+
+      <div class="fg">
+        <label class="fl">Transport preference <span class="opt">optional</span></label>
+        <div class="g4" id="tg">
+          <div class="card" onclick="pick('tg',this)"><span class="ci">⚡</span><div class="ct">Speed & comfort</div></div>
+          <div class="card" onclick="pick('tg',this)"><span class="ci">⚖️</span><div class="ct">Balanced</div></div>
+          <div class="card" onclick="pick('tg',this)"><span class="ci">💰</span><div class="ct">Budget-friendly</div></div>
+          <div class="card" onclick="pick('tg',this)"><span class="ci">🎲</span><div class="ct">No preference</div></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Budget tier <span class="opt">optional</span></label>
+        <div class="g3" id="bg">
+          <div class="card" onclick="pick('bg',this)"><span class="ci">🎒</span><div class="ct">Budget</div><div class="cs">~$50–100/day</div></div>
+          <div class="card" onclick="pick('bg',this)"><span class="ci">🧳</span><div class="ct">Mid-range</div><div class="cs">~$100–250/day</div></div>
+          <div class="card" onclick="pick('bg',this)"><span class="ci">💼</span><div class="ct">Luxury</div><div class="cs">$250+/day</div></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Accommodation style <span class="opt">optional · pick all that apply</span></label>
+        <div class="g4" id="accom">
+          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
+          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏡</span><div class="ct">Airbnb / Rental</div></div>
+          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
+          <div class="card" onclick="this.classList.toggle('on')"><span class="ci">🏕️</span><div class="ct">Glamping / Unique</div></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Pace of travel <span class="opt">optional</span></label>
+        <div class="g3" id="paceg">
+          <div class="card" onclick="pick('paceg',this)"><span class="ci">☕</span><div class="ct">Relaxed</div><div class="cs">Fewer stops, linger longer</div></div>
+          <div class="card" onclick="pick('paceg',this)"><span class="ci">🗺️</span><div class="ct">Balanced</div><div class="cs">Best of both</div></div>
+          <div class="card" onclick="pick('paceg',this)"><span class="ci">⚡</span><div class="ct">Packed</div><div class="cs">See everything possible</div></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Trip vibe <span class="opt">optional</span></label>
+        <div class="g4" id="vg">
+          <div class="card" onclick="pick('vg',this)"><span class="ci">🗺️</span><div class="ct">Off the beaten path</div></div>
+          <div class="card" onclick="pick('vg',this)"><span class="ci">📸</span><div class="ct">Popular highlights</div></div>
+          <div class="card" onclick="pick('vg',this)"><span class="ci">🏘️</span><div class="ct">Local immersion</div></div>
+          <div class="card" onclick="pick('vg',this)"><span class="ci">💑</span><div class="ct">Romantic</div></div>
+          <div class="card" onclick="pick('vg',this)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family-friendly</div></div>
+        </div>
+      </div>
+
+      <div class="brow">
+        <button class="bbk" onclick="go(1)">← Back</button>
+        <button class="bnx" onclick="go(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="step3">
+      <div class="slabel">Step 3 of 3</div>
+      <div class="stitle">Final details</div>
+      <div class="ssub">The more you share, the better your itinerary. <span class="opt">All optional</span></div>
+
+      <div class="fg">
+        <label class="fl">Your interest mix <span class="opt">optional · allocate up to 100%</span></label>
+        <div style="margin-top:10px">
+          <div class="irow"><span class="ilbl">🏛️ History</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🌿 Nature</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+          <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="100" step="5" value="0" oninput="updInt(this)"/><span class="ival">0%</span></div>
+        </div>
+        <div class="trow">
+          <span style="font-size:12px;color:#9b87d4">Total:</span>
+          <span class="tbadge" id="tb">0%</span>
+        </div>
+      </div>
+
+      <hr class="hdiv"/>
+
+      <div class="fg">
+        <label class="fl">Cuisine preferences <span class="opt">optional · pick all that apply</span></label>
+        <div class="chips">
+          <div class="chip" onclick="this.classList.toggle('on')">Local & traditional</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Street food</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Fine dining</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Seafood</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Vegetarian-friendly</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Plant-based</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Fusion & modern</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Markets & food halls</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Must-see destinations or experiences <span class="opt">optional</span></label>
+        <textarea class="inp" rows="3" id="mustSee" placeholder="Anything specific you don't want to miss? Or leave blank and let AI suggest everything."></textarea>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Anything else we should know <span class="opt">optional</span></label>
+        <textarea class="inp" rows="2" id="extraNotes" placeholder="Special occasion? Niche interest? Traveling with kids or pets? Tell us anything..."></textarea>
+      </div>
+
+      <div class="brow">
+        <button class="bbk" onclick="go(2)">← Back</button>
+        <button class="bnx" onclick="submitForm()">✨ Generate my itinerary</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="step" id="step4">
+      <div style="text-align:center;padding:2rem 0;">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="display:block;margin:0 auto 1.25rem">
+          <defs>
+            <linearGradient id="lg2" x1="12" y1="6" x2="54" y2="62" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#a78bfa"/>
+              <stop offset="100%" stop-color="#38bdf8"/>
+            </linearGradient>
+          </defs>
+          <path d="M32 6C32 6 54 26 54 40C54 52.15 44.15 62 32 62C19.85 62 10 52.15 10 40C10 26 32 6 32 6Z" fill="url(#lg2)"/>
+          <path d="M22 40L29 47L43 33" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div style="font-family:'Nunito',sans-serif;font-size:24px;font-weight:800;color:#1a1640;margin:0 0 8px;">You're all set!</div>
+        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your personalized itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
+        <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;">
+          Your itinerary sheet includes:<br/>
+          <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 📋 Practical info</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function go(n) {
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById('step' + i).classList.toggle('on', i === n);
+        const p = document.getElementById('p' + i);
+        if (p) p.classList.toggle('on', i <= n);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function pick(gridId, el, isParty) {
+      document.getElementById(gridId).querySelectorAll('.card').forEach(c => c.classList.remove('on'));
+      el.classList.add('on');
+      if (isParty) {
+        document.getElementById('gsw').style.display = el.querySelector('.ct').textContent === 'Group' ? 'block' : 'none';
+      }
+    }
+
+    function toggleCities() {
+      const v = document.getElementById('aic').checked;
+      document.getElementById('cr').style.display = v ? 'none' : 'inline';
+      document.getElementById('co').style.display = v ? 'inline' : 'none';
+      document.getElementById('cn').classList.toggle('on', v);
+      document.getElementById('ci').placeholder = v
+        ? 'Add any cities you have in mind, or leave blank to let AI decide everything'
+        : 'e.g. Kyoto, Hiroshima, Nara';
+    }
+
+    function updInt(s) {
+      s.closest('.irow').querySelector('.ival').textContent = Math.round(s.value) + '%';
+      let t = 0;
+      document.querySelectorAll('.islider').forEach(x => t += parseInt(x.value));
+      const b = document.getElementById('tb');
+      b.textContent = Math.round(t) + '%';
+      b.className = 'tbadge' + (t > 100 ? ' over' : t === 100 ? ' exact' : '');
+    }
+
+    function collectFormData() {
+      const getSelected = (gridId) => {
+        const el = document.querySelector('#' + gridId + ' .card.on .ct');
+        return el ? el.textContent : '';
+      };
+      const getMultiSelected = (gridId) => {
+        return Array.from(document.querySelectorAll('#' + gridId + ' .card.on .ct')).map(e => e.textContent);
+      };
+      const getChips = () => {
+        return Array.from(document.querySelectorAll('.chip.on')).map(e => e.textContent);
+      };
+      const getInterests = () => {
+        const rows = document.querySelectorAll('.irow');
+        const result = {};
+        rows.forEach(row => {
+          const label = row.querySelector('.ilbl').textContent.replace(/^\S+\s/, '');
+          const val = parseInt(row.querySelector('.islider').value);
+          if (val > 0) result[label] = val + '%';
+        });
+        return result;
+      };
+
+      return {
+        country: document.getElementById('country').value,
+        arrivalCity: document.getElementById('arrivalCity').value,
+        departureCity: document.getElementById('departureCity').value,
+        citiesToVisit: document.getElementById('ci').value,
+        aiCityRecommendation: document.getElementById('aic').checked,
+        arrivalDate: document.getElementById('arrivalDate').value,
+        departureDate: document.getElementById('departureDate').value,
+        email: document.getElementById('email').value,
+        travelParty: getSelected('pg'),
+        groupSize: document.getElementById('groupSize').value || null,
+        transportPreference: getSelected('tg'),
+        budgetTier: getSelected('bg'),
+        accommodationStyle: getMultiSelected('accom'),
+        paceOfTravel: getSelected('paceg'),
+        tripVibe: getSelected('vg'),
+        interests: getInterests(),
+        cuisinePreferences: getChips(),
+        mustSee: document.getElementById('mustSee').value,
+        extraNotes: document.getElementById('extraNotes').value,
+      };
+    }
+
+    function submitForm() {
+      const data = collectFormData();
+      const WEBHOOK_URL = 'YOUR_MAKE_WEBHOOK_URL_HERE';
+
+      // Uncomment the block below once you have your Make webhook URL:
+      /*
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(() => go(4))
+      .catch(err => {
+        console.error('Submission error:', err);
+        alert('Something went wrong. Please try again.');
+      });
+      */
+
+      // Remove this line once webhook is connected:
+      go(4);
+    }
+  </script>
+
+</body>
+</html>
