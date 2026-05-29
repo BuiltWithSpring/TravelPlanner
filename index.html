@@ -30,9 +30,6 @@
     .hint a { color: #8b5cf6; text-decoration: none; }
     .hint a:hover { text-decoration: underline; }
     .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .cwrap { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
-    .cwrap input { accent-color: #8b5cf6; width: 16px; height: 16px; }
-    .cwrap span { font-size: 13px; color: #6b5fa0; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
     .chip { padding: 7px 14px; border-radius: 99px; border: 1.5px solid #ddd8f5; font-size: 13px; font-weight: 600; color: #6b5fa0; background: #f9f7fe; cursor: pointer; transition: all .15s; user-select: none; }
     .chip.on { background: #ede9fe; border-color: #8b5cf6; color: #5b21b6; }
@@ -45,6 +42,26 @@
     .sc .st { font-size: 12px; font-weight: 700; color: #1a1640; line-height: 1.3; }
     .sc .ss { font-size: 11px; color: #9b87d4; margin-top: 2px; }
     .sc.on .st { color: #5b21b6; }
+    /* Mode selector cards */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .mode-card { border: 1.5px solid #ddd8f5; border-radius: 14px; padding: 18px 14px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
+    .mode-card.on { background: #ede9fe; border-color: #8b5cf6; }
+    .mode-card .mc-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+    .mode-card .mc-title { font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800; color: #1a1640; margin-bottom: 4px; }
+    .mode-card.on .mc-title { color: #5b21b6; }
+    .mode-card .mc-sub { font-size: 11px; color: #9b87d4; line-height: 1.5; }
+    /* Tag input */
+    .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1.5px solid #ddd8f5; border-radius: 10px; background: #f9f7fe; min-height: 44px; cursor: text; transition: border-color .2s; }
+    .tag-input-wrap:focus-within { border-color: #8b5cf6; background: #fff; }
+    .tag { display: inline-flex; align-items: center; gap: 5px; background: #ede9fe; border: 1px solid #c4b5fd; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+    .tag-x { cursor: pointer; font-size: 14px; line-height: 1; color: #8b5cf6; }
+    .tag-x:hover { color: #5b21b6; }
+    .tag-inp { border: none; outline: none; background: transparent; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; min-width: 120px; flex: 1; padding: 2px 4px; }
+    /* AI confirmation box */
+    .ai-confirm { background: #f3f0fc; border: 1.5px solid #c4b5fd; border-radius: 12px; padding: 14px 16px; margin-top: 8px; }
+    .ai-confirm-title { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; color: #5b21b6; margin-bottom: 4px; }
+    .ai-confirm-sub { font-size: 12px; color: #6b5fa0; line-height: 1.5; }
+    /* Pace cards */
     .pace-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
     .pace-card { border: 1.5px solid #ddd8f5; border-radius: 14px; padding: 16px 12px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
     .pace-card.on { background: #ede9fe; border-color: #8b5cf6; }
@@ -60,14 +77,8 @@
     .bnx:hover { background: #7c3aed; }
     .step { display: none; }
     .step.on { display: block; }
-    .cnote { font-size: 12px; color: #9b87d4; margin-top: 5px; display: none; }
-    .cnote.on { display: block; }
-    .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1.5px solid #ddd8f5; border-radius: 10px; background: #f9f7fe; min-height: 44px; cursor: text; transition: border-color .2s; }
-    .tag-input-wrap:focus-within { border-color: #8b5cf6; background: #fff; }
-    .tag { display: inline-flex; align-items: center; gap: 5px; background: #ede9fe; border: 1px solid #c4b5fd; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
-    .tag-x { cursor: pointer; font-size: 14px; line-height: 1; color: #8b5cf6; }
-    .tag-x:hover { color: #5b21b6; }
-    .tag-inp { border: none; outline: none; background: transparent; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; min-width: 120px; flex: 1; padding: 2px 4px; }
+    .hidden { display: none !important; }
+    /* Slider */
     .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .ilbl { width: 160px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
     .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
@@ -77,7 +88,7 @@
     .legend-spacer { width: 160px; flex-shrink: 0; margin-right: 10px; }
     .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: #b3a8d4; font-weight: 600; }
     @media (max-width: 480px) {
-      .r2 { grid-template-columns: 1fr; }
+      .r2, .mode-grid, .pace-wrap { grid-template-columns: 1fr; }
       .g3 { grid-template-columns: 1fr 1fr; }
       .g5 { grid-template-columns: 1fr 1fr; }
       .irow { flex-wrap: wrap; }
@@ -148,16 +159,43 @@
       </div>
 
       <div class="fg">
-        <label class="fl">Cities you plan to visit <span class="req" id="cr">*</span><span class="opt" id="co" style="display:none">optional</span></label>
+        <label class="fl">How would you like to plan your cities? <span class="req">*</span></label>
+        <div class="mode-grid">
+          <div class="mode-card" id="modeKnow" onclick="setMode('know')">
+            <span class="mc-icon">🗺️</span>
+            <div class="mc-title">I know where I want to go</div>
+            <div class="mc-sub">I'll enter my cities and AI will plan around them</div>
+          </div>
+          <div class="mode-card" id="modeAI" onclick="setMode('ai')">
+            <span class="mc-icon">✨</span>
+            <div class="mc-title">Recommend cities for me</div>
+            <div class="mc-sub">AI picks the best cities based on my preferences</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 1: Know your cities -->
+      <div class="fg hidden" id="cityKnowBlock">
+        <label class="fl">Cities you plan to visit <span class="req">*</span></label>
         <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
           <input class="tag-inp" id="tagInp" placeholder="Type a city and press Enter or comma..."/>
         </div>
         <div class="hint">Press Enter or comma after each city to add it as a tag</div>
-        <div class="cnote" id="cn">You can still add cities above — AI will fill in the rest around your picks.</div>
-        <label class="cwrap">
-          <input type="checkbox" id="aic" onchange="toggleCities()"/>
-          <span>✨ Let AI recommend the best cities for me</span>
-        </label>
+      </div>
+
+      <!-- MODE 2: AI recommends -->
+      <div class="fg hidden" id="cityAIBlock">
+        <div class="ai-confirm">
+          <div class="ai-confirm-title">✨ AI will recommend your cities</div>
+          <div class="ai-confirm-sub">Based on your preferences, interests, and travel dates — AI will select and order the best cities for your trip.</div>
+        </div>
+        <div class="fg" style="margin-top:12px; margin-bottom:0;">
+          <label class="fl">Any cities you definitely want to include? <span class="opt">optional · max 3</span></label>
+          <div class="tag-input-wrap" id="anchorWrap" onclick="document.getElementById('anchorInp').focus()">
+            <input class="tag-inp" id="anchorInp" placeholder="Type an anchor city and press Enter..."/>
+          </div>
+          <div class="hint">Add up to 3 cities and AI will build the rest around them. Or leave blank and AI decides everything.</div>
+        </div>
       </div>
 
       <div class="fg">
@@ -171,7 +209,7 @@
         </div>
       </div>
 
-      <div class="fg" id="gsw" style="display:none">
+      <div class="fg hidden" id="gsw">
         <label class="fl">Number of people</label>
         <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="How many people?"/>
       </div>
@@ -325,39 +363,75 @@
   </div>
 
   <script>
+    // ── MODE SELECTOR ──────────────────────────────────────────
+    let currentMode = null;
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('modeKnow').classList.toggle('on', mode === 'know');
+      document.getElementById('modeAI').classList.toggle('on', mode === 'ai');
+      document.getElementById('cityKnowBlock').classList.toggle('hidden', mode !== 'know');
+      document.getElementById('cityAIBlock').classList.toggle('hidden', mode !== 'ai');
+    }
+
+    // ── CITY TAG INPUT (Mode 1) ────────────────────────────────
     const tags = [];
     const tagInp = document.getElementById('tagInp');
     const tagWrap = document.getElementById('tagWrap');
 
-    function addTag(val) {
+    function addTag(val, arr, wrap, inp, max) {
       const v = val.trim().replace(/,+$/, '').trim();
-      if (!v || tags.includes(v)) return;
-      tags.push(v);
+      if (!v || arr.includes(v)) return;
+      if (max && arr.length >= max) {
+        inp.placeholder = 'Max ' + max + ' cities reached';
+        return;
+      }
+      arr.push(v);
       const t = document.createElement('span');
       t.className = 'tag';
-      t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g, "\\'") + '\')">&times;</span>';
-      tagWrap.insertBefore(t, tagInp);
-      tagInp.value = '';
-      tagInp.placeholder = '';
+      t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g, "\\'") + '\',true)">&times;</span>';
+      wrap.insertBefore(t, inp);
+      inp.value = '';
+      inp.placeholder = '';
     }
 
-    function removeTag(el, val) {
-      const i = tags.indexOf(val);
-      if (i > -1) tags.splice(i, 1);
+    function removeTag(el, val, isMain) {
+      const arr = isMain ? tags : anchorTags;
+      const i = arr.indexOf(val);
+      if (i > -1) arr.splice(i, 1);
       el.parentElement.remove();
-      if (tags.length === 0) tagInp.placeholder = 'Type a city and press Enter or comma...';
+      const inp = isMain ? tagInp : anchorInp;
+      const max = isMain ? null : 3;
+      if (arr.length === 0) inp.placeholder = isMain ? 'Type a city and press Enter or comma...' : 'Type an anchor city and press Enter...';
+      if (max && arr.length < max) inp.placeholder = 'Type an anchor city and press Enter...';
     }
 
     tagInp.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value); }
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value, tags, tagWrap, tagInp, null); }
       else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
         tagWrap.querySelectorAll('.tag')[tags.length - 1].remove();
         tags.pop();
       }
     });
-    tagInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value); });
-    tagInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value); });
+    tagInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, tags, tagWrap, tagInp, null); });
+    tagInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, tags, tagWrap, tagInp, null); });
 
+    // ── ANCHOR TAG INPUT (Mode 2) ──────────────────────────────
+    const anchorTags = [];
+    const anchorInp = document.getElementById('anchorInp');
+    const anchorWrap = document.getElementById('anchorWrap');
+
+    anchorInp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); }
+      else if (e.key === 'Backspace' && this.value === '' && anchorTags.length > 0) {
+        anchorWrap.querySelectorAll('.tag')[anchorTags.length - 1].remove();
+        anchorTags.pop();
+      }
+    });
+    anchorInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
+    anchorInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
+
+    // ── NAVIGATION ─────────────────────────────────────────────
     function go(n) {
       for (let i = 1; i <= 4; i++) {
         document.getElementById('step' + i).classList.toggle('on', i === n);
@@ -372,7 +446,7 @@
       el.classList.add('on');
       if (isParty) {
         const t = el.querySelector('.st').textContent;
-        document.getElementById('gsw').style.display = (t === 'Friends group' || t === 'Family with kids' || t === 'Family no kids') ? 'block' : 'none';
+        document.getElementById('gsw').classList.toggle('hidden', !(t === 'Friends group' || t === 'Family with kids' || t === 'Family no kids'));
       }
     }
 
@@ -381,21 +455,13 @@
       el.classList.add('on');
     }
 
-    function toggleCities() {
-      const v = document.getElementById('aic').checked;
-      document.getElementById('cr').style.display = v ? 'none' : 'inline';
-      document.getElementById('co').style.display = v ? 'inline' : 'none';
-      document.getElementById('cn').classList.toggle('on', v);
-      tagInp.placeholder = v ? 'Add any cities, or leave blank to let AI decide...' : 'Type a city and press Enter or comma...';
-    }
-
     function updSlider(s) {
       const pct = (parseInt(s.value) / 10) * 100;
       s.style.background = 'linear-gradient(to right,#8b5cf6 ' + pct + '%,#e0d9f5 ' + pct + '%)';
     }
-
     document.querySelectorAll('.islider').forEach(s => updSlider(s));
 
+    // ── FORM DATA COLLECTION ───────────────────────────────────
     function collectFormData() {
       const getSelected = id => { const el = document.querySelector('#' + id + ' .sc.on .st'); return el ? el.textContent : ''; };
       const getMultiSelected = id => Array.from(document.querySelectorAll('#' + id + ' .sc.on .st')).map(e => e.textContent);
@@ -413,14 +479,17 @@
         });
         return result;
       };
+
       return {
         country: document.getElementById('country').value,
         arrivalAirport: document.getElementById('arrivalAirport').value,
         departureAirport: document.getElementById('departureAirport').value,
         arrivalDate: document.getElementById('arrDate').value,
         departureDate: document.getElementById('depDate').value,
-        citiesToVisit: tags,
-        aiCityRecommendation: document.getElementById('aic').checked,
+        cityPlanningMode: currentMode,
+        citiesToVisit: currentMode === 'know' ? tags : [],
+        aiCityRecommendation: currentMode === 'ai',
+        anchorCities: currentMode === 'ai' ? anchorTags : [],
         travelParty: getSelected('pg'),
         groupSize: document.getElementById('groupSize').value || null,
         email: document.getElementById('email').value,
@@ -435,6 +504,7 @@
       };
     }
 
+    // ── SUBMIT ─────────────────────────────────────────────────
     function submitForm() {
       const data = collectFormData();
       const WEBHOOK_URL = 'https://hook.us2.make.com/vgf8dodou77vnfrugshreiumvq1vgthm';
