@@ -245,6 +245,22 @@
       </div>
 
       <div class="fg">
+        <label class="fl">How are you getting around? <span class="opt">optional</span></label>
+        <div class="mode-grid" id="tripStructureGrid">
+          <div class="mode-card" onclick="pickTripStructure(this)" data-value="road_trip">
+            <span class="mc-icon">🚗</span>
+            <div class="mc-title">Road trip</div>
+            <div class="mc-sub">I'll drive between cities and stop along the way</div>
+          </div>
+          <div class="mode-card" onclick="pickTripStructure(this)" data-value="flying">
+            <span class="mc-icon">✈️</span>
+            <div class="mc-title">Flying between cities</div>
+            <div class="mc-sub">I'll fly and explore each city and its surrounds</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fg">
         <label class="fl">Transportation preference <span class="opt">optional</span></label>
         <div class="g4" id="tg">
           <div class="sc" onclick="pick('tg',this)"><span class="si">⚡</span><div class="st">Fast & comfortable</div></div>
@@ -450,6 +466,14 @@
       }
     }
 
+    let tripStructure = null;
+
+    function pickTripStructure(el) {
+      document.getElementById('tripStructureGrid').querySelectorAll('.mode-card').forEach(c => c.classList.remove('on'));
+      el.classList.add('on');
+      tripStructure = el.dataset.value;
+    }
+
     function pickPace(el) {
       document.getElementById('paceGrid').querySelectorAll('.pace-card').forEach(c => c.classList.remove('on'));
       el.classList.add('on');
@@ -487,6 +511,7 @@
         arrivalDate: document.getElementById('arrDate').value,
         departureDate: document.getElementById('depDate').value,
         cityPlanningMode: currentMode,
+        tripStructure: tripStructure,
         citiesToVisit: currentMode === 'know' ? tags : [],
         aiCityRecommendation: currentMode === 'ai',
         anchorCities: currentMode === 'ai' ? anchorTags : [],
