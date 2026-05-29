@@ -26,6 +26,9 @@
     .inp { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; background: #f9f7fe; transition: border-color .2s; outline: none; }
     .inp:focus { border-color: #8b5cf6; background: #fff; }
     textarea.inp { resize: vertical; line-height: 1.5; }
+    .hint { font-size: 11px; color: #b3a8d4; margin-top: 4px; }
+    .hint a { color: #8b5cf6; text-decoration: none; }
+    .hint a:hover { text-decoration: underline; }
     .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .cwrap { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
     .cwrap input { accent-color: #8b5cf6; width: 16px; height: 16px; }
@@ -65,7 +68,6 @@
     .tag-x { cursor: pointer; font-size: 14px; line-height: 1; color: #8b5cf6; }
     .tag-x:hover { color: #5b21b6; }
     .tag-inp { border: none; outline: none; background: transparent; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; min-width: 120px; flex: 1; padding: 2px 4px; }
-    .hint { font-size: 11px; color: #b3a8d4; margin-top: 4px; }
     .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .ilbl { width: 160px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
     .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
@@ -118,17 +120,31 @@
 
       <div class="fg">
         <label class="fl">Country you're visiting <span class="req">*</span></label>
-        <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Morocco"/>
+        <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Costa Rica"/>
       </div>
 
       <div class="r2">
-        <div class="fg"><label class="fl">Arrival city <span class="req">*</span></label><input class="inp" type="text" id="arrCity" placeholder="e.g. Tokyo"/></div>
-        <div class="fg"><label class="fl">Departure city <span class="req">*</span></label><input class="inp" type="text" id="depCity" placeholder="e.g. Osaka"/></div>
+        <div class="fg">
+          <label class="fl">Arrival airport <span class="req">*</span></label>
+          <input class="inp" type="text" id="arrivalAirport" placeholder="e.g. LHR, Tokyo Narita, JFK"/>
+          <div class="hint">Airport code or name. <a href="https://www.iata.org/en/publications/directories/code-search/" target="_blank">Look up your code →</a></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Departure airport <span class="req">*</span></label>
+          <input class="inp" type="text" id="departureAirport" placeholder="e.g. FCO, Osaka Kansai, LAX"/>
+          <div class="hint">Can be same as arrival airport.</div>
+        </div>
       </div>
 
       <div class="r2">
-        <div class="fg"><label class="fl">Arrival date <span class="req">*</span></label><input class="inp" type="date" id="arrDate"/></div>
-        <div class="fg"><label class="fl">Departure date <span class="req">*</span></label><input class="inp" type="date" id="depDate"/></div>
+        <div class="fg">
+          <label class="fl">Arrival date <span class="req">*</span></label>
+          <input class="inp" type="date" id="arrDate"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Departure date <span class="req">*</span></label>
+          <input class="inp" type="date" id="depDate"/>
+        </div>
       </div>
 
       <div class="fg">
@@ -245,7 +261,7 @@
           <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🌿 Nature & landscapes</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🖼️ Art, architecture & culture</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
@@ -300,8 +316,8 @@
         <div style="font-family:'Nunito',sans-serif;font-size:24px;font-weight:800;color:#1a1640;margin:0 0 8px;">You're all set!</div>
         <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your personalized itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
         <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;">
-          Your itinerary sheet includes:<br/>
-          <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 📋 Practical info</span>
+          Your itinerary includes:<br/>
+          <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 🗺️ City activity guide &nbsp;·&nbsp; 📋 Booking tracker</span>
         </div>
       </div>
     </div>
@@ -390,17 +406,17 @@
         let total = 0;
         document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
         if (total === 0) return result;
-        document.querySelectorAll('.irow').forEach(row => {
-          const label = row.querySelector('.ilbl').textContent.replace(/^\S+\s/, '');
-          const val = parseInt(row.querySelector('.islider').value);
-          if (val > 0) result[label] = Math.round((val / total) * 100) + '%';
+        const labels = ['History & heritage','Food & drink','Nature & landscapes','Nightlife','Arts & culture','Wellness & relaxation','Shopping','Adventure & thrills'];
+        document.querySelectorAll('.islider').forEach((s, i) => {
+          const val = parseInt(s.value);
+          if (val > 0) result[labels[i]] = Math.round((val / total) * 100) + '%';
         });
         return result;
       };
       return {
         country: document.getElementById('country').value,
-        arrivalCity: document.getElementById('arrCity').value,
-        departureCity: document.getElementById('depCity').value,
+        arrivalAirport: document.getElementById('arrivalAirport').value,
+        departureAirport: document.getElementById('departureAirport').value,
         arrivalDate: document.getElementById('arrDate').value,
         departureDate: document.getElementById('depDate').value,
         citiesToVisit: tags,
