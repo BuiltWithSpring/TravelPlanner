@@ -87,6 +87,7 @@
     .slider-legend-row { display: flex; margin-bottom: 10px; }
     .legend-spacer { width: 160px; flex-shrink: 0; margin-right: 10px; }
     .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: #b3a8d4; font-weight: 600; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 480px) {
       .r2, .mode-grid, .pace-wrap { grid-template-columns: 1fr; }
       .g3 { grid-template-columns: 1fr 1fr; }
@@ -354,8 +355,69 @@
       </div>
     </div>
 
-    <!-- SUCCESS -->
+    <!-- STEP 4 — PREVIEW / CONFIRMATION -->
     <div class="step" id="step4">
+      <div class="slbl">Almost there</div>
+      <div class="stit">Your trip preview</div>
+      <div class="ssub">Review your cities and key info before we build your full itinerary.</div>
+
+      <!-- Loading state -->
+      <div id="previewLoading" style="text-align:center;padding:2rem 0;">
+        <div style="width:40px;height:40px;border:3px solid #e0d9f5;border-top-color:#8b5cf6;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem;"></div>
+        <div style="font-size:13px;color:#6b5fa0;">AI is planning your cities...</div>
+      </div>
+
+      <!-- Preview content -->
+      <div id="previewContent" class="hidden">
+
+        <!-- Overview -->
+        <div style="background:#f3f0fc;border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;">
+          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Trip overview</div>
+          <div id="previewOverview" style="font-size:13px;color:#1a1640;line-height:1.6;"></div>
+        </div>
+
+        <!-- Cities -->
+        <div class="fg">
+          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🗺️ Your cities</div>
+          <div id="previewCities"></div>
+        </div>
+
+        <!-- Weather -->
+        <div class="fg">
+          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🌤️ Weather during your trip</div>
+          <div id="previewWeather" style="font-size:13px;color:#1a1640;line-height:1.6;background:#f9f7fe;border-radius:10px;padding:12px 14px;"></div>
+        </div>
+
+        <!-- Visa -->
+        <div class="fg">
+          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🛂 Visa requirements</div>
+          <div id="previewVisa" style="font-size:13px;color:#1a1640;line-height:1.6;background:#f9f7fe;border-radius:10px;padding:12px 14px;"></div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="fg">
+          <label class="fl">Want to change something? <span class="opt">optional</span></label>
+          <textarea class="inp" rows="3" id="previewFeedback" placeholder="e.g. I'd prefer Rome instead of Milan · Add more days in Tokyo · Remove the beach city..."></textarea>
+        </div>
+
+        <div class="brow">
+          <button class="bbk" onclick="go(3)">← Back</button>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
+            <button class="bnx" onclick="confirmAndGenerate()">✨ Generate my itinerary →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div id="previewError" class="hidden" style="text-align:center;padding:1.5rem 0;">
+        <div style="font-size:13px;color:#e74c4c;margin-bottom:1rem;">Something went wrong generating your preview.</div>
+        <button class="bnx" onclick="generatePreview()">Try again</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 — SUCCESS -->
+    <div class="step" id="step5">
       <div style="text-align:center;padding:2rem 0;">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="display:block;margin:0 auto 1.25rem">
           <defs>
@@ -368,7 +430,7 @@
           <path d="M22 40L29 47L43 33" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <div style="font-family:'Nunito',sans-serif;font-size:24px;font-weight:800;color:#1a1640;margin:0 0 8px;">You're all set!</div>
-        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your personalized itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
+        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your full itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
         <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;">
           Your itinerary includes:<br/>
           <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 🗺️ City activity guide &nbsp;·&nbsp; 📋 Booking tracker</span>
@@ -449,8 +511,9 @@
 
     // ── NAVIGATION ─────────────────────────────────────────────
     function go(n) {
-      for (let i = 1; i <= 4; i++) {
-        document.getElementById('step' + i).classList.toggle('on', i === n);
+      for (let i = 1; i <= 5; i++) {
+        const s = document.getElementById('step' + i);
+        if (s) s.classList.toggle('on', i === n);
         const p = document.getElementById('p' + i);
         if (p) p.classList.toggle('on', i <= n);
       }
@@ -529,20 +592,123 @@
       };
     }
 
-    // ── SUBMIT ─────────────────────────────────────────────────
-    function submitForm() {
-      const data = collectFormData();
+    // ── PREVIEW GENERATION (Stage 1 — direct Claude API call) ──
+    let formData = null;
+
+    const PREVIEW_PROMPT = `You are an expert travel planner. Generate a quick trip preview only.
+Return ONLY valid JSON starting with { and ending with }. No markdown, no code fences.
+
+CITY SELECTION RULES:
+- If cityPlanningMode is "know": respect listed cities exactly, distribute nights proportionally by city size.
+- If aiCityRecommendation is true: select best cities based on interests, budget, travel dates, and routing. If anchorCities provided treat as fixed stops.
+- If tripStructure is "road_trip": select cities along efficient driving corridor between arrival and departure airports. Cities must be driveable in 2-5 hour daily legs.
+- If tripStructure is "flying": select independent best-fit cities matching interest profile. Prefer well-known heavily visited cities unless Adventure or Arts interest exceeds 25%.
+- For large countries with no anchor cities and flying structure: keep cities in same region or coast.
+- Calculate total trip days and distribute nights by city size: Mega 4-6 nights, Large 3-5 nights, Medium 2-3 nights, Small 1-2 nights, Micro 0.5-1 night. Pack it in = minimum, Less cities more time = maximum.
+- Every city needs why_recommended: "[City] is [known for] — chosen for your [specific interest % or preference]." Max 25 words. Never generic or logistical.
+
+WEATHER: Provide city-by-city weather for exact travel dates with temperature range and conditions.
+VISA: State clearly whether a visa is required for Western passport holders, processing time, visa-on-arrival availability.
+
+Return exactly this JSON:
+{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words"}],"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
+
+    async function generatePreview() {
+      go(4);
+      document.getElementById('previewLoading').classList.remove('hidden');
+      document.getElementById('previewContent').classList.add('hidden');
+      document.getElementById('previewError').classList.add('hidden');
+
+      const d = formData;
+      const userMessage = `${PREVIEW_PROMPT}
+
+TRAVELER PREFERENCES:
+Country: ${d.country}
+Arrival airport: ${d.arrivalAirport}
+Departure airport: ${d.departureAirport}
+Arrival date: ${d.arrivalDate}
+Departure date: ${d.departureDate}
+City planning mode: ${d.cityPlanningMode}
+Trip structure: ${d.tripStructure || 'not specified'}
+Cities requested: ${JSON.stringify(d.citiesToVisit)}
+AI recommendation: ${d.aiCityRecommendation}
+Anchor cities: ${JSON.stringify(d.anchorCities)}
+Travel party: ${d.travelParty}
+Pace: ${d.paceOfTravel}
+Budget: ${d.budgetTier}
+Interests: ${JSON.stringify(d.interests)}
+Must see: ${d.mustSee}
+Extra notes: ${d.extraNotes}`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: userMessage }]
+          })
+        });
+        const data = await response.json();
+        const text = data.content[0].text;
+        const preview = JSON.parse(text);
+        renderPreview(preview);
+      } catch (err) {
+        console.error('Preview error:', err);
+        document.getElementById('previewLoading').classList.add('hidden');
+        document.getElementById('previewError').classList.remove('hidden');
+      }
+    }
+
+    function renderPreview(preview) {
+      document.getElementById('previewLoading').classList.add('hidden');
+      document.getElementById('previewOverview').textContent = preview.overview;
+
+      const citiesEl = document.getElementById('previewCities');
+      citiesEl.innerHTML = preview.cities.map(c => `
+        <div style="border:1.5px solid #ddd8f5;border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#f9f7fe;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#1a1640;">${c.city}</span>
+            <span style="font-size:12px;font-weight:700;color:#8b5cf6;background:#ede9fe;padding:2px 10px;border-radius:99px;">${c.nights} nights</span>
+          </div>
+          <div style="font-size:12px;color:#6b5fa0;line-height:1.5;">${c.why_recommended}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('previewWeather').textContent = preview.weather;
+      document.getElementById('previewVisa').textContent = preview.visa;
+      document.getElementById('previewContent').classList.remove('hidden');
+    }
+
+    async function regeneratePreview() {
+      const feedback = document.getElementById('previewFeedback').value.trim();
+      if (feedback) {
+        formData.extraNotes = (formData.extraNotes ? formData.extraNotes + ' · ' : '') + 'Feedback: ' + feedback;
+        document.getElementById('previewFeedback').value = '';
+      }
+      await generatePreview();
+    }
+
+    // ── CONFIRM AND FIRE MAKE WEBHOOK (Stage 2) ─────────────────
+    function confirmAndGenerate() {
       const WEBHOOK_URL = 'https://hook.us2.make.com/vgf8dodou77vnfrugshreiumvq1vgthm';
       fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(formData)
       })
-      .then(() => go(4))
+      .then(() => go(5))
       .catch(err => {
         console.error('Submission error:', err);
         alert('Something went wrong. Please try again.');
       });
+    }
+
+    // ── SUBMIT FORM (goes to preview first) ─────────────────────
+    function submitForm() {
+      formData = collectFormData();
+      generatePreview();
     }
   </script>
 
