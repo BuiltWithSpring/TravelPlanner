@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://hook.us2.make.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"/>
   <title>BuiltWithSpring · AI-Powered Travel Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -650,7 +651,21 @@ Extra notes: ${d.extraNotes}`;
             messages: [{ role: 'user', content: userMessage }]
           })
         });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('Worker error:', response.status, errText);
+          throw new Error('Worker returned ' + response.status + ': ' + errText);
+        }
+
         const data = await response.json();
+        console.log('Claude response:', data);
+
+        if (!data.content || !data.content[0]) {
+          console.error('Unexpected response structure:', data);
+          throw new Error('Unexpected response: ' + JSON.stringify(data));
+        }
+
         const text = data.content[0].text;
         const preview = JSON.parse(text);
         renderPreview(preview);
