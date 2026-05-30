@@ -735,17 +735,18 @@ TRIP STRUCTURE RULES — apply before selecting any cities:
 - If trip structure not provided: default to flying logic.
 
 CITY SELECTION RULES:
+- All recommended cities must be within the submitted country. Never recommend cities in other countries unless the traveler explicitly named them in anchor cities or extra notes.
 - If cityPlanningMode is "know": respect listed cities exactly, distribute nights proportionally by city size.
 - If aiCityRecommendation is true: select best cities based on interests, budget, travel dates, and routing. If anchorCities provided treat as fixed stops.
 - Calculate total trip days and distribute nights by city size: Mega 4-6 nights, Large 3-5 nights, Medium 2-3 nights, Small 1-2 nights, Micro 0.5-1 night.
 - Full days pace = minimum nights per city. Relaxed days pace = maximum nights per city.
-- Every city needs why_recommended: "[City] is [known for] — chosen for your [specific interest % or preference]." Max 25 words. Never generic or logistical.
+- Every city needs why_recommended: max 25 words of natural travel writing explaining what the city is known for and what makes it a great fit for this traveler. Never reference interest percentages directly. Never generic or logistical.
 
 WEATHER: Provide city-by-city weather for exact travel dates with temperature range and conditions.
 VISA: State clearly whether a visa is required for Western passport holders, processing time, visa-on-arrival availability.
 
 Return exactly this JSON:
-{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — e.g. Day 3 or A day in Tokyo","morning":"string — one compelling activity, max 20 words, enticing and specific","afternoon":"string — one compelling activity, max 20 words, enticing and specific","evening":"string — one compelling activity, max 20 words, enticing and specific","dinner":"string — restaurant name and one line why it's special, max 20 words"},"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
+{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words of natural travel writing, what the city is known for and why it suits this traveler. No percentage references."}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — e.g. Day 3 or A day in Tokyo","morning":"string — one compelling activity, max 20 words, enticing and specific","afternoon":"string — one compelling activity, max 20 words, enticing and specific","evening":"string — one compelling activity, max 20 words, enticing and specific","dinner":"string — restaurant name and one line why it's special, max 20 words"},"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
 
     async function generatePreview() {
       go(4);
