@@ -246,17 +246,17 @@
       <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Pace of travel <span class="req">*</span></label>
+        <label class="fl">Daily pace <span class="req">*</span></label>
         <div class="pace-wrap" id="paceGrid">
           <div class="pace-card" onclick="pickPace(this)">
             <span class="pc-icon">🏃</span>
-            <div class="pc-title">Pack it in</div>
-            <div class="pc-sub">More cities, more activities, full days</div>
+            <div class="pc-title">Full days</div>
+            <div class="pc-sub">Packed schedule, more cities or activities, maximise every day</div>
           </div>
           <div class="pace-card" onclick="pickPace(this)">
-            <span class="pc-icon">🏘️</span>
-            <div class="pc-title">Less cities, more time</div>
-            <div class="pc-sub">Go deep, not wide — linger longer</div>
+            <span class="pc-icon">🌿</span>
+            <div class="pc-title">Relaxed days</div>
+            <div class="pc-sub">Slower pace, fewer activities per day, room to breathe and wander</div>
           </div>
         </div>
         <div class="error-msg" id="err-pace">Please select your pace of travel</div>
@@ -264,11 +264,16 @@
 
       <div class="fg">
         <label class="fl">How are you getting around? <span class="opt">optional</span></label>
-        <div class="mode-grid" id="tripStructureGrid">
+        <div class="g3" id="tripStructureGrid">
           <div class="mode-card" onclick="pickTripStructure(this)" data-value="road_trip">
             <span class="mc-icon">🚗</span>
             <div class="mc-title">Road trip</div>
             <div class="mc-sub">I'll drive between cities and stop along the way</div>
+          </div>
+          <div class="mode-card" onclick="pickTripStructure(this)" data-value="train">
+            <span class="mc-icon">🚆</span>
+            <div class="mc-title">Train travel</div>
+            <div class="mc-sub">I'll take trains between cities along a rail corridor</div>
           </div>
           <div class="mode-card" onclick="pickTripStructure(this)" data-value="flying">
             <span class="mc-icon">✈️</span>
@@ -278,16 +283,6 @@
         </div>
       </div>
 
-      <div class="fg">
-        <label class="fl">Transportation preference <span class="req">*</span></label>
-        <div class="g4" id="tg">
-          <div class="sc" onclick="pick('tg',this)"><span class="si">⚡</span><div class="st">Fast & comfortable</div></div>
-          <div class="sc" onclick="pick('tg',this)"><span class="si">🌄</span><div class="st">Scenic & relaxed</div></div>
-          <div class="sc" onclick="pick('tg',this)"><span class="si">💰</span><div class="st">Budget-friendly</div></div>
-          <div class="sc" onclick="pick('tg',this)"><span class="si">🎲</span><div class="st">No preference</div></div>
-        </div>
-        <div class="error-msg" id="err-transport">Please select your transportation preference</div>
-      </div>
 
       <div class="fg">
         <label class="fl">Budget tier <span class="req">*</span></label>
@@ -332,12 +327,12 @@
         <div id="sliders">
           <div class="irow"><span class="ilbl">🏛️ History & heritage</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🌿 Nature & landscapes</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🌿 Nature & outdoors</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife & bars</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎭 Culture & museums</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness & spa</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎢 Adventure & fun</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
         </div>
         <div class="error-msg" id="err-interests">Please set at least one interest slider above zero</div>
       </div>
@@ -619,7 +614,6 @@
       clearErrors();
       let valid = true;
       if (!document.querySelector('#paceGrid .pace-card.on')) { showError('err-pace', null); valid = false; }
-      if (!document.querySelector('#tg .sc.on')) { showError('err-transport', null); valid = false; }
       if (!document.querySelector('#bg .sc.on')) { showError('err-budget', null); valid = false; }
       if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
       return valid;
@@ -696,7 +690,7 @@
         let total = 0;
         document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
         if (total === 0) return result;
-        const labels = ['History & heritage','Food & drink','Nature & landscapes','Nightlife','Arts & culture','Wellness & relaxation','Shopping','Adventure & thrills'];
+        const labels = ['History & heritage','Food & drink','Nature & outdoors','Nightlife & bars','Culture & museums','Wellness & spa','Shopping','Adventure & fun'];
         document.querySelectorAll('.islider').forEach((s, i) => {
           const val = parseInt(s.value);
           if (val > 0) result[labels[i]] = Math.round((val / total) * 100) + '%';
@@ -719,7 +713,6 @@
         groupSize: document.getElementById('groupSize').value || null,
         email: document.getElementById('email').value,
         paceOfTravel: getPace(),
-        transportationPreference: getSelected('tg'),
         budgetTier: getSelected('bg'),
         accommodationStyle: getMultiSelected('accom'),
         interests: getInterests(),
@@ -735,13 +728,17 @@
     const PREVIEW_PROMPT = `You are an expert travel planner. Generate a quick trip preview only.
 Return ONLY valid JSON starting with { and ending with }. No markdown, no code fences.
 
+TRIP STRUCTURE RULES — apply before selecting any cities:
+- road_trip: select cities along the most efficient driving corridor between arrival and departure airports. Cities must be geographically connected and driveable in 2-5 hour daily legs. Never recommend a city requiring significant backtracking.
+- train: select cities along the most logical rail corridor between arrival and departure airports. Prioritize cities with major train stations and strong rail connections. Order cities to follow the natural rail route without backtracking.
+- flying: treat each city as a fully independent destination. Select based on interest profile, budget, and travel dates — not geographic proximity. For large countries with no anchor cities, keep cities in same region or coast. Prefer well-known heavily visited cities unless Adventure or Arts interest exceeds 25%.
+- If trip structure not provided: default to flying logic.
+
 CITY SELECTION RULES:
 - If cityPlanningMode is "know": respect listed cities exactly, distribute nights proportionally by city size.
 - If aiCityRecommendation is true: select best cities based on interests, budget, travel dates, and routing. If anchorCities provided treat as fixed stops.
-- If tripStructure is "road_trip": select cities along efficient driving corridor between arrival and departure airports. Cities must be driveable in 2-5 hour daily legs.
-- If tripStructure is "flying": select independent best-fit cities matching interest profile. Prefer well-known heavily visited cities unless Adventure or Arts interest exceeds 25%.
-- For large countries with no anchor cities and flying structure: keep cities in same region or coast.
-- Calculate total trip days and distribute nights by city size: Mega 4-6 nights, Large 3-5 nights, Medium 2-3 nights, Small 1-2 nights, Micro 0.5-1 night. Pack it in = minimum, Less cities more time = maximum.
+- Calculate total trip days and distribute nights by city size: Mega 4-6 nights, Large 3-5 nights, Medium 2-3 nights, Small 1-2 nights, Micro 0.5-1 night.
+- Full days pace = minimum nights per city. Relaxed days pace = maximum nights per city.
 - Every city needs why_recommended: "[City] is [known for] — chosen for your [specific interest % or preference]." Max 25 words. Never generic or logistical.
 
 WEATHER: Provide city-by-city weather for exact travel dates with temperature range and conditions.
