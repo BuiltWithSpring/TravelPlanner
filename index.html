@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://hook.us2.make.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"/>
   <title>BuiltWithSpring · AI-Powered Travel Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -82,7 +82,7 @@
     /* Slider */
     .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .ilbl { width: 160px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
-    .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
+    .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; touch-action: pan-y; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
     .islider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #8b5cf6; }
     .islider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; }
     .slider-legend-row { display: flex; margin-bottom: 10px; }
@@ -434,8 +434,8 @@
 
         <!-- Time saved -->
         <div style="background:linear-gradient(135deg,#ede9fe,#dbeafe);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;text-align:center;">
-          <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#5b21b6;" id="timeSaved"></div>
-          <div style="font-size:12px;color:#6b5fa0;margin-top:4px;">of research saved vs planning this manually</div>
+          <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:36px;color:#5b21b6;" id="timeSaved"></div>
+          <div style="font-size:12px;color:#6b5fa0;margin-top:4px;">saved vs planning this manually</div>
         </div>
 
         <!-- Feedback -->
@@ -656,7 +656,7 @@ WEATHER: Provide city-by-city weather for exact travel dates with temperature ra
 VISA: State clearly whether a visa is required for Western passport holders, processing time, visa-on-arrival availability.
 
 Return exactly this JSON:
-{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words"}],"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
+{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — the most exciting city on the trip","morning":"string — one compelling activity sentence, max 20 words, no pipes, make it enticing"},"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
 
     async function generatePreview() {
       go(4);
@@ -740,9 +740,13 @@ Extra notes: ${d.extraNotes}`;
       document.getElementById('previewWeather').textContent = preview.weather;
       document.getElementById('previewVisa').textContent = preview.visa;
 
-      // Teaser city label
-      if (preview.cities && preview.cities.length > 0) {
+      // Teaser day — use exciting sample day from preview if available
+      if (preview.teaser_day) {
+        document.getElementById('teaserCityLabel').textContent = preview.teaser_day.city || '';
+        document.getElementById('teaserMorning').textContent = preview.teaser_day.morning || '';
+      } else if (preview.cities && preview.cities.length > 0) {
         document.getElementById('teaserCityLabel').textContent = preview.cities[0].city;
+        document.getElementById('teaserMorning').textContent = 'Arrive and check in to your accommodation.';
       }
 
       // Dynamic inclusions list
@@ -762,12 +766,12 @@ Extra notes: ${d.extraNotes}`;
         `<div style="font-size:13px;color:#1a1640;padding:4px 0;line-height:1.5;">${i}</div>`
       ).join('');
 
-      // Dynamic time saved calculation
+      // Dynamic time saved
       const baseHours = 2;
       const hoursPerCity = 1;
       const minutesPerDay = 20;
       const totalHours = Math.round(baseHours + (totalCities * hoursPerCity) + (totalDays * minutesPerDay / 60));
-      document.getElementById('timeSaved').textContent = `Saves you ~${totalHours} hours of research`;
+      document.getElementById('timeSaved').textContent = `~${totalHours} hours`;
 
       document.getElementById('previewContent').classList.remove('hidden');
     }
