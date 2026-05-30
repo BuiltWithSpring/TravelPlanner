@@ -91,6 +91,10 @@
     .slider-legend-row { display: flex; margin-bottom: 10px; }
     .legend-spacer { width: 160px; flex-shrink: 0; margin-right: 10px; }
     .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: #b3a8d4; font-weight: 600; }
+    .field-error { border-color: #e74c4c !important; background: #fff5f5 !important; }
+    .error-msg { font-size: 11px; color: #e74c4c; margin-top: 4px; display: none; }
+    .error-msg.on { display: block; }
+    .card-error { border: 1.5px solid #e74c4c !important; border-radius: 12px; padding: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 480px) {
       .r2, .mode-grid, .pace-wrap { grid-template-columns: 1fr; }
@@ -137,6 +141,7 @@
       <div class="fg">
         <label class="fl">Country you're visiting <span class="req">*</span></label>
         <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Costa Rica"/>
+        <div class="error-msg" id="err-country">Please enter a country</div>
       </div>
 
       <div class="r2">
@@ -144,11 +149,13 @@
           <label class="fl">Arrival airport <span class="req">*</span></label>
           <input class="inp" type="text" id="arrivalAirport" placeholder="e.g. LHR, Tokyo Narita, JFK"/>
           <div class="hint">Airport code or name. <a href="https://www.iata.org/en/publications/directories/code-search/" target="_blank">Look up your code →</a></div>
+          <div class="error-msg" id="err-arrivalAirport">Please enter your arrival airport</div>
         </div>
         <div class="fg">
           <label class="fl">Departure airport <span class="req">*</span></label>
           <input class="inp" type="text" id="departureAirport" placeholder="e.g. FCO, Osaka Kansai, LAX"/>
           <div class="hint">Can be same as arrival airport.</div>
+          <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
         </div>
       </div>
 
@@ -156,10 +163,12 @@
         <div class="fg">
           <label class="fl">Arrival date <span class="req">*</span></label>
           <input class="inp" type="date" id="arrDate"/>
+          <div class="error-msg" id="err-arrDate">Please select your arrival date</div>
         </div>
         <div class="fg">
           <label class="fl">Departure date <span class="req">*</span></label>
           <input class="inp" type="date" id="depDate"/>
+          <div class="error-msg" id="err-depDate">Please select your departure date</div>
         </div>
       </div>
 
@@ -177,6 +186,7 @@
             <div class="mc-sub">AI picks the best cities based on my preferences</div>
           </div>
         </div>
+        <div class="error-msg" id="err-mode">Please select how you want to plan your cities</div>
       </div>
 
       <!-- MODE 1: Know your cities -->
@@ -212,6 +222,7 @@
           <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👧</span><div class="st">Family with kids</div></div>
           <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👦‍👦</span><div class="st">Family no kids</div></div>
         </div>
+        <div class="error-msg" id="err-party">Please select your travel party</div>
       </div>
 
       <div class="fg hidden" id="gsw">
@@ -222,9 +233,10 @@
       <div class="fg">
         <label class="fl">Your email <span class="req">*</span></label>
         <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
+        <div class="error-msg" id="err-email">Please enter a valid email address</div>
       </div>
 
-      <div class="brow"><button class="bnx" onclick="go(2)">Continue →</button></div>
+      <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
     </div>
 
     <!-- STEP 2 -->
@@ -234,7 +246,7 @@
       <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Pace of travel <span class="opt">optional</span></label>
+        <label class="fl">Pace of travel <span class="req">*</span></label>
         <div class="pace-wrap" id="paceGrid">
           <div class="pace-card" onclick="pickPace(this)">
             <span class="pc-icon">🏃</span>
@@ -247,6 +259,7 @@
             <div class="pc-sub">Go deep, not wide — linger longer</div>
           </div>
         </div>
+        <div class="error-msg" id="err-pace">Please select your pace of travel</div>
       </div>
 
       <div class="fg">
@@ -266,22 +279,24 @@
       </div>
 
       <div class="fg">
-        <label class="fl">Transportation preference <span class="opt">optional</span></label>
+        <label class="fl">Transportation preference <span class="req">*</span></label>
         <div class="g4" id="tg">
           <div class="sc" onclick="pick('tg',this)"><span class="si">⚡</span><div class="st">Fast & comfortable</div></div>
           <div class="sc" onclick="pick('tg',this)"><span class="si">🌄</span><div class="st">Scenic & relaxed</div></div>
           <div class="sc" onclick="pick('tg',this)"><span class="si">💰</span><div class="st">Budget-friendly</div></div>
           <div class="sc" onclick="pick('tg',this)"><span class="si">🎲</span><div class="st">No preference</div></div>
         </div>
+        <div class="error-msg" id="err-transport">Please select your transportation preference</div>
       </div>
 
       <div class="fg">
-        <label class="fl">Budget tier <span class="opt">optional</span></label>
+        <label class="fl">Budget tier <span class="req">*</span></label>
         <div class="g3" id="bg">
           <div class="sc" onclick="pick('bg',this)"><span class="si">🎒</span><div class="st">Budget</div><div class="ss">~$50–100/day</div></div>
           <div class="sc" onclick="pick('bg',this)"><span class="si">🧳</span><div class="st">Mid-range</div><div class="ss">~$100–250/day</div></div>
           <div class="sc" onclick="pick('bg',this)"><span class="si">💼</span><div class="st">Luxury</div><div class="ss">$250+/day</div></div>
         </div>
+        <div class="error-msg" id="err-budget">Please select your budget tier</div>
       </div>
 
       <div class="fg">
@@ -296,7 +311,7 @@
 
       <div class="brow">
         <button class="bbk" onclick="go(1)">← Back</button>
-        <button class="bnx" onclick="go(3)">Continue →</button>
+        <button class="bnx" onclick="goStep(3)">Continue →</button>
       </div>
     </div>
 
@@ -307,9 +322,8 @@
       <div class="ssub">The more you share, the better your itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Your interest mix <span class="opt">optional</span></label>
-        <div class="slider-legend-row">
-          <div class="legend-spacer"></div>
+        <label class="fl">Your interest mix <span class="req">*</span> <span class="opt">— set at least one above zero</span></label>
+        <div class="slider-legend-row">          <div class="legend-spacer"></div>
           <div class="legend-labels">
             <span>Not a priority</span>
             <span>High priority</span>
@@ -325,6 +339,7 @@
           <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
         </div>
+        <div class="error-msg" id="err-interests">Please set at least one interest slider above zero</div>
       </div>
 
       <hr class="hdiv"/>
@@ -455,7 +470,7 @@
           <button class="bbk" onclick="go(3)">← Back</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;">✨ Get my itinerary — $29</button>
+            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;">✨ Generate my itinerary — free beta</button>
           </div>
         </div>
       </div>
@@ -482,10 +497,13 @@
           <path d="M22 40L29 47L43 33" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <div style="font-family:'Nunito',sans-serif;font-size:24px;font-weight:800;color:#1a1640;margin:0 0 8px;">You're all set!</div>
-        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your full itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
-        <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;">
+        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your personalized itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
+        <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;margin-bottom:1rem;">
           Your itinerary includes:<br/>
           <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 🗺️ City activity guide &nbsp;·&nbsp; 📋 Booking tracker</span>
+        </div>
+        <div style="background:#fef3c7;border-radius:12px;padding:12px 16px;font-size:12px;color:#92400e;text-align:left;">
+          🧪 <strong>You're part of our free beta!</strong> We'd love your honest feedback once you've reviewed your itinerary. A quick follow up email is on its way.
         </div>
       </div>
     </div>
@@ -564,6 +582,69 @@
     });
     anchorInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
     anchorInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
+
+    // ── CLEAR ERRORS ───────────────────────────────────────────
+    function clearErrors() {
+      document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
+      document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
+    }
+
+    function showError(id, inputId) {
+      const err = document.getElementById(id);
+      if (err) err.classList.add('on');
+      if (inputId) {
+        const inp = document.getElementById(inputId);
+        if (inp) inp.classList.add('field-error');
+      }
+    }
+
+    // ── STEP VALIDATION ────────────────────────────────────────
+    function validateStep1() {
+      clearErrors();
+      let valid = true;
+      if (!document.getElementById('country').value.trim()) { showError('err-country', 'country'); valid = false; }
+      if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport', 'arrivalAirport'); valid = false; }
+      if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport', 'departureAirport'); valid = false; }
+      if (!document.getElementById('arrDate').value) { showError('err-arrDate', 'arrDate'); valid = false; }
+      if (!document.getElementById('depDate').value) { showError('err-depDate', 'depDate'); valid = false; }
+      if (!currentMode) { showError('err-mode', null); valid = false; }
+      if (currentMode === 'know' && tags.length === 0) { showError('err-cities', null); valid = false; }
+      if (!document.querySelector('#pg .sc.on')) { showError('err-party', null); valid = false; }
+      if (!document.getElementById('email').value.trim()) { showError('err-email', 'email'); valid = false; }
+      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
+      return valid;
+    }
+
+    function validateStep2() {
+      clearErrors();
+      let valid = true;
+      if (!document.querySelector('#paceGrid .pace-card.on')) { showError('err-pace', null); valid = false; }
+      if (!document.querySelector('#tg .sc.on')) { showError('err-transport', null); valid = false; }
+      if (!document.querySelector('#bg .sc.on')) { showError('err-budget', null); valid = false; }
+      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
+      return valid;
+    }
+
+    function validateStep3() {
+      clearErrors();
+      let valid = true;
+      const sliders = document.querySelectorAll('.islider');
+      const anyInterest = Array.from(sliders).some(s => parseInt(s.value) > 0);
+      if (!anyInterest) { showError('err-interests', null); valid = false; }
+      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
+      return valid;
+    }
+
+    // ── STEP NAVIGATION WITH VALIDATION ────────────────────────
+    function goStep(n) {
+      const current = parseInt(document.querySelector('.step.on').id.replace('step', ''));
+      if (n > current) {
+        if (current === 1 && !validateStep1()) return;
+        if (current === 2 && !validateStep2()) return;
+        if (current === 3 && !validateStep3()) return;
+      }
+      go(n);
+    }
 
     // ── NAVIGATION ─────────────────────────────────────────────
     function go(n) {
@@ -826,6 +907,7 @@ Extra notes: ${d.extraNotes}`;
 
     // ── SUBMIT FORM (goes to preview first) ─────────────────────
     function submitForm() {
+      if (!validateStep3()) return;
       formData = collectFormData();
       console.log('Submitting form data:', formData.country, formData.arrivalAirport, formData.departureAirport);
       generatePreview();
