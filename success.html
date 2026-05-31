@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>You're all set — BuiltWithSpring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #eeeaf8;
+      font-family: 'Nunito Sans', sans-serif;
+      color: #1a1640;
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+    }
+
+    #hdr {
+      text-align: center;
+      padding-bottom: 1.5rem;
+    }
+
+    #tgl {
+      font-size: 13px;
+      color: #6b5fa0;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    #card {
+      background: #fff;
+      border-radius: 20px;
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 2rem;
+      box-shadow: 0 4px 32px rgba(90,60,180,.09);
+      text-align: center;
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Check circle */
+    .check-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #ede9fe;
+      border: 2px solid #c4b5fd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      animation: pop 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .check-path {
+      stroke-dasharray: 50;
+      stroke-dashoffset: 50;
+      animation: draw 0.45s ease 0.6s forwards;
+    }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    /* Title */
+    .stit {
+      font-family: 'Nunito', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a1640;
+      margin-bottom: 6px;
+    }
+    .ssub {
+      font-size: 13px;
+      color: #6b5fa0;
+      margin-bottom: 1.75rem;
+      line-height: 1.6;
+    }
+
+    /* Divider */
+    .hdiv {
+      border: none;
+      border-top: 1.5px solid #ede9fe;
+      margin: 1.5rem 0;
+    }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1.5px solid #ede9fe;
+    }
+    .step-row:last-child { border-bottom: none; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid #ddd8f5;
+      background: #f9f7fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Nunito', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      color: #9b87d4;
+      margin-top: 1px;
+    }
+    .step-num.done {
+      background: #ede9fe;
+      border-color: #8b5cf6;
+      color: #5b21b6;
+    }
+    .step-num.active {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: #fff;
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(139,92,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+    }
+
+    .step-body {}
+    .step-label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #1a1640;
+      margin-bottom: 2px;
+    }
+    .step-num.active ~ .step-body .step-label { color: #5b21b6; }
+    .step-desc {
+      font-size: 12px;
+      color: #9b87d4;
+      line-height: 1.5;
+    }
+
+    /* Timer */
+    .timer-box {
+      background: #f9f7fe;
+      border: 1.5px solid #ddd8f5;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 1.25rem;
+      text-align: left;
+    }
+    .timer-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9b87d4;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+    }
+    .timer-bar-bg {
+      height: 6px;
+      background: #e0d9f5;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .timer-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #8b5cf6, #38bdf8);
+      border-radius: 99px;
+      animation: fill-bar 900s linear forwards;
+    }
+    @keyframes fill-bar {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+    .timer-caption {
+      font-size: 12px;
+      color: #9b87d4;
+      margin-top: 8px;
+    }
+    .timer-caption strong {
+      color: #5b21b6;
+      font-weight: 700;
+    }
+
+    /* Spam note */
+    .spam-note {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f3f0fc;
+      border: 1.5px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #6b5fa0;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+    .spam-note strong { color: #5b21b6; font-weight: 700; }
+
+    /* Footer */
+    #foot {
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 12px;
+      color: #9b87d4;
+    }
+    #foot a {
+      color: #8b5cf6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    #foot a:hover { text-decoration: underline; }
+
+    @media (max-width: 480px) {
+      #card { padding: 2rem 1.25rem 1.5rem; }
+      .stit { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="hdr">
+    <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+      <defs>
+        <linearGradient id="lg1" x1="30" y1="20" x2="75" y2="85" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#a78bfa"/>
+          <stop offset="100%" stop-color="#38bdf8"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="22" fill="#eeeaf8"/>
+      <path d="M50 20C50 20 75 42 75 60C75 73.8 63.8 85 50 85C36.2 85 25 73.8 25 60C25 42 50 20 50 20Z" fill="url(#lg1)"/>
+      <polygon points="50,18 72,30 72,55 50,67 28,55 28,30" fill="none" stroke="#f0a0d0" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="50" cy="56" r="5" fill="rgba(255,255,255,0.5)"/>
+      <circle cx="50" cy="68" r="3" fill="rgba(56,189,248,0.7)"/>
+    </svg>
+    <div id="tgl">BuiltWithSpring · AI-Powered Travel Planner</div>
+  </div>
+
+  <!-- Card -->
+  <div id="card">
+
+    <!-- Checkmark -->
+    <div class="check-wrap">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <polyline class="check-path" points="6,18 14,26 28,10"
+          stroke="#8b5cf6" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <div class="stit">You're all set! 🎉</div>
+    <p class="ssub">Payment confirmed. Your personalized AI travel itinerary is being generated right now.</p>
+
+    <hr class="hdiv"/>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step-row">
+        <div class="step-num done">✓</div>
+        <div class="step-body">
+          <div class="step-label">Payment received</div>
+          <div class="step-desc">Your order has been confirmed and recorded.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num active">2</div>
+        <div class="step-body">
+          <div class="step-label" style="color:#5b21b6;">Generating your itinerary</div>
+          <div class="step-desc">AI is building your day-by-day plan, booking tracker, restaurants, transport, and city guides.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-label">Delivered to your inbox</div>
+          <div class="step-desc">Your Google Sheet itinerary link will arrive by email within 15 minutes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-box">
+      <div class="timer-label">Estimated delivery</div>
+      <div class="timer-bar-bg">
+        <div class="timer-bar-fill"></div>
+      </div>
+      <div class="timer-caption">Within <strong>15 minutes</strong> — usually much faster ✨</div>
+    </div>
+
+    <!-- Spam note -->
+    <div class="spam-note">
+      <span style="font-size:1.1rem;">📬</span>
+      <span>Can't find it? Check your <strong>spam or promotions folder</strong> — sometimes it ends up there.</span>
+    </div>
+
+    <!-- Footer inside card -->
+    <div id="foot">
+      Questions? <a href="mailto:hello@builtwithspring.com">hello@builtwithspring.com</a>
+      &nbsp;·&nbsp; <a href="https://builtwithspring.com">builtwithspring.com</a>
+    </div>
+
+  </div>
+
+</body>
+</html>
