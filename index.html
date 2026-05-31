@@ -140,8 +140,12 @@
 
       <div class="fg">
         <label class="fl">Country you're visiting <span class="req">*</span></label>
-        <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Costa Rica"/>
+        <div class="tag-wrap inp" id="countryWrap" style="cursor:text;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;" onclick="document.getElementById('countryInp').focus()">
+          <input type="text" id="countryInp" placeholder="Type a country and press Enter..." style="border:none;outline:none;flex:1;min-width:120px;font-size:14px;background:transparent;font-family:inherit;" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()"/>
+        </div>
+        <div class="hint">One country per itinerary — press Enter to confirm.</div>
         <div class="error-msg" id="err-country">Please enter a country</div>
+        <div class="error-msg" id="err-country-max" style="display:none;">Only one country per itinerary — remove the current one first to change it.</div>
       </div>
 
       <div class="r2">
@@ -578,7 +582,60 @@
     anchorInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
     anchorInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
 
-    // ── CLEAR ERRORS ───────────────────────────────────────────
+    // ── COUNTRY TAG ─────────────────────────────────────────────
+    let countryTag = null;
+
+    function addCountryTag(e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const inp = document.getElementById('countryInp');
+      const val = inp.value.trim();
+      if (!val) return;
+
+      if (countryTag) {
+        // Already have a country — show error
+        document.getElementById('err-country-max').style.display = 'block';
+        inp.value = '';
+        return;
+      }
+
+      countryTag = val;
+      inp.value = '';
+      inp.placeholder = '';
+      document.getElementById('err-country-max').style.display = 'none';
+      document.getElementById('err-country').classList.remove('on');
+
+      // Render tag
+      const wrap = document.getElementById('countryWrap');
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
+      wrap.insertBefore(tag, inp);
+    }
+
+    function removeCountryTag() {
+      countryTag = null;
+      const wrap = document.getElementById('countryWrap');
+      const existing = wrap.querySelector('.tag');
+      if (existing) existing.remove();
+      const inp = document.getElementById('countryInp');
+      inp.placeholder = 'Type a country and press Enter...';
+      inp.focus();
+      document.getElementById('err-country-max').style.display = 'none';
+    }
+
+    function autoSaveCountryTag() {
+      const inp = document.getElementById('countryInp');
+      const val = inp.value.trim();
+      if (!val) return;
+      if (countryTag) {
+        inp.value = '';
+        document.getElementById('err-country-max').style.display = 'block';
+        return;
+      }
+      // Simulate Enter press to save tag
+      addCountryTag({ key: 'Enter', preventDefault: () => {} });
+    }
     function clearErrors() {
       document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
       document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
@@ -597,7 +654,7 @@
     function validateStep1() {
       clearErrors();
       let valid = true;
-      if (!document.getElementById('country').value.trim()) { showError('err-country', 'country'); valid = false; }
+      if (!countryTag) { showError('err-country', 'countryWrap'); valid = false; }
       if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport', 'arrivalAirport'); valid = false; }
       if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport', 'departureAirport'); valid = false; }
       if (!document.getElementById('arrDate').value) { showError('err-arrDate', 'arrDate'); valid = false; }
@@ -699,7 +756,7 @@
       };
 
       return {
-        country: document.getElementById('country').value,
+        country: countryTag,
         arrivalAirport: document.getElementById('arrivalAirport').value,
         departureAirport: document.getElementById('departureAirport').value,
         arrivalDate: document.getElementById('arrDate').value,
