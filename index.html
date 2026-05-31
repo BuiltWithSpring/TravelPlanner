@@ -833,7 +833,7 @@ Must see: ${d.mustSee}
 Extra notes: ${d.extraNotes}`;
 
       try {
-        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev', {
+        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
