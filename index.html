@@ -244,7 +244,7 @@
           <div class="ai-confirm-sub">Based on your preferences, interests, and travel dates — AI will select and order the best cities for your trip.</div>
         </div>
         <div class="fg" style="margin-top:12px; margin-bottom:0;">
-          <label class="fl">Any cities you definitely want to include? <span class="opt">optional · max 3</span></label>
+          <label class="fl">Any cities you definitely want to include? <br/><span class="opt">optional · max 3</span></label>
           <div class="tag-input-wrap" id="anchorWrap" onclick="document.getElementById('anchorInp').focus()">
             <input class="tag-inp" id="anchorInp" placeholder="Type an anchor city and press Enter..."/>
           </div>
@@ -1048,7 +1048,7 @@ Extra notes: ${d.extraNotes}`;
       const encoded = params.get('preview');
       if (encoded) {
         try {
-          const preview = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+          const preview = JSON.parse(decodeURIComponent(atob(encoded)));
           // Small delay to ensure DOM is fully ready
           setTimeout(() => {
             // Show step 4
@@ -1075,7 +1075,8 @@ Extra notes: ${d.extraNotes}`;
 
       // ── Encode preview into shareable URL ──────────────────
       try {
-        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(preview))));
+        const jsonStr = JSON.stringify(preview);
+        const encoded = btoa(encodeURIComponent(jsonStr));
         const shareUrl = `${window.location.origin}${window.location.pathname}?preview=${encoded}`;
         const country = (preview.recommended_cities && preview.recommended_cities[0]) ? preview.recommended_cities[0].city : 'our trip';
         document.getElementById('whatsappShareBtn').href =
