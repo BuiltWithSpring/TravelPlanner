@@ -140,6 +140,26 @@
       <div class="stit">Your trip basics</div>
       <div class="ssub">Tell us where you're going and when.</div>
 
+      <!-- Name + Email at top -->
+      <div class="r2">
+        <div class="fg">
+          <label class="fl">First name <span class="req">*</span></label>
+          <input class="inp" type="text" id="firstName" placeholder="Your first name"/>
+          <div class="error-msg" id="err-firstName">Please enter your first name</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Last name <span class="req">*</span></label>
+          <input class="inp" type="text" id="lastName" placeholder="Your last name"/>
+          <div class="error-msg" id="err-lastName">Please enter your last name</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Your email <span class="req">*</span></label>
+        <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
+        <div class="error-msg" id="err-email">Please enter a valid email address</div>
+      </div>
+
       <div class="fg">
         <label class="fl">Country you're visiting <span class="req">*</span></label>
         <div class="tag-wrap inp" id="countryWrap" style="cursor:text;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;" onclick="document.getElementById('countryInp').focus()">
@@ -183,13 +203,13 @@
         <div class="mode-grid">
           <div class="mode-card" id="modeKnow" onclick="setMode('know')">
             <span class="mc-icon">🗺️</span>
-            <div class="mc-title">I know where I want to go</div>
-            <div class="mc-sub">I'll enter my cities and AI will plan around them</div>
+            <div class="mc-title">I have my cities picked — build my day-by-day plan</div>
+            <div class="mc-sub">Tell us your cities and we'll handle the rest</div>
           </div>
           <div class="mode-card" id="modeAI" onclick="setMode('ai')">
             <span class="mc-icon">✨</span>
-            <div class="mc-title">Recommend cities for me</div>
-            <div class="mc-sub">AI picks the best cities based on my preferences</div>
+            <div class="mc-title">Pick my cities and plan everything</div>
+            <div class="mc-sub">I'll answer a few questions and AI picks the best cities and route</div>
           </div>
         </div>
         <div class="error-msg" id="err-mode">Please select how you want to plan your cities</div>
@@ -234,25 +254,6 @@
       <div class="fg hidden" id="gsw">
         <label class="fl">Number of people</label>
         <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="How many people?"/>
-      </div>
-
-      <div class="r2">
-        <div class="fg">
-          <label class="fl">First name <span class="req">*</span></label>
-          <input class="inp" type="text" id="firstName" placeholder="Your first name"/>
-          <div class="error-msg" id="err-firstName">Please enter your first name</div>
-        </div>
-        <div class="fg">
-          <label class="fl">Last name <span class="req">*</span></label>
-          <input class="inp" type="text" id="lastName" placeholder="Your last name"/>
-          <div class="error-msg" id="err-lastName">Please enter your last name</div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Your email <span class="req">*</span></label>
-        <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
-        <div class="error-msg" id="err-email">Please enter a valid email address</div>
       </div>
 
       <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
@@ -374,12 +375,12 @@
 
       <div class="fg">
         <label class="fl">Must-see destinations or experiences <span class="opt">optional</span></label>
-        <textarea class="inp" rows="3" id="mustSee" placeholder="Anything specific you don't want to miss? Or leave blank and let AI suggest everything."></textarea>
+        <textarea class="inp" rows="3" id="mustSee" placeholder="Any must-see spots, pre-booked tours, or specific experiences? e.g. I already have Colosseum tickets on Oct 3 · I want to see the Northern Lights · Skip tourist traps"></textarea>
       </div>
 
       <div class="fg">
         <label class="fl">Anything else we should know <span class="opt">optional</span></label>
-        <textarea class="inp" rows="2" id="extraNotes" placeholder="Special occasion? Niche interest? Traveling with kids or pets? Tell us anything..."></textarea>
+        <textarea class="inp" rows="2" id="extraNotes" placeholder="Arrival and departure times, special occasions, dietary needs, mobility considerations, or anything else. e.g. Landing at 10pm on arrival day · Anniversary trip · Vegetarian · Early morning flights"></textarea>
       </div>
 
       <div class="brow">
@@ -802,12 +803,13 @@
     let formData = null;
     let approvedPreview = null; // stores approved preview JSON for passing to Stripe
 
-    const PREVIEW_PROMPT = `You are an expert travel planner. Generate a quick trip preview only.
+    const PREVIEW_PROMPT = (d) => `You are an expert travel planner. Generate a quick trip preview only.
 Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
 
 STEP 1 — NIGHT ALLOCATION
 Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.
-- Pack it in = minimum nights. Relaxed = maximum nights.
+- Full days (Pack it in) = minimum nights per city, more cities possible.
+- Relaxed days = maximum nights per city, fewer cities, slower pace.
 - If cities × minimum nights > total trip days → remove lowest-priority cities.
 - Travel days over 4 hours = full day lost → add 1 night to that city.
 - Departure city classified Large or Mega → minimum 2 nights.
@@ -853,6 +855,8 @@ Never recommend a venue that exceeds the traveler's budget tier.
 
 STEP 7 — TEASER DAY RULES
 - Pick the single most exciting city on the trip for the teaser.
+- Never pick a city the traveler only passes through or spends less than 1 night in.
+- Never pick a travel day or a day trip destination as the teaser day.
 - Always label the teaser day as "Sample Day in [City]" — never use Day 1, Day 3, or any specific day number.
 - Morning, afternoon, evening must be in the same or adjacent neighborhoods — no zigzagging.
 - Activities must match travel party, interest weights, and budget tier.
@@ -862,22 +866,23 @@ STEP 7 — TEASER DAY RULES
 - Never recommend a bar or nightlife venue as morning or afternoon activity.
 - why_recommended for every city: "[City] is [known for] — chosen for your [specific interest or travel style]." Max 25 words. Never generic. Never logistical.
 
+STEP 8 — TEASER DAY TIME BUDGET
+Validate the teaser day activities against a realistic time budget before finalizing:
+- Full days → ~10 hours of activity time available. Populate morning, afternoon AND evening.
+- Relaxed days → ~6 hours of activity time available. Populate morning and ONE of afternoon or evening.
+- Full-day activity (theme park, long trek, major day trip) → that is the teaser day's only activity. Add one light nearby evening activity max. Never pair with 2 other independent activities.
+- Day trip (90+ min each way) → counts as the full teaser day. No other activities.
+- Never schedule 3 time-intensive activities (each 3+ hours) on the teaser day regardless of pace.
+
 WEATHER: City-by-city for exact travel dates. Temperature range and conditions. Flag any seasonal highlights or issues.
 VISA: Requirements for Western passport holders. Processing time. Visa-on-arrival availability if applicable.
 
 Return exactly this JSON:
-{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","dinner":"string — max 20 words"},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}`;
-
-    async function generatePreview() {
-      go(4);
-      document.getElementById('previewLoading').classList.remove('hidden');
-      document.getElementById('previewContent').classList.add('hidden');
-      document.getElementById('previewError').classList.add('hidden');
-
-      const d = formData;
-      const userMessage = `${PREVIEW_PROMPT}
+{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","dinner":"string — max 20 words"},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
 
 TRAVELER PREFERENCES:
+First name: ${d.firstName}
+Last name: ${d.lastName}
 Country: ${d.country}
 Arrival airport: ${d.arrivalAirport}
 Departure airport: ${d.departureAirport}
@@ -894,6 +899,16 @@ Budget: ${d.budgetTier}
 Interests: ${JSON.stringify(d.interests)}
 Must see: ${d.mustSee}
 Extra notes: ${d.extraNotes}`;
+
+    async function generatePreview() {
+      go(4);
+      document.getElementById('previewLoading').classList.remove('hidden');
+      document.getElementById('previewContent').classList.add('hidden');
+      document.getElementById('previewError').classList.add('hidden');
+
+      const d = formData;
+      // PREVIEW_PROMPT is a function that accepts formData and returns the full prompt with preferences embedded
+      const userMessage = PREVIEW_PROMPT(d);
 
       try {
         const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', { 
