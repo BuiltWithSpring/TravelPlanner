@@ -107,6 +107,9 @@
       .ilbl { width: 100%; }
       .legend-spacer { display: none; }
       #card { padding: 1.5rem 1.25rem 1rem; border-radius: 14px; }
+      #previewCities { grid-template-columns: 1fr !important; }
+      .brow { flex-wrap: wrap; gap: 8px; }
+      .brow button, .brow a { flex: 1; min-width: 0; font-size: 13px; }
     }
     @media (max-width: 900px) and (min-width: 481px) {
       #card { padding: 2rem 1.75rem 1.5rem; }
@@ -504,7 +507,7 @@
           <button class="bbk" onclick="go(3)">← Back</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;">✨ Get my itinerary — $29</button>
+            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;white-space:nowrap;">✨ Get my itinerary — $29</button>
           </div>
         </div>
       </div>
