@@ -510,7 +510,7 @@
           <button class="bbk" onclick="go(3)">← Back</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;white-space:nowrap;">✨ Get my itinerary — $29</button>
+            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;white-space:nowrap;">Get Itinerary — $29</button>
           </div>
         </div>
       </div>
@@ -1042,24 +1042,11 @@ Extra notes: ${d.extraNotes}`;
       });
     }
 
-    // ── Auto-load preview from URL ─────────────────────────────
+    // ── Auto-load preview from URL param ───────────────────────
     window.addEventListener('load', () => {
-      // Check for short URL: /p/:id
-      const pathMatch = window.location.pathname.match(/^\/p\/([a-z0-9]+)$/);
-      // Check for long URL: ?preview=...
       const params = new URLSearchParams(window.location.search);
       const encoded = params.get('preview');
-
-      if (pathMatch) {
-        // Fetch preview from KV
-        fetch(`https://bws-travel-proxy.springlam-co.workers.dev/p/${pathMatch[1]}`)
-          .then(r => r.json())
-          .then(preview => {
-            setTimeout(() => loadSharedPreview(preview), 100);
-          })
-          .catch(e => console.warn('Could not load shared preview', e));
-      } else if (encoded) {
-        // Decode from URL param (fallback)
+      if (encoded) {
         try {
           const preview = JSON.parse(decodeURIComponent(atob(encoded)));
           setTimeout(() => loadSharedPreview(preview), 100);
@@ -1100,7 +1087,7 @@ Extra notes: ${d.extraNotes}`;
         .then(r => r.json())
         .then(({ id }) => {
           if (id) {
-            const shortUrl = `${window.location.origin}/p/${id}`;
+            const shortUrl = `https://bws-travel-proxy.springlam-co.workers.dev/p/${id}`;
             window._previewShareUrl = shortUrl;
             // Update share buttons with short URL
             document.getElementById('whatsappShareBtn').href =
