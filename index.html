@@ -196,13 +196,13 @@
       <div class="r2">
         <div class="fg">
           <label class="fl">Arrival date <span class="req">*</span></label>
-          <input class="inp" type="date" id="arrDate" onchange="onArrDateChange()"/>
+          <input class="inp" type="date" id="arrDate" onblur="onArrDateChange()"/>
           <div class="error-msg" id="err-arrDate">Please select your arrival date</div>
           <div class="error-msg" id="err-arrDate-past" style="display:none;">Arrival date can't be in the past</div>
         </div>
         <div class="fg">
           <label class="fl">Departure date <span class="req">*</span></label>
-          <input class="inp" type="date" id="depDate" onchange="onDepDateChange()"/>
+          <input class="inp" type="date" id="depDate" onblur="onDepDateChange()"/>
           <div class="error-msg" id="err-depDate">Please select your departure date</div>
           <div class="error-msg" id="err-depDate-before" style="display:none;">Departure date must be after arrival date</div>
         </div>
