@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-src https://js.stripe.com https://checkout.stripe.com;"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://hook.us2.make.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"/>
   <title>BuiltWithSpring · AI-Powered Travel Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -140,12 +140,8 @@
 
       <div class="fg">
         <label class="fl">Country you're visiting <span class="req">*</span></label>
-        <div class="tag-wrap inp" id="countryWrap" style="cursor:text;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;" onclick="document.getElementById('countryInp').focus()">
-          <input type="text" id="countryInp" placeholder="Type a country and press Enter..." style="border:none;outline:none;flex:1;min-width:120px;font-size:14px;background:transparent;font-family:inherit;" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()"/>
-        </div>
-        <div class="hint">One country per itinerary — press Enter to confirm.</div>
+        <input class="inp" type="text" id="country" placeholder="e.g. Japan, Italy, Costa Rica"/>
         <div class="error-msg" id="err-country">Please enter a country</div>
-        <div class="error-msg" id="err-country-max" style="display:none;">Only one country per itinerary — remove the current one first to change it.</div>
       </div>
 
       <div class="r2">
@@ -250,17 +246,17 @@
       <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
 
       <div class="fg">
-        <label class="fl">Daily pace <span class="req">*</span></label>
+        <label class="fl">Pace of travel <span class="req">*</span></label>
         <div class="pace-wrap" id="paceGrid">
           <div class="pace-card" onclick="pickPace(this)">
             <span class="pc-icon">🏃</span>
-            <div class="pc-title">Full days</div>
-            <div class="pc-sub">Packed schedule, more cities or activities, maximise every day</div>
+            <div class="pc-title">Pack it in</div>
+            <div class="pc-sub">More cities, more activities, full days</div>
           </div>
           <div class="pace-card" onclick="pickPace(this)">
-            <span class="pc-icon">🌿</span>
-            <div class="pc-title">Relaxed days</div>
-            <div class="pc-sub">Slower pace, fewer activities per day, room to breathe and wander</div>
+            <span class="pc-icon">🏘️</span>
+            <div class="pc-title">Less cities, more time</div>
+            <div class="pc-sub">Go deep, not wide — linger longer</div>
           </div>
         </div>
         <div class="error-msg" id="err-pace">Please select your pace of travel</div>
@@ -268,16 +264,11 @@
 
       <div class="fg">
         <label class="fl">How are you getting around? <span class="opt">optional</span></label>
-        <div class="g3" id="tripStructureGrid">
+        <div class="mode-grid" id="tripStructureGrid">
           <div class="mode-card" onclick="pickTripStructure(this)" data-value="road_trip">
             <span class="mc-icon">🚗</span>
             <div class="mc-title">Road trip</div>
             <div class="mc-sub">I'll drive between cities and stop along the way</div>
-          </div>
-          <div class="mode-card" onclick="pickTripStructure(this)" data-value="train">
-            <span class="mc-icon">🚆</span>
-            <div class="mc-title">Train travel</div>
-            <div class="mc-sub">I'll take trains between cities along a rail corridor</div>
           </div>
           <div class="mode-card" onclick="pickTripStructure(this)" data-value="flying">
             <span class="mc-icon">✈️</span>
@@ -287,6 +278,16 @@
         </div>
       </div>
 
+      <div class="fg">
+        <label class="fl">Transportation preference <span class="req">*</span></label>
+        <div class="g4" id="tg">
+          <div class="sc" onclick="pick('tg',this)"><span class="si">⚡</span><div class="st">Fast & comfortable</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">🌄</span><div class="st">Scenic & relaxed</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">💰</span><div class="st">Budget-friendly</div></div>
+          <div class="sc" onclick="pick('tg',this)"><span class="si">🎲</span><div class="st">No preference</div></div>
+        </div>
+        <div class="error-msg" id="err-transport">Please select your transportation preference</div>
+      </div>
 
       <div class="fg">
         <label class="fl">Budget tier <span class="req">*</span></label>
@@ -331,12 +332,12 @@
         <div id="sliders">
           <div class="irow"><span class="ilbl">🏛️ History & heritage</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🌿 Nature & outdoors</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎉 Nightlife & bars</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎭 Culture & museums</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🧘 Wellness & spa</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🌿 Nature & landscapes</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🖼️ Arts & culture</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness & relaxation</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
           <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎢 Adventure & fun</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧗 Adventure & thrills</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
         </div>
         <div class="error-msg" id="err-interests">Please set at least one interest slider above zero</div>
       </div>
@@ -469,7 +470,7 @@
           <button class="bbk" onclick="go(3)">← Back</button>
           <div style="display:flex;gap:8px;margin-left:auto;">
             <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;">✨ Get my itinerary — $29</button>
+            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;">✨ Generate my itinerary — free beta</button>
           </div>
         </div>
       </div>
@@ -502,7 +503,7 @@
           <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 🗺️ City activity guide &nbsp;·&nbsp; 📋 Booking tracker</span>
         </div>
         <div style="background:#fef3c7;border-radius:12px;padding:12px 16px;font-size:12px;color:#92400e;text-align:left;">
-          🎉 <strong>Beta friends get it free!</strong> Use code <strong>BWSBETA</strong> at checkout to apply your 100% discount.
+          🧪 <strong>You're part of our free beta!</strong> We'd love your honest feedback once you've reviewed your itinerary. A quick follow up email is on its way.
         </div>
       </div>
     </div>
@@ -582,60 +583,7 @@
     anchorInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
     anchorInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
 
-    // ── COUNTRY TAG ─────────────────────────────────────────────
-    let countryTag = null;
-
-    function addCountryTag(e) {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      const inp = document.getElementById('countryInp');
-      const val = inp.value.trim();
-      if (!val) return;
-
-      if (countryTag) {
-        // Already have a country — show error
-        document.getElementById('err-country-max').style.display = 'block';
-        inp.value = '';
-        return;
-      }
-
-      countryTag = val;
-      inp.value = '';
-      inp.placeholder = '';
-      document.getElementById('err-country-max').style.display = 'none';
-      document.getElementById('err-country').classList.remove('on');
-
-      // Render tag
-      const wrap = document.getElementById('countryWrap');
-      const tag = document.createElement('span');
-      tag.className = 'tag';
-      tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
-      wrap.insertBefore(tag, inp);
-    }
-
-    function removeCountryTag() {
-      countryTag = null;
-      const wrap = document.getElementById('countryWrap');
-      const existing = wrap.querySelector('.tag');
-      if (existing) existing.remove();
-      const inp = document.getElementById('countryInp');
-      inp.placeholder = 'Type a country and press Enter...';
-      inp.focus();
-      document.getElementById('err-country-max').style.display = 'none';
-    }
-
-    function autoSaveCountryTag() {
-      const inp = document.getElementById('countryInp');
-      const val = inp.value.trim();
-      if (!val) return;
-      if (countryTag) {
-        inp.value = '';
-        document.getElementById('err-country-max').style.display = 'block';
-        return;
-      }
-      // Simulate Enter press to save tag
-      addCountryTag({ key: 'Enter', preventDefault: () => {} });
-    }
+    // ── CLEAR ERRORS ───────────────────────────────────────────
     function clearErrors() {
       document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
       document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
@@ -654,7 +602,7 @@
     function validateStep1() {
       clearErrors();
       let valid = true;
-      if (!countryTag) { showError('err-country', 'countryWrap'); valid = false; }
+      if (!document.getElementById('country').value.trim()) { showError('err-country', 'country'); valid = false; }
       if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport', 'arrivalAirport'); valid = false; }
       if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport', 'departureAirport'); valid = false; }
       if (!document.getElementById('arrDate').value) { showError('err-arrDate', 'arrDate'); valid = false; }
@@ -671,6 +619,7 @@
       clearErrors();
       let valid = true;
       if (!document.querySelector('#paceGrid .pace-card.on')) { showError('err-pace', null); valid = false; }
+      if (!document.querySelector('#tg .sc.on')) { showError('err-transport', null); valid = false; }
       if (!document.querySelector('#bg .sc.on')) { showError('err-budget', null); valid = false; }
       if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
       return valid;
@@ -747,7 +696,7 @@
         let total = 0;
         document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
         if (total === 0) return result;
-        const labels = ['History & heritage','Food & drink','Nature & outdoors','Nightlife & bars','Culture & museums','Wellness & spa','Shopping','Adventure & fun'];
+        const labels = ['History & heritage','Food & drink','Nature & landscapes','Nightlife','Arts & culture','Wellness & relaxation','Shopping','Adventure & thrills'];
         document.querySelectorAll('.islider').forEach((s, i) => {
           const val = parseInt(s.value);
           if (val > 0) result[labels[i]] = Math.round((val / total) * 100) + '%';
@@ -756,12 +705,12 @@
       };
 
       return {
-        country: countryTag,
+        country: document.getElementById('country').value,
         arrivalAirport: document.getElementById('arrivalAirport').value,
         departureAirport: document.getElementById('departureAirport').value,
         arrivalDate: document.getElementById('arrDate').value,
         departureDate: document.getElementById('depDate').value,
-        cityPlanningMode: currentMode === 'ai' ? 'AI recommended' : 'Traveler selected',
+        cityPlanningMode: currentMode,
         tripStructure: tripStructure,
         citiesToVisit: currentMode === 'know' ? tags : [],
         aiCityRecommendation: currentMode === 'ai',
@@ -770,6 +719,7 @@
         groupSize: document.getElementById('groupSize').value || null,
         email: document.getElementById('email').value,
         paceOfTravel: getPace(),
+        transportationPreference: getSelected('tg'),
         budgetTier: getSelected('bg'),
         accommodationStyle: getMultiSelected('accom'),
         interests: getInterests(),
@@ -781,29 +731,73 @@
 
     // ── PREVIEW GENERATION (Stage 1 — direct Claude API call) ──
     let formData = null;
+    let approvedPreview = null; // stores the approved preview JSON for passing to Stripe
 
     const PREVIEW_PROMPT = `You are an expert travel planner. Generate a quick trip preview only.
-Return ONLY valid JSON starting with { and ending with }. No markdown, no code fences.
+Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
 
-TRIP STRUCTURE RULES — apply before selecting any cities:
-- road_trip: select cities along the most efficient driving corridor between arrival and departure airports. Cities must be geographically connected and driveable in 2-5 hour daily legs. Never recommend a city requiring significant backtracking.
-- train: select cities along the most logical rail corridor between arrival and departure airports. Prioritize cities with major train stations and strong rail connections. Order cities to follow the natural rail route without backtracking.
-- flying: treat each city as a fully independent destination. Select based on interest profile, budget, and travel dates — not geographic proximity. For large countries with no anchor cities, keep cities in same region or coast. Prefer well-known heavily visited cities unless Adventure or Arts interest exceeds 25%.
-- If trip structure not provided: default to flying logic.
+STEP 1 — NIGHT ALLOCATION
+Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.
+- Pack it in = minimum nights. Relaxed = maximum nights.
+- If cities × minimum nights > total trip days → remove lowest-priority cities.
+- Travel days over 4 hours = full day lost → add 1 night to that city.
+- Departure city classified Large or Mega → minimum 2 nights.
 
-CITY SELECTION RULES:
-- All recommended cities must be within the submitted country. Never recommend cities in other countries unless the traveler explicitly named them in anchor cities or extra notes.
-- If cityPlanningMode is "know": respect listed cities exactly, distribute nights proportionally by city size.
-- If aiCityRecommendation is true: select best cities based on interests, budget, travel dates, and routing. If anchorCities provided treat as fixed stops.
-- Calculate total trip days and distribute nights by city size: Mega 4-6 nights, Large 3-5 nights, Medium 2-3 nights, Small 1-2 nights, Micro 0.5-1 night.
-- Full days pace = minimum nights per city. Relaxed days pace = maximum nights per city.
-- Every city needs why_recommended: max 25 words of natural travel writing explaining what the city is known for and what makes it a great fit for this traveler. Never reference interest percentages directly. Never generic or logistical.
+STEP 2 — CITY SELECTION
+Calculate total trip days from arrival to departure date.
+- All cities must be within the submitted country unless traveler explicitly listed others.
+- Always consider arrival and departure airport cities as candidates.
+- cityPlanningMode "know" → respect listed cities exactly. Adjust count if needed.
+- aiCityRecommendation true + anchorCities → anchors are fixed, fill remaining with best-fit.
+- aiCityRecommendation true + no cities → select from scratch weighted by interests, budget, travel dates, routing.
+- Large countries (USA, Australia, Canada, Brazil, China) + flying + no anchors → same region or coast only.
+- Prefer well-known cities unless Adventure or Arts interest exceeds 25%.
+- Verify cities suit exact travel dates — flag festivals or seasonal highlights in overview.
 
-WEATHER: Provide city-by-city weather for exact travel dates with temperature range and conditions.
-VISA: State clearly whether a visa is required for Western passport holders, processing time, visa-on-arrival availability.
+STEP 3 — TRIP STRUCTURE
+- road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking.
+- train → cities along logical rail corridor, major train stations only, no car/bus connections.
+- flying → each city fully independent, selected by interest profile not geography.
+- Not provided → default to flying logic.
+
+STEP 4 — TRAVEL PARTY RULES
+Apply to teaser day activities and dinner:
+- Couple → romantic, intimate venues only.
+- Family with kids → kid-friendly without exception. No adult-only venues.
+- Family no kids → adult experiences fine.
+- Friends group → social, communal, group-capacity venues.
+- Solo → flexible, independent, safe venues.
+
+STEP 5 — INTEREST WEIGHTS
+Apply to teaser day activity and dinner selection:
+- 20%+ → feature prominently in teaser day.
+- 11–19% → include if it fits the day naturally.
+- 1–10% → only if nothing higher priority fits.
+- 0% → exclude entirely. Never suggest activity from a 0% interest category.
+
+STEP 6 — BUDGET
+Apply strictly to teaser day dinner and activities:
+- Budget → ~$50–100/day. Street food, casual dining, free attractions.
+- Mid-range → ~$100–250/day. Mid-tier restaurants, paid attractions.
+- Luxury → $250+/day. Fine dining, premium experiences.
+Never recommend a venue that exceeds the traveler's budget tier.
+
+STEP 7 — TEASER DAY RULES
+- Pick the single most exciting city on the trip for the teaser.
+- Always label the teaser day as "Sample Day in [City]" — never use Day 1, Day 3, or any specific day number.
+- Morning, afternoon, evening must be in the same or adjacent neighborhoods — no zigzagging.
+- Activities must match travel party, interest weights, and budget tier.
+- Dinner must be geographically close to that day's activities.
+- Every activity: "[Activity name] — [what it is and why it suits this traveler]." Max 20 words. Enticing and specific.
+- Dinner: "[Restaurant name] — [one line why it's special for this traveler]." Max 20 words.
+- Never recommend a bar or nightlife venue as morning or afternoon activity.
+- why_recommended for every city: "[City] is [known for] — chosen for your [specific interest % or preference]." Max 25 words. Never generic. Never logistical.
+
+WEATHER: City-by-city for exact travel dates. Temperature range and conditions. Flag any seasonal highlights or issues.
+VISA: Requirements for Western passport holders. Processing time. Visa-on-arrival availability if applicable.
 
 Return exactly this JSON:
-{"overview":"2 sentences max — trip tone, cities chosen, seasonal highlight","cities":[{"city":"string","nights":"number","why_recommended":"string — max 25 words of natural travel writing, what the city is known for and why it suits this traveler. No percentage references."}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — e.g. Day 3 or A day in Tokyo","morning":"string — one compelling activity, max 20 words, enticing and specific","afternoon":"string — one compelling activity, max 20 words, enticing and specific","evening":"string — one compelling activity, max 20 words, enticing and specific","dinner":"string — restaurant name and one line why it's special, max 20 words"},"weather":"string — city by city for exact travel dates, 2-3 sentences","visa":"string — requirements for Western passport holders, one short paragraph"}`;
+{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","dinner":"string — max 20 words"},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}`;
 
     async function generatePreview() {
       go(4);
@@ -833,7 +827,7 @@ Must see: ${d.mustSee}
 Extra notes: ${d.extraNotes}`;
 
       try {
-        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', {
+        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -868,6 +862,7 @@ Extra notes: ${d.extraNotes}`;
     }
 
     function renderPreview(preview) {
+      approvedPreview = preview; // store for passing to Stripe on confirmation
       document.getElementById('previewLoading').classList.add('hidden');
       document.getElementById('previewOverview').textContent = preview.overview;
 
@@ -889,8 +884,9 @@ Extra notes: ${d.extraNotes}`;
 
       // Teaser day — use exciting sample day from preview if available
       if (preview.teaser_day) {
-        document.getElementById('teaserCityLabel').textContent = preview.teaser_day.city || '';
-        document.getElementById('teaserDayLabel').textContent = preview.teaser_day.day_label || 'A highlight day';
+        const teaserCity = preview.teaser_day.city || '';
+        document.getElementById('teaserCityLabel').textContent = teaserCity;
+        document.getElementById('teaserDayLabel').textContent = `Sample Day in ${teaserCity}`;
         document.getElementById('teaserMorning').textContent = preview.teaser_day.morning || '';
         const teaserAfternoon = document.getElementById('teaserAfternoon');
         const teaserEvening = document.getElementById('teaserEvening');
@@ -899,8 +895,9 @@ Extra notes: ${d.extraNotes}`;
         const teaserDinner = document.getElementById('teaserDinner');
         if (teaserDinner && preview.teaser_day.dinner) teaserDinner.textContent = preview.teaser_day.dinner;
       } else if (preview.cities && preview.cities.length > 0) {
-        document.getElementById('teaserCityLabel').textContent = preview.cities[0].city;
-        document.getElementById('teaserDayLabel').textContent = 'A highlight day';
+        const fallbackCity = preview.cities[0].city;
+        document.getElementById('teaserCityLabel').textContent = fallbackCity;
+        document.getElementById('teaserDayLabel').textContent = `Sample Day in ${fallbackCity}`;
         document.getElementById('teaserMorning').textContent = 'Your itinerary is packed with hand-picked experiences for your interests.';
       }
 
@@ -945,34 +942,37 @@ Extra notes: ${d.extraNotes}`;
       await generatePreview();
     }
 
-    // ── STRIPE CHECKOUT ─────────────────────────────────────────
+    // ── CONFIRM AND PAY (Stage 2 — Stripe checkout with preview data) ─────────────────
     async function confirmAndGenerate() {
-      const btn = document.querySelector('.bnx[onclick="confirmAndGenerate()"]');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ Setting up checkout...';
-      btn.disabled = true;
+      const btn = document.querySelector('[onclick="confirmAndGenerate()"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to checkout...'; }
 
       try {
+        // Build compact approved city plan to pass through Stripe metadata
+        const approvedCities = approvedPreview ? approvedPreview.cities : [];
+        const teaserDay = approvedPreview ? approvedPreview.teaser_day : null;
+
         const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ formData })
+          body: JSON.stringify({
+            formData: formData,
+            approvedCities: approvedCities,
+            teaserDay: teaserDay
+          })
         });
 
         const data = await response.json();
 
-        if (data.error) {
-          throw new Error(data.error);
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error(data.error || 'No checkout URL returned');
         }
-
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
-
       } catch (err) {
         console.error('Checkout error:', err);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert('Something went wrong setting up checkout. Please try again.');
+        if (btn) { btn.disabled = false; btn.textContent = '✨ Generate my itinerary — $29'; }
+        alert('Something went wrong starting checkout. Please try again.');
       }
     }
 
