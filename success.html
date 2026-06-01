@@ -241,18 +241,26 @@
 
   <!-- Header -->
   <div id="hdr">
-    <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="52" height="52" style="display:block;margin:0 auto;">
       <defs>
-        <linearGradient id="lg1" x1="30" y1="20" x2="75" y2="85" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#a78bfa"/>
-          <stop offset="100%" stop-color="#38bdf8"/>
+        <linearGradient id="gfinal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#F9A8D4"/>
+          <stop offset="45%" stop-color="#A855F7"/>
+          <stop offset="100%" stop-color="#38BDF8"/>
         </linearGradient>
       </defs>
-      <rect width="100" height="100" rx="22" fill="#eeeaf8"/>
-      <path d="M50 20C50 20 75 42 75 60C75 73.8 63.8 85 50 85C36.2 85 25 73.8 25 60C25 42 50 20 50 20Z" fill="url(#lg1)"/>
-      <polygon points="50,18 72,30 72,55 50,67 28,55 28,30" fill="none" stroke="#f0a0d0" stroke-width="1.5" opacity="0.7"/>
-      <circle cx="50" cy="56" r="5" fill="rgba(255,255,255,0.5)"/>
-      <circle cx="50" cy="68" r="3" fill="rgba(56,189,248,0.7)"/>
+      <rect x="0" y="0" width="500" height="500" rx="100" fill="#F8F5FF"/>
+      <ellipse cx="250" cy="250" r="190" fill="#EDE9FE" opacity="0.2"/>
+      <polygon points="250,58 374,120 374,246 250,308 126,246 126,120" fill="none" stroke="#E879F9" stroke-width="2.5" opacity="0.4"/>
+      <polygon points="250,80 350,136 350,248 250,304 150,248 150,136" fill="none" stroke="#C084FC" stroke-width="1.5" opacity="0.25"/>
+      <path d="M250 90 C250 90 358 200 358 260 C358 320 310 354 250 354 C190 354 142 320 142 260 C142 200 250 90 250 90 Z" fill="url(#gfinal)" opacity="0.95"/>
+      <circle cx="250" cy="264" r="12" fill="white" opacity="0.6"/>
+      <circle cx="250" cy="58" r="6" fill="#F9A8D4" opacity="0.8"/>
+      <circle cx="374" cy="120" r="5" fill="#C084FC" opacity="0.6"/>
+      <circle cx="374" cy="246" r="5" fill="#A855F7" opacity="0.6"/>
+      <circle cx="250" cy="308" r="6" fill="#38BDF8" opacity="0.8"/>
+      <circle cx="126" cy="246" r="5" fill="#818CF8" opacity="0.6"/>
+      <circle cx="126" cy="120" r="5" fill="#E879F9" opacity="0.6"/>
     </svg>
     <div id="tgl">BuiltWithSpring · AI-Powered Travel Planner</div>
   </div>
@@ -318,6 +326,41 @@
     <div id="foot">
       Questions? <a href="mailto:hello@builtwithspring.com">hello@builtwithspring.com</a>
       &nbsp;·&nbsp; <a href="https://builtwithspring.com">builtwithspring.com</a>
+    </div>
+
+    <!-- Social follow -->
+    <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1.5px solid #ede9fe;">
+      <div style="font-size:11px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Follow along while you wait</div>
+      <div style="display:flex;justify-content:center;gap:12px;">
+
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/BuiltWithSpring" target="_blank" style="text-decoration:none;">
+          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:border-color .2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- LinkedIn -->
+        <a href="https://www.linkedin.com/in/springlam/" target="_blank" style="text-decoration:none;">
+          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- YouTube -->
+        <a href="https://www.youtube.com/@BuiltWithSpring" target="_blank" style="text-decoration:none;">
+          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#8b5cf6" stroke="none"/>
+            </svg>
+          </div>
+        </a>
+
+      </div>
     </div>
 
   </div>
