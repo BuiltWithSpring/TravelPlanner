@@ -886,8 +886,10 @@ Validate the teaser day activities against a realistic time budget before finali
 WEATHER: City-by-city for exact travel dates. Temperature range in Fahrenheit (°F). Include conditions and flag any seasonal highlights or issues.
 VISA: Never assume or infer the traveler's nationality from their name or any other detail. Provide general visa requirements for the destination country covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time. Always address the traveler directly as "you" — never refer to them by name or in third person.
 
+TONE: Always write in second person throughout — "you", "your". Never "the couple", "the traveler", "the group", or the traveler's name. This applies to overview, city descriptions, teaser day content, weather, and visa.
+
 Return exactly this JSON:
-{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","restaurant_suggestion":"string — Lunch/Dinner: Restaurant name — one line why it's special. Max 20 words."},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
+{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight. Written in second person as 'you' and 'your'.","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","restaurant_suggestion":"string — Lunch/Dinner: Restaurant name — one line why it's special. Max 20 words."},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
 
 TRAVELER PREFERENCES:
 First name: ${d.firstName}
