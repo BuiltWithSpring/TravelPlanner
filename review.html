@@ -350,6 +350,7 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get('name')) document.getElementById('firstName').value = params.get('name');
     if (params.get('country')) document.getElementById('country').value = params.get('country');
+    if (params.get('rating')) setRating(parseInt(params.get('rating')));
 
     // ── Star rating ────────────────────────────────────────────
     let rating = 0;
