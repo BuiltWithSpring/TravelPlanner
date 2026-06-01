@@ -738,9 +738,14 @@
     let tripStructure = null;
 
     function pickTripStructure(el) {
+      const isSelected = el.classList.contains('on');
       document.getElementById('tripStructureGrid').querySelectorAll('.mode-card').forEach(c => c.classList.remove('on'));
-      el.classList.add('on');
-      tripStructure = el.dataset.value;
+      if (!isSelected) {
+        el.classList.add('on');
+        tripStructure = el.dataset.value;
+      } else {
+        tripStructure = null; // deselected — back to default flying logic
+      }
     }
 
     function pickPace(el) {
@@ -874,8 +879,8 @@ Validate the teaser day activities against a realistic time budget before finali
 - Day trip (90+ min each way) → counts as the full teaser day. No other activities.
 - Never schedule 3 time-intensive activities (each 3+ hours) on the teaser day regardless of pace.
 
-WEATHER: City-by-city for exact travel dates. Temperature range and conditions. Flag any seasonal highlights or issues.
-VISA: Requirements for Western passport holders. Processing time. Visa-on-arrival availability if applicable.
+WEATHER: City-by-city for exact travel dates. Temperature range in Fahrenheit (°F). Include conditions and flag any seasonal highlights or issues.
+VISA: Never assume or infer the traveler's nationality from their name or any other detail. Provide general visa requirements for the destination country covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time. Always address the traveler directly as "you" — never refer to them by name or in third person.
 
 Return exactly this JSON:
 {"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","dinner":"string — max 20 words"},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
