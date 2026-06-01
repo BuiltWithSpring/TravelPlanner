@@ -100,7 +100,7 @@
     .card-error { border: 1.5px solid #e74c4c !important; border-radius: 12px; padding: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 480px) {
-      .r2, .mode-grid, .pace-wrap { grid-template-columns: 1fr; }
+      .r2, .mode-grid { grid-template-columns: 1fr; }
       .g3 { grid-template-columns: 1fr 1fr; }
       .g5 { grid-template-columns: 1fr 1fr; }
       .irow { flex-wrap: wrap; }
@@ -284,12 +284,12 @@
           <div class="pace-card" onclick="pickPace(this)">
             <span class="pc-icon">🏃</span>
             <div class="pc-title">Full days</div>
-            <div class="pc-sub">Packed schedule, more cities or activities, maximise every day</div>
+            <div class="pc-sub">Packed schedule, maximum activities each day</div>
           </div>
           <div class="pace-card" onclick="pickPace(this)">
             <span class="pc-icon">🌿</span>
             <div class="pc-title">Relaxed days</div>
-            <div class="pc-sub">Slower pace, fewer activities per day, room to breathe and wander</div>
+            <div class="pc-sub">Slower pace, room to breathe and explore</div>
           </div>
         </div>
         <div class="error-msg" id="err-pace">Please select your pace of travel</div>
