@@ -193,13 +193,15 @@
       <div class="r2">
         <div class="fg">
           <label class="fl">Arrival date <span class="req">*</span></label>
-          <input class="inp" type="date" id="arrDate"/>
+          <input class="inp" type="date" id="arrDate" onchange="onArrDateChange()"/>
           <div class="error-msg" id="err-arrDate">Please select your arrival date</div>
+          <div class="error-msg" id="err-arrDate-past" style="display:none;">Arrival date can't be in the past</div>
         </div>
         <div class="fg">
           <label class="fl">Departure date <span class="req">*</span></label>
-          <input class="inp" type="date" id="depDate"/>
+          <input class="inp" type="date" id="depDate" onchange="onDepDateChange()"/>
           <div class="error-msg" id="err-depDate">Please select your departure date</div>
+          <div class="error-msg" id="err-depDate-before" style="display:none;">Departure date must be after arrival date</div>
         </div>
       </div>
 
@@ -683,6 +685,40 @@
       }
     }
 
+    // ── DATE VALIDATION ──────────────────────────────────────────
+    function onArrDateChange() {
+      const arrVal = document.getElementById('arrDate').value;
+      const depInput = document.getElementById('depDate');
+      if (arrVal) depInput.min = arrVal;
+      if (depInput.value && depInput.value <= arrVal) {
+        depInput.value = '';
+        document.getElementById('err-depDate-before').style.display = 'block';
+      } else {
+        document.getElementById('err-depDate-before').style.display = 'none';
+      }
+      document.getElementById('err-arrDate').classList.remove('on');
+      document.getElementById('err-arrDate-past').style.display = 'none';
+    }
+
+    function onDepDateChange() {
+      const arrVal = document.getElementById('arrDate').value;
+      const depVal = document.getElementById('depDate').value;
+      const errBefore = document.getElementById('err-depDate-before');
+      if (arrVal && depVal && depVal <= arrVal) {
+        errBefore.style.display = 'block';
+        document.getElementById('depDate').value = '';
+      } else {
+        errBefore.style.display = 'none';
+      }
+      document.getElementById('err-depDate').classList.remove('on');
+    }
+
+    // Set today as minimum arrival date on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('arrDate').min = today;
+    });
+
     // ── STEP VALIDATION ────────────────────────────────────────
     function validateStep1() {
       clearErrors();
@@ -692,8 +728,13 @@
       if (!document.getElementById('lastName').value.trim()) { showError('err-lastName', 'lastName'); valid = false; }
       if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport', 'arrivalAirport'); valid = false; }
       if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport', 'departureAirport'); valid = false; }
-      if (!document.getElementById('arrDate').value) { showError('err-arrDate', 'arrDate'); valid = false; }
-      if (!document.getElementById('depDate').value) { showError('err-depDate', 'depDate'); valid = false; }
+      const today = new Date().toISOString().split('T')[0];
+      const arrVal = document.getElementById('arrDate').value;
+      const depVal = document.getElementById('depDate').value;
+      if (!arrVal) { showError('err-arrDate', 'arrDate'); valid = false; }
+      else if (arrVal < today) { document.getElementById('err-arrDate-past').style.display = 'block'; valid = false; }
+      if (!depVal) { showError('err-depDate', 'depDate'); valid = false; }
+      else if (arrVal && depVal <= arrVal) { document.getElementById('err-depDate-before').style.display = 'block'; valid = false; }
       if (!currentMode) { showError('err-mode', null); valid = false; }
       if (currentMode === 'know' && tags.length === 0) { showError('err-cities', null); valid = false; }
       if (!document.querySelector('#pg .sc.on')) { showError('err-party', null); valid = false; }
