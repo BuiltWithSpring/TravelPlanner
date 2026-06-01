@@ -1042,49 +1042,81 @@ Extra notes: ${d.extraNotes}`;
       });
     }
 
-    // ── Auto-load preview from URL param if shared link ────────
+    // ── Auto-load preview from URL ─────────────────────────────
     window.addEventListener('load', () => {
+      // Check for short URL: /p/:id
+      const pathMatch = window.location.pathname.match(/^\/p\/([a-z0-9]+)$/);
+      // Check for long URL: ?preview=...
       const params = new URLSearchParams(window.location.search);
       const encoded = params.get('preview');
-      if (encoded) {
+
+      if (pathMatch) {
+        // Fetch preview from KV
+        fetch(`https://bws-travel-proxy.springlam-co.workers.dev/p/${pathMatch[1]}`)
+          .then(r => r.json())
+          .then(preview => {
+            setTimeout(() => loadSharedPreview(preview), 100);
+          })
+          .catch(e => console.warn('Could not load shared preview', e));
+      } else if (encoded) {
+        // Decode from URL param (fallback)
         try {
           const preview = JSON.parse(decodeURIComponent(atob(encoded)));
-          // Small delay to ensure DOM is fully ready
-          setTimeout(() => {
-            // Show step 4
-            go(4);
-            // Hide loading, show content
-            document.getElementById('previewLoading').classList.add('hidden');
-            document.getElementById('previewContent').classList.remove('hidden');
-            // Store and render
-            approvedPreview = preview;
-            formData = {}; // prevent null errors on buy button
-            renderPreview(preview);
-            // Show shared preview banner
-            const banner = document.createElement('div');
-            banner.style.cssText = 'background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#5b21b6;font-weight:600;text-align:center;';
-            banner.textContent = '👀 You\'re viewing a shared trip preview — click below to build your own itinerary!';
-            document.getElementById('previewContent').prepend(banner);
-          }, 100);
+          setTimeout(() => loadSharedPreview(preview), 100);
         } catch(e) { console.warn('Could not decode preview from URL', e); }
       }
     });
 
+    function loadSharedPreview(preview) {
+      go(4);
+      document.getElementById('previewLoading').classList.add('hidden');
+      document.getElementById('previewContent').classList.remove('hidden');
+      approvedPreview = preview;
+      formData = {};
+      renderPreview(preview);
+      const banner = document.createElement('div');
+      banner.style.cssText = 'background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#5b21b6;font-weight:600;text-align:center;';
+      banner.textContent = '👀 You\'re viewing a shared trip preview — click below to build your own itinerary!';
+      document.getElementById('previewContent').prepend(banner);
+    }
+
     function renderPreview(preview) {
       approvedPreview = preview; // store for passing to Stripe on confirmation
 
-      // ── Encode preview into shareable URL ──────────────────
+      // ── Save preview to KV and generate short URL ──────────
       try {
         const jsonStr = JSON.stringify(preview);
+        // Set share buttons with long URL as immediate fallback
         const encoded = btoa(encodeURIComponent(jsonStr));
-        const shareUrl = `${window.location.origin}${window.location.pathname}?preview=${encoded}`;
-        const country = (preview.recommended_cities && preview.recommended_cities[0]) ? preview.recommended_cities[0].city : 'our trip';
+        const longUrl = `${window.location.origin}${window.location.pathname}?preview=${encoded}`;
+        window._previewShareUrl = longUrl;
+
+        // Save to KV via Worker for short branded URL
+        fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preview })
+        })
+        .then(r => r.json())
+        .then(({ id }) => {
+          if (id) {
+            const shortUrl = `${window.location.origin}/p/${id}`;
+            window._previewShareUrl = shortUrl;
+            // Update share buttons with short URL
+            document.getElementById('whatsappShareBtn').href =
+              `https://wa.me/?text=${encodeURIComponent('Check out the trip preview I just generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ ' + shortUrl)}`;
+            document.getElementById('xShareBtn').href =
+              `https://twitter.com/intent/tweet?text=${encodeURIComponent('Just generated an AI travel itinerary preview ✈️ Check it out:')}&url=${encodeURIComponent(shortUrl)}`;
+          }
+        })
+        .catch(() => {}); // silently fall back to long URL
+
+        // Set share buttons immediately with long URL
         document.getElementById('whatsappShareBtn').href =
-          `https://wa.me/?text=${encodeURIComponent('Check out the trip preview I just generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ ' + shareUrl)}`;
+          `https://wa.me/?text=${encodeURIComponent('Check out the trip preview I just generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ ' + longUrl)}`;
         document.getElementById('xShareBtn').href =
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent('Just generated an AI travel itinerary preview ✈️ Check it out:')}&url=${encodeURIComponent(shareUrl)}`;
-        window._previewShareUrl = shareUrl;
-      } catch(e) { console.warn('Could not encode preview URL', e); }
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent('Just generated an AI travel itinerary preview ✈️ Check it out:')}&url=${encodeURIComponent(longUrl)}`;
+      } catch(e) { console.warn('Could not generate share URL', e); }
       document.getElementById('previewLoading').classList.add('hidden');
       document.getElementById('previewOverview').textContent = preview.overview;
 
