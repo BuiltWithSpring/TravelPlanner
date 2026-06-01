@@ -30,7 +30,7 @@
     .fl { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 6px; display: block; }
     .opt { font-weight: 400; color: #9b87d4; font-size: 12px; margin-left: 4px; }
     .req { color: #e74c4c; }
-    .inp { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; background: #f9f7fe; transition: border-color .2s; outline: none; box-sizing: border-box; }
+    .inp { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; background: #f9f7fe; transition: border-color .2s; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
     .inp:focus { border-color: #8b5cf6; background: #fff; }
     textarea.inp { resize: vertical; line-height: 1.5; }
     .hint { font-size: 11px; color: #b3a8d4; margin-top: 4px; }
@@ -106,12 +106,13 @@
       .irow { flex-wrap: wrap; }
       .ilbl { width: 100%; }
       .legend-spacer { display: none; }
-      #card { padding: 1.5rem 1.25rem 1rem; border-radius: 14px; }
+      #card { padding: 1.5rem 1.25rem 1rem; border-radius: 14px; overflow: hidden; }
       #previewCities { grid-template-columns: 1fr !important; }
       .brow { flex-wrap: wrap; gap: 8px; }
       .brow button, .brow a { flex: 1; min-width: 0; font-size: 13px; }
-      input[type="date"] { width: 100%; box-sizing: border-box; }
-      .r2 input[type="date"] { width: 100%; box-sizing: border-box; }
+      input[type="date"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; -webkit-appearance: none; }
+      .r2 { overflow: hidden; }
+      .fg { overflow: hidden; }
     }
     @media (max-width: 900px) and (min-width: 481px) {
       #card { padding: 2rem 1.75rem 1.5rem; }
