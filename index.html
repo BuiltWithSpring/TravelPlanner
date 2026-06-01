@@ -447,15 +447,15 @@
               </div>
               <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
                 <span style="font-size:14px;flex-shrink:0;">☀️</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserAfternoon">Discover the hidden gems of the old quarter and explore local markets with your guide</div>
+                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserAfternoon"></div>
               </div>
               <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
                 <span style="font-size:14px;flex-shrink:0;">🌙</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserEvening">Rooftop dinner at an acclaimed local restaurant with panoramic city views and cocktails</div>
+                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserEvening"></div>
               </div>
               <div style="display:flex;gap:10px;align-items:flex-start;">
                 <span style="font-size:14px;flex-shrink:0;">🍽️</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserDinner"></div>
+                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserRestaurant"></div>
               </div>
             </div>
             <div style="background:#f9f7fe;padding:10px 14px;text-align:center;border-top:1.5px solid #ede9fe;">
@@ -987,8 +987,8 @@ Extra notes: ${d.extraNotes}`;
         const teaserEvening = document.getElementById('teaserEvening');
         if (teaserAfternoon && preview.teaser_day.afternoon) teaserAfternoon.textContent = preview.teaser_day.afternoon;
         if (teaserEvening && preview.teaser_day.evening) teaserEvening.textContent = preview.teaser_day.evening;
-        const teaserDinner = document.getElementById('teaserDinner');
-        if (teaserDinner && preview.teaser_day.restaurant_suggestion) teaserDinner.textContent = preview.teaser_day.restaurant_suggestion;
+        const teaserRestaurant = document.getElementById('teaserRestaurant');
+        if (teaserRestaurant && preview.teaser_day.restaurant_suggestion) teaserRestaurant.textContent = preview.teaser_day.restaurant_suggestion;
       } else if (preview.cities && preview.cities.length > 0) {
         const fallbackCity = preview.cities[0].city;
         document.getElementById('teaserCityLabel').textContent = fallbackCity;
