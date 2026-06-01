@@ -911,7 +911,7 @@ Interests: ${JSON.stringify(d.interests)}
 Must see: ${d.mustSee}
 Extra notes: ${d.extraNotes}`;
 
-    async function generatePreview() {
+    async function generatePreview(retryCount = 0) {
       go(4);
       document.getElementById('previewLoading').classList.remove('hidden');
       document.getElementById('previewContent').classList.add('hidden');
@@ -951,6 +951,12 @@ Extra notes: ${d.extraNotes}`;
         renderPreview(preview);
       } catch (err) {
         console.error('Preview error:', err);
+        // Auto-retry once on failure (handles Cloudflare Worker cold starts)
+        if (retryCount < 1) {
+          console.log('Retrying preview generation...');
+          setTimeout(() => generatePreview(retryCount + 1), 1500);
+          return;
+        }
         document.getElementById('previewLoading').classList.add('hidden');
         document.getElementById('previewError').classList.remove('hidden');
       }
