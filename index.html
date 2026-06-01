@@ -283,7 +283,8 @@
       </div>
 
       <div class="fg">
-        <label class="fl">How are you getting around? <span class="opt">optional</span></label>
+        <label class="fl">Preferred method of transport between cities <span class="opt">optional</span></label>
+        <div class="hint" style="margin-bottom:8px;">Leave blank and AI will recommend the most efficient transport for each leg based on distance and travel time.</div>
         <div class="g3" id="tripStructureGrid">
           <div class="mode-card" onclick="pickTripStructure(this)" data-value="road_trip">
             <span class="mc-icon">🚗</span>
@@ -831,13 +832,15 @@ Calculate total trip days from arrival to departure date.
 - Verify cities suit exact travel dates — flag festivals or seasonal highlights in overview.
 
 STEP 3 — TRIP STRUCTURE
+Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
+
 - road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking.
 - train → cities along logical rail corridor, major train stations only, no car/bus connections.
 - flying → each city fully independent, selected by interest profile not geography.
-- Not provided → default to flying logic.
+- Not provided → evaluate each leg independently. Under 3 hours by train → recommend train over flying. 3–5 hours → recommend whichever is faster door-to-door including airport time. Over 5 hours or no rail connection → flying. Never recommend flying between cities where train is under 3 hours.
 
 STEP 4 — TRAVEL PARTY RULES
-Apply to teaser day activities and dinner:
+Apply to teaser day activities and restaurant suggestion:
 - Couple → romantic, intimate venues only.
 - Family with kids → kid-friendly without exception. No adult-only venues.
 - Family no kids → adult experiences fine.
@@ -845,14 +848,14 @@ Apply to teaser day activities and dinner:
 - Solo → flexible, independent, safe venues.
 
 STEP 5 — INTEREST WEIGHTS
-Apply to teaser day activity and dinner selection:
+Apply to teaser day activity and restaurant selection:
 - 20%+ → feature prominently in teaser day.
 - 11–19% → include if it fits the day naturally.
 - 1–10% → only if nothing higher priority fits.
 - 0% → exclude entirely. Never suggest activity from a 0% interest category.
 
 STEP 6 — BUDGET
-Apply strictly to teaser day dinner and activities:
+Apply strictly to teaser day restaurant and activities:
 - Budget → ~$50–100/day. Street food, casual dining, free attractions.
 - Mid-range → ~$100–250/day. Mid-tier restaurants, paid attractions.
 - Luxury → $250+/day. Fine dining, premium experiences.
@@ -865,9 +868,10 @@ STEP 7 — TEASER DAY RULES
 - Always label the teaser day as "Sample Day in [City]" — never use Day 1, Day 3, or any specific day number.
 - Morning, afternoon, evening must be in the same or adjacent neighborhoods — no zigzagging.
 - Activities must match travel party, interest weights, and budget tier.
-- Dinner must be geographically close to that day's activities.
+- Restaurant suggestion must be geographically close to that day's activities.
+- Pick lunch or dinner based on what suits the day's flow — label clearly as Lunch or Dinner.
 - Every activity: "[Activity name] — [what it is and why it suits this traveler]." Max 20 words. Enticing and specific.
-- Dinner: "[Restaurant name] — [one line why it's special for this traveler]." Max 20 words.
+- Restaurant: "Lunch/Dinner: [Restaurant name] — [one line why it's special for this traveler]." Max 20 words.
 - Never recommend a bar or nightlife venue as morning or afternoon activity.
 - why_recommended for every city: "[City] is [known for] — chosen for your [specific interest or travel style]." Max 25 words. Never generic. Never logistical.
 
@@ -883,7 +887,7 @@ WEATHER: City-by-city for exact travel dates. Temperature range in Fahrenheit (�
 VISA: Never assume or infer the traveler's nationality from their name or any other detail. Provide general visa requirements for the destination country covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time. Always address the traveler directly as "you" — never refer to them by name or in third person.
 
 Return exactly this JSON:
-{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","dinner":"string — max 20 words"},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
+{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","restaurant_suggestion":"string — Lunch/Dinner: Restaurant name — one line why it's special. Max 20 words."},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
 
 TRAVELER PREFERENCES:
 First name: ${d.firstName}
@@ -982,7 +986,7 @@ Extra notes: ${d.extraNotes}`;
         if (teaserAfternoon && preview.teaser_day.afternoon) teaserAfternoon.textContent = preview.teaser_day.afternoon;
         if (teaserEvening && preview.teaser_day.evening) teaserEvening.textContent = preview.teaser_day.evening;
         const teaserDinner = document.getElementById('teaserDinner');
-        if (teaserDinner && preview.teaser_day.dinner) teaserDinner.textContent = preview.teaser_day.dinner;
+        if (teaserDinner && preview.teaser_day.restaurant_suggestion) teaserDinner.textContent = preview.teaser_day.restaurant_suggestion;
       } else if (preview.cities && preview.cities.length > 0) {
         const fallbackCity = preview.cities[0].city;
         document.getElementById('teaserCityLabel').textContent = fallbackCity;
