@@ -404,18 +404,18 @@
 
 <!-- ══ LANDING PAGE ══════════════════════════════════════════ -->
 <div id="landing">
-  <div class="l-badge"><span></span> AI-Powered · Instant Itinerary</div>
+  <div class="l-badge"><span></span> AI-Powered · Up to 14 Nights</div>
 
   <h1 class="l-headline">Your trip,<br/><em>expertly planned.</em></h1>
 
-  <p class="l-sub">Tell us where you're going and what you love. We'll build a personalised day-by-day itinerary — cities, restaurants, transport, and a booking tracker — delivered straight to your inbox.</p>
+  <p class="l-sub">Meet Spring, your personal AI travel agent. Tell us where you're going and what you love — Spring builds a personalised day-by-day itinerary with cities, restaurants, transport, and a booking tracker, delivered straight to your inbox.</p>
 
   <button class="l-cta" onclick="startPlanning()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     Plan my trip — free preview
   </button>
 
-  <p class="l-price-hint">Free city preview · <strong>$29</strong> to unlock your full personalised itinerary</p>
+  <p class="l-price-hint">Free city preview · <strong>$29</strong> full itinerary · trips up to 14 nights</p>
 
   <div class="l-cards">
     <div class="l-feat"><span class="l-feat-icon">📅</span> Day-by-day plan</div>
@@ -543,6 +543,7 @@
           <input class="inp" type="date" id="depDate" onblur="onDepDateChange()"/>
           <div class="error-msg" id="err-depDate">Please select departure date</div>
           <div class="error-msg" id="err-depDate-before" style="display:none;">Must be after arrival date</div>
+          <div class="error-msg" id="err-depDate-toolong" style="display:none;">Spring plans trips up to 14 nights — for longer trips, split by region for best results</div>
         </div>
       </div>
 
@@ -936,8 +937,21 @@
   function onDepDateChange() {
     const arrVal = document.getElementById('arrDate').value;
     const depVal = document.getElementById('depDate').value;
-    if (arrVal && depVal && depVal <= arrVal) { document.getElementById('err-depDate-before').style.display='block'; document.getElementById('depDate').value=''; }
-    else document.getElementById('err-depDate-before').style.display='none';
+    if (arrVal && depVal && depVal <= arrVal) {
+      document.getElementById('err-depDate-before').style.display='block';
+      document.getElementById('depDate').value='';
+    } else {
+      document.getElementById('err-depDate-before').style.display='none';
+    }
+    if (arrVal && depVal && depVal > arrVal) {
+      const nights = Math.round((new Date(depVal) - new Date(arrVal)) / (1000*60*60*24));
+      if (nights > 14) {
+        document.getElementById('err-depDate-toolong').style.display='block';
+        document.getElementById('depDate').value='';
+      } else {
+        document.getElementById('err-depDate-toolong').style.display='none';
+      }
+    }
     document.getElementById('err-depDate').classList.remove('on');
   }
   document.addEventListener('DOMContentLoaded', () => {
@@ -966,6 +980,10 @@
     else if (arr < today) { document.getElementById('err-arrDate-past').style.display='block'; ok=false; }
     if (!dep) { showError('err-depDate','depDate'); ok=false; }
     else if (arr && dep <= arr) { document.getElementById('err-depDate-before').style.display='block'; ok=false; }
+    else if (arr && dep) {
+      const nights = Math.round((new Date(dep) - new Date(arr)) / (1000*60*60*24));
+      if (nights > 14) { document.getElementById('err-depDate-toolong').style.display='block'; ok=false; }
+    }
     if (!currentMode) { showError('err-mode',null); ok=false; }
     if (currentMode==='know' && tags.length===0) { showError('err-cities',null); ok=false; }
     if (!ok) window.scrollTo({top:0,behavior:'smooth'});
