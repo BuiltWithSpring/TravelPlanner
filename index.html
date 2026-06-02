@@ -7,131 +7,444 @@
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src 'self' https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-src https://js.stripe.com https://checkout.stripe.com;"/>
-  <title>BuiltWithSpring · AI-Powered Travel Planner</title>
+  <title>BuiltWithSpring · AI Travel Planner</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/BWSLogo.png"/>
   <link rel="apple-touch-icon" href="/BWSLogo.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
+    :root {
+      --ink: #0f0c1e;
+      --ink2: #3d3660;
+      --muted: #7c72a0;
+      --border: #e4e0f5;
+      --bg: #f7f5ff;
+      --card: #ffffff;
+      --accent: #7c3aed;
+      --accent2: #6d28d9;
+      --accent-light: #ede9fe;
+      --accent-mid: #c4b5fd;
+      --green: #059669;
+      --red: #dc2626;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(124,58,237,.06), 0 8px 32px rgba(124,58,237,.08);
+      --shadow-lg: 0 2px 8px rgba(124,58,237,.08), 0 24px 64px rgba(124,58,237,.12);
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #eeeaf8; font-family: 'Nunito Sans', sans-serif; color: #1a1640; min-height: 100vh; padding: 2rem 1rem 3rem; }
-    #hdr { text-align: center; padding-bottom: 1.5rem; }
-    #tgl { font-size: 13px; color: #6b5fa0; font-weight: 600; margin-top: 6px; }
-    #card { background: #fff; border-radius: 20px; max-width: 860px; margin: 0 auto; padding: 2rem 2.5rem 1.5rem; box-shadow: 0 4px 32px rgba(90,60,180,.09); }
-    @media (min-width: 900px) { #card { padding: 2.5rem 3rem 2rem; } }
-    .pbar { display: flex; gap: 6px; margin-bottom: 1.75rem; }
-    .pseg { height: 5px; border-radius: 99px; flex: 1; background: #e0d9f5; transition: background .3s; }
-    .pseg.on { background: #8b5cf6; }
-    .slbl { font-size: 12px; font-weight: 700; color: #9b87d4; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
-    .stit { font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 800; color: #1a1640; margin: 0 0 4px; }
-    .ssub { font-size: 13px; color: #6b5fa0; margin-bottom: 1.5rem; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 90% 60%, rgba(167,139,250,.07) 0%, transparent 60%);
+    }
+
+    /* ── LANDING ─────────────────────────────────────── */
+    #landing {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.25rem 4rem;
+      text-align: center;
+    }
+    .l-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-light);
+      border: 1px solid var(--accent-mid);
+      color: var(--accent2);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp .5s .1s forwards;
+    }
+    .l-badge span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+    .l-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 1.25rem;
+      max-width: 700px;
+      opacity: 0;
+      animation: fadeUp .6s .2s forwards;
+    }
+    .l-headline em { font-style: normal; color: var(--accent); }
+    .l-sub {
+      font-size: 1.0625rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp .6s .3s forwards;
+    }
+    .l-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 15px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(124,58,237,.35);
+      transition: all .2s;
+      opacity: 0;
+      animation: fadeUp .6s .4s forwards;
+    }
+    .l-cta:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(124,58,237,.4); }
+    .l-cta svg { width: 18px; height: 18px; }
+    .l-price-hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      opacity: 0;
+      animation: fadeUp .6s .5s forwards;
+    }
+    .l-price-hint strong { color: var(--ink2); }
+    .l-cards {
+      display: flex;
+      gap: 10px;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 680px;
+      opacity: 0;
+      animation: fadeUp .7s .55s forwards;
+    }
+    .l-feat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--ink2);
+      font-weight: 500;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .l-feat-icon { font-size: 14px; }
+    .l-social {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 2.5rem;
+      opacity: 0;
+      animation: fadeUp .6s .65s forwards;
+    }
+    .l-avatar-stack { display: flex; }
+    .l-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; font-size: 13px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .l-avatar:first-child { margin-left: 0; }
+    .l-social-text { font-size: 13px; color: var(--muted); }
+    .l-social-text strong { color: var(--ink); }
+
+    /* ── FORM WRAPPER ────────────────────────────────── */
+    #formWrap {
+      display: none;
+      padding: 2rem 1rem 5rem;
+      min-height: 100vh;
+    }
+    #formWrap.on { display: block; }
+
+    /* ── TOPBAR ──────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 620px;
+      margin: 0 auto 1.5rem;
+      padding: 0 0.25rem;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .topbar-brand:hover { color: var(--accent); }
+    .topbar-price {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--accent-light);
+      border: 1px solid var(--accent-mid);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-weight: 500;
+    }
+    .topbar-price strong { color: var(--accent2); }
+
+    /* ── CARD ────────────────────────────────────────── */
+    #card {
+      background: var(--card);
+      border-radius: 20px;
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 2rem 2rem 1.75rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(124,58,237,.08);
+    }
+    @media (min-width: 640px) { #card { padding: 2.5rem 2.5rem 2rem; } }
+
+    /* ── PROGRESS ────────────────────────────────────── */
+    .pbar { display: flex; gap: 5px; margin-bottom: 2rem; }
+    .pseg { height: 3px; border-radius: 99px; flex: 1; background: var(--border); transition: background .4s; }
+    .pseg.on { background: var(--accent); }
+
+    /* ── STEP HEADER ─────────────────────────────────── */
+    .step-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+    .step-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; line-height: 1.2; }
+    .step-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.6; }
+
+    /* ── FORM ELEMENTS ───────────────────────────────── */
     .fg { margin-bottom: 1.25rem; }
-    .fl { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 6px; display: block; }
-    .opt { font-weight: 400; color: #9b87d4; font-size: 12px; margin-left: 4px; }
-    .req { color: #e74c4c; }
-    .inp { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd8f5; border-radius: 10px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; background: #f9f7fe; transition: border-color .2s; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
-    .inp:focus { border-color: #8b5cf6; background: #fff; }
-    textarea.inp { resize: vertical; line-height: 1.5; }
-    .hint { font-size: 11px; color: #b3a8d4; margin-top: 4px; }
-    .hint a { color: #8b5cf6; text-decoration: none; }
-    .hint a:hover { text-decoration: underline; }
+    .fl { font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 6px; display: block; }
+    .opt { font-weight: 400; color: var(--muted); font-size: 12px; }
+    .req { color: var(--red); }
+    .inp {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; color: var(--ink);
+      background: #faf9ff;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
+    textarea.inp { resize: vertical; line-height: 1.6; }
+    .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+    .hint a { color: var(--accent); text-decoration: none; }
     .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-    .chip { padding: 7px 14px; border-radius: 99px; border: 1.5px solid #ddd8f5; font-size: 13px; font-weight: 600; color: #6b5fa0; background: #f9f7fe; cursor: pointer; transition: all .15s; user-select: none; }
-    .chip.on { background: #ede9fe; border-color: #8b5cf6; color: #5b21b6; }
-    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
-    .g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 6px; }
-    .g5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
-    .sc { border: 1.5px solid #ddd8f5; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
-    .sc.on { background: #ede9fe; border-color: #8b5cf6; }
-    .sc .si { font-size: 20px; display: block; margin-bottom: 4px; }
-    .sc .st { font-size: 12px; font-weight: 700; color: #1a1640; line-height: 1.3; }
-    .sc .ss { font-size: 11px; color: #9b87d4; margin-top: 2px; }
-    .sc.on .st { color: #5b21b6; }
-    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
-    .mode-card { border: 1.5px solid #ddd8f5; border-radius: 14px; padding: 18px 14px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
-    .mode-card.on { background: #ede9fe; border-color: #8b5cf6; }
-    .mode-card .mc-icon { font-size: 28px; display: block; margin-bottom: 8px; }
-    .mode-card .mc-title { font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800; color: #1a1640; margin-bottom: 4px; }
-    .mode-card.on .mc-title { color: #5b21b6; }
-    .mode-card .mc-sub { font-size: 11px; color: #9b87d4; line-height: 1.5; }
-    .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1.5px solid #ddd8f5; border-radius: 10px; background: #f9f7fe; min-height: 44px; cursor: text; transition: border-color .2s; }
-    .tag-input-wrap:focus-within { border-color: #8b5cf6; background: #fff; }
-    .tag { display: inline-flex; align-items: center; gap: 5px; background: #ede9fe; border: 1px solid #c4b5fd; color: #5b21b6; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
-    .tag-x { cursor: pointer; font-size: 14px; line-height: 1; color: #8b5cf6; }
-    .tag-x:hover { color: #5b21b6; }
-    .tag-inp { border: none; outline: none; background: transparent; font-family: 'Nunito Sans', sans-serif; font-size: 14px; color: #1a1640; min-width: 120px; flex: 1; padding: 2px 4px; }
-    .ai-confirm { background: #f3f0fc; border: 1.5px solid #c4b5fd; border-radius: 12px; padding: 14px 16px; margin-top: 8px; }
-    .ai-confirm-title { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; color: #5b21b6; margin-bottom: 4px; }
-    .ai-confirm-sub { font-size: 12px; color: #6b5fa0; line-height: 1.5; }
-    .pace-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
-    .pace-card { border: 1.5px solid #ddd8f5; border-radius: 14px; padding: 16px 12px; text-align: center; cursor: pointer; background: #f9f7fe; transition: all .15s; user-select: none; }
-    .pace-card.on { background: #ede9fe; border-color: #8b5cf6; }
-    .pace-card .pc-icon { font-size: 26px; display: block; margin-bottom: 6px; }
-    .pace-card .pc-title { font-size: 13px; font-weight: 700; color: #1a1640; margin-bottom: 3px; }
-    .pace-card.on .pc-title { color: #5b21b6; }
-    .pace-card .pc-sub { font-size: 11px; color: #9b87d4; line-height: 1.4; }
-    .hdiv { border: none; border-top: 1.5px solid #ede9fe; margin: 1.5rem 0; }
-    .brow { display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; gap: 10px; }
-    .bbk { padding: 11px 22px; border-radius: 10px; border: 1.5px solid #ddd8f5; background: transparent; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #6b5fa0; cursor: pointer; }
-    .bbk:hover { background: #f3f0fc; }
-    .bnx { padding: 11px 28px; border-radius: 10px; border: none; background: #8b5cf6; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; margin-left: auto; }
-    .bnx:hover { background: #7c3aed; }
-    .step { display: none; }
-    .step.on { display: block; }
-    .hidden { display: none !important; }
-    .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .ilbl { width: 160px; font-size: 13px; font-weight: 600; color: #1a1640; flex-shrink: 0; }
-    .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 5px; border-radius: 99px; outline: none; cursor: pointer; touch-action: pan-y; background: linear-gradient(to right, #8b5cf6 0%, #8b5cf6 0%, #e0d9f5 0%, #e0d9f5 100%); }
-    .islider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #8b5cf6; }
-    .islider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; }
-    .slider-legend-row { display: flex; margin-bottom: 10px; }
-    .legend-spacer { width: 160px; flex-shrink: 0; margin-right: 10px; }
-    .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: #b3a8d4; font-weight: 600; }
-    .field-error { border-color: #e74c4c !important; background: #fff5f5 !important; }
-    .error-msg { font-size: 11px; color: #e74c4c; margin-top: 4px; display: none; }
+
+    /* ── CHOICE CARDS ────────────────────────────────── */
+    .cc-grid { display: grid; gap: 8px; margin-top: 6px; }
+    .cc-grid.g2 { grid-template-columns: 1fr 1fr; }
+    .cc-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+    .cc-grid.g4 { grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); }
+    .cc-grid.g5 { grid-template-columns: repeat(auto-fit, minmax(90px,1fr)); }
+    .cc {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      background: #faf9ff;
+      transition: all .15s;
+      user-select: none;
+    }
+    .cc:hover { border-color: var(--accent-mid); background: #f5f1ff; }
+    .cc.on { background: var(--accent-light); border-color: var(--accent); }
+    .cc .ci { font-size: 22px; display: block; margin-bottom: 5px; }
+    .cc .ct { font-size: 12px; font-weight: 600; color: var(--ink2); line-height: 1.3; }
+    .cc .cs { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .cc.on .ct { color: var(--accent2); }
+
+    /* ── MODE CARDS (wide) ───────────────────────────── */
+    .mc {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 14px;
+      cursor: pointer;
+      background: #faf9ff;
+      transition: all .15s;
+      user-select: none;
+    }
+    .mc:hover { border-color: var(--accent-mid); }
+    .mc.on { background: var(--accent-light); border-color: var(--accent); }
+    .mc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+    .mc-icon { font-size: 22px; flex-shrink: 0; }
+    .mc-title { font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+    .mc.on .mc-title { color: var(--accent2); }
+    .mc-sub { font-size: 12px; color: var(--muted); line-height: 1.5; padding-left: 32px; }
+
+    /* ── CHIPS ───────────────────────────────────────── */
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+    .chip { padding: 6px 14px; border-radius: 99px; border: 1.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--ink2); background: #faf9ff; cursor: pointer; transition: all .15s; user-select: none; }
+    .chip:hover { border-color: var(--accent-mid); }
+    .chip.on { background: var(--accent-light); border-color: var(--accent); color: var(--accent2); }
+
+    /* ── TAG INPUT ───────────────────────────────────── */
+    .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: #faf9ff; min-height: 46px; cursor: text; transition: border-color .15s, box-shadow .15s; }
+    .tag-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
+    .tag { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-light); border: 1px solid var(--accent-mid); color: var(--accent2); font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .tag-x { cursor: pointer; font-size: 15px; line-height: 1; color: var(--accent); opacity: .7; }
+    .tag-x:hover { opacity: 1; }
+    .tag-inp { border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); min-width: 140px; flex: 1; padding: 2px 4px; }
+
+    /* ── AI BOX ──────────────────────────────────────── */
+    .ai-box { background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 1px solid var(--accent-mid); border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 8px; }
+    .ai-box-title { font-size: 13px; font-weight: 600; color: var(--accent2); margin-bottom: 3px; }
+    .ai-box-sub { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    /* ── SLIDER ──────────────────────────────────────── */
+    .slider-legend { display: flex; margin-bottom: 8px; }
+    .legend-spacer { width: 155px; flex-shrink: 0; margin-right: 10px; }
+    .legend-labels { display: flex; justify-content: space-between; flex: 1; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .irow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .ilbl { width: 155px; font-size: 13px; font-weight: 500; color: var(--ink2); flex-shrink: 0; }
+    .islider { -webkit-appearance: none; appearance: none; flex: 1; height: 4px; border-radius: 99px; outline: none; cursor: pointer; touch-action: pan-y; background: linear-gradient(to right, var(--accent) 0%, var(--accent) 0%, var(--border) 0%); }
+    .islider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--accent), 0 2px 6px rgba(124,58,237,.3); }
+    .islider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; }
+    .hdiv { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+    /* ── BUTTONS ─────────────────────────────────────── */
+    .brow { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; gap: 10px; }
+    .bbk { padding: 11px 20px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all .15s; }
+    .bbk:hover { border-color: var(--accent-mid); color: var(--accent2); background: var(--accent-light); }
+    .bnx { padding: 12px 28px; border-radius: var(--radius-sm); border: none; background: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; margin-left: auto; transition: all .2s; box-shadow: 0 4px 14px rgba(124,58,237,.3); }
+    .bnx:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,.4); }
+
+    /* ── ERRORS ──────────────────────────────────────── */
+    .field-error { border-color: var(--red) !important; }
+    .error-msg { font-size: 11.5px; color: var(--red); margin-top: 4px; display: none; }
     .error-msg.on { display: block; }
-    .card-error { border: 1.5px solid #e74c4c !important; border-radius: 12px; padding: 6px; }
+
+    /* ── STEPS ───────────────────────────────────────── */
+    .step { display: none; }
+    .step.on { display: block; animation: stepIn .3s ease; }
+    .hidden { display: none !important; }
+
+    /* ── PREVIEW / STEP 5 ────────────────────────────── */
+    .prev-section-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .prev-overview { background: linear-gradient(135deg, #f5f3ff, #ede9fe); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 1.25rem; font-size: 13.5px; color: var(--ink2); line-height: 1.7; }
+    .city-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; background: #faf9ff; }
+    .city-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .city-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .city-nights { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-light); padding: 2px 10px; border-radius: 99px; }
+    .city-why { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .info-box { background: #faf9ff; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--ink2); line-height: 1.6; }
+    .teaser-card { border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.25rem; }
+    .teaser-head { background: var(--accent-light); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .teaser-title { font-weight: 700; font-size: 13px; color: var(--accent2); }
+    .teaser-city { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .teaser-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .teaser-row { display: flex; gap: 10px; align-items: flex-start; }
+    .teaser-emoji { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .teaser-text { font-size: 12.5px; color: var(--ink2); line-height: 1.55; }
+    .teaser-foot { background: #faf9ff; padding: 10px 16px; text-align: center; border-top: 1.5px solid var(--border); font-size: 11.5px; font-weight: 600; color: var(--accent); }
+    .incl-row { font-size: 13px; color: var(--ink2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+    .incl-row:last-child { border-bottom: none; }
+    .time-saved { background: var(--accent); border-radius: var(--radius-sm); padding: 18px; text-align: center; margin-bottom: 1.25rem; }
+    .time-saved-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; color: #fff; }
+    .time-saved-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 4px; }
+    .share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .share-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--accent-mid); background: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: var(--accent2); cursor: pointer; text-decoration: none; display: inline-block; transition: all .15s; }
+    .share-btn:hover { background: var(--accent-light); }
+    .prev-actions { display: flex; gap: 8px; margin-left: auto; }
+
+    /* ── LOADING ─────────────────────────────────────── */
+    .loading-wrap { text-align: center; padding: 3rem 0 2rem; }
+    .spinner { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1.25rem; }
+    .loading-msg { font-size: 15px; font-weight: 500; color: var(--ink2); margin-bottom: 6px; transition: opacity .3s; }
+    .loading-hint { font-size: 12.5px; color: var(--muted); }
+
+    /* ── ERROR STATE ─────────────────────────────────── */
+    .error-wrap { text-align: center; padding: 2rem 0; }
+    .error-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .error-title { font-size: 15px; color: var(--red); margin-bottom: 6px; font-weight: 600; }
+    .error-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.6; }
+
+    /* ── SUCCESS ─────────────────────────────────────── */
+    .success-wrap { text-align: center; padding: 2rem 0; }
+    .success-icon { width: 64px; height: 64px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+    .success-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; }
+    .success-box { background: var(--accent-light); border: 1px solid var(--accent-mid); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 13px; color: var(--ink2); text-align: left; margin-bottom: 1rem; line-height: 1.8; }
+    .beta-box { background: #fef9ec; border: 1px solid #fcd34d; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: #78350f; text-align: left; }
+
+    /* ── ANIMATIONS ──────────────────────────────────── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes stepIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
     @media (max-width: 480px) {
-      .r2, .mode-grid { grid-template-columns: 1fr; }
-      .g3 { grid-template-columns: 1fr 1fr; }
-      .g5 { grid-template-columns: 1fr 1fr; }
+      .r2, .cc-grid.g2 { grid-template-columns: 1fr; }
+      .cc-grid.g3 { grid-template-columns: 1fr 1fr; }
+      .cc-grid.g5 { grid-template-columns: 1fr 1fr; }
       .irow { flex-wrap: wrap; }
       .ilbl { width: 100%; }
       .legend-spacer { display: none; }
-      #card { padding: 1.5rem 1.25rem 1rem; border-radius: 14px; overflow: hidden; }
+      #card { padding: 1.5rem 1.25rem 1.25rem; border-radius: 16px; }
       #previewCities { grid-template-columns: 1fr !important; }
-      .brow { flex-wrap: wrap; gap: 8px; }
-      .brow button, .brow a { flex: 1; min-width: 0; font-size: 13px; }
-      input[type="date"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; -webkit-appearance: none; min-height: 44px; padding: 10px 14px !important; }
-      .r2 { overflow: hidden; }
-      .fg { overflow: hidden; }
-    }
-    @media (max-width: 900px) and (min-width: 481px) {
-      #card { padding: 2rem 1.75rem 1.5rem; }
+      .brow { flex-wrap: wrap; }
+      .brow button, .brow a { flex: 1; font-size: 13px; }
+      input[type="date"] { -webkit-appearance: none; min-height: 44px; }
+      .prev-actions { flex-direction: column; width: 100%; }
+      .prev-actions button { width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <div id="hdr">
-    <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
-      <defs>
-        <linearGradient id="lg1" x1="30" y1="20" x2="75" y2="85" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#a78bfa"/>
-          <stop offset="100%" stop-color="#38bdf8"/>
-        </linearGradient>
-      </defs>
-      <rect width="100" height="100" rx="22" fill="#eeeaf8"/>
-      <path d="M50 20C50 20 75 42 75 60C75 73.8 63.8 85 50 85C36.2 85 25 73.8 25 60C25 42 50 20 50 20Z" fill="url(#lg1)"/>
-      <polygon points="50,18 72,30 72,55 50,67 28,55 28,30" fill="none" stroke="#f0a0d0" stroke-width="1.5" opacity="0.7"/>
-      <circle cx="50" cy="56" r="5" fill="rgba(255,255,255,0.5)"/>
-      <circle cx="50" cy="68" r="3" fill="rgba(56,189,248,0.7)"/>
-    </svg>
-    <div id="tgl">BuiltWithSpring · AI-Powered Travel Planner</div>
+<!-- ══ LANDING PAGE ══════════════════════════════════════════ -->
+<div id="landing">
+  <div class="l-badge"><span></span> AI-Powered · Instant Itinerary</div>
+
+  <h1 class="l-headline">Your trip planned in<br/><em>under 60 seconds.</em></h1>
+
+  <p class="l-sub">Tell us where you're going and what you love. We'll build a personalised day-by-day itinerary — cities, restaurants, transport, and a booking tracker — delivered straight to your inbox.</p>
+
+  <button class="l-cta" onclick="startPlanning()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    Plan my trip — free preview
+  </button>
+
+  <p class="l-price-hint">Free city preview · <strong>$29</strong> to unlock your full personalised itinerary</p>
+
+  <div class="l-cards">
+    <div class="l-feat"><span class="l-feat-icon">📅</span> Day-by-day plan</div>
+    <div class="l-feat"><span class="l-feat-icon">🍜</span> Restaurant picks</div>
+    <div class="l-feat"><span class="l-feat-icon">🚆</span> Transport sorted</div>
+    <div class="l-feat"><span class="l-feat-icon">📋</span> Booking tracker</div>
+    <div class="l-feat"><span class="l-feat-icon">🛂</span> Visa &amp; weather</div>
+  </div>
+
+  <div class="l-social">
+    <div class="l-avatar-stack">
+      <div class="l-avatar" style="background:#dbeafe;color:#1e40af;">S</div>
+      <div class="l-avatar" style="background:#dcfce7;color:#166534;">M</div>
+      <div class="l-avatar" style="background:#fce7f3;color:#9d174d;">J</div>
+      <div class="l-avatar" style="background:#fef3c7;color:#92400e;">R</div>
+    </div>
+    <p class="l-social-text"><strong>Beta testers love it</strong> — try it free today</p>
+  </div>
+</div>
+
+<!-- ══ FORM ══════════════════════════════════════════════════ -->
+<div id="formWrap">
+
+  <div class="topbar">
+    <div class="topbar-brand" onclick="backToLanding()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      BuiltWithSpring
+    </div>
+    <div class="topbar-price">Free preview · <strong>$29</strong> full itinerary</div>
   </div>
 
   <div id="card">
@@ -139,194 +452,134 @@
       <div class="pseg on" id="p1"></div>
       <div class="pseg" id="p2"></div>
       <div class="pseg" id="p3"></div>
+      <div class="pseg" id="p4"></div>
     </div>
 
-    <!-- STEP 1 -->
+    <!-- ── STEP 1: You ──────────────────────────────── -->
     <div class="step on" id="step1">
-      <div class="slbl">Step 1 of 3</div>
-      <div class="stit">Your trip basics</div>
-      <div class="ssub">Tell us where you're going and when.</div>
+      <div class="step-eyebrow">Step 1 of 4</div>
+      <div class="step-title">Let's start with you</div>
+      <div class="step-sub">Quick basics so we can send you your itinerary.</div>
 
       <div class="r2">
         <div class="fg">
           <label class="fl">First name <span class="req">*</span></label>
-          <input class="inp" type="text" id="firstName" placeholder="Your first name"/>
+          <input class="inp" type="text" id="firstName" placeholder="First name"/>
           <div class="error-msg" id="err-firstName">Please enter your first name</div>
         </div>
         <div class="fg">
           <label class="fl">Last name <span class="req">*</span></label>
-          <input class="inp" type="text" id="lastName" placeholder="Your last name"/>
+          <input class="inp" type="text" id="lastName" placeholder="Last name"/>
           <div class="error-msg" id="err-lastName">Please enter your last name</div>
         </div>
       </div>
 
       <div class="fg">
-        <label class="fl">Your email <span class="req">*</span></label>
+        <label class="fl">Email <span class="req">*</span></label>
         <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
-        <div class="error-msg" id="err-email">Please enter a valid email address</div>
+        <div class="error-msg" id="err-email">Please enter a valid email</div>
       </div>
 
       <div class="fg">
-        <label class="fl">Country you're visiting <span class="req">*</span></label>
-        <div class="tag-wrap inp" id="countryWrap" style="cursor:text;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 12px;" onclick="document.getElementById('countryInp').focus()">
-          <input type="text" id="countryInp" placeholder="Type a country and press Enter..." style="border:none;outline:none;flex:1;min-width:120px;font-size:14px;background:transparent;font-family:inherit;" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()"/>
+        <label class="fl">Where are you headed? <span class="req">*</span></label>
+        <div class="tag-wrap" id="countryWrap" onclick="document.getElementById('countryInp').focus()">
+          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()"/>
         </div>
         <div class="hint">One country per itinerary — press Enter to confirm.</div>
         <div class="error-msg" id="err-country">Please enter a country</div>
-        <div class="error-msg" id="err-country-max" style="display:none;">Only one country per itinerary — remove the current one first to change it.</div>
+        <div class="error-msg" id="err-country-max" style="display:none;">One country only — remove it first to change.</div>
       </div>
+
+      <div class="fg">
+        <label class="fl">Who's travelling? <span class="req">*</span></label>
+        <div class="cc-grid g5" id="pg">
+          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
+          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
+          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">🎉</span><div class="ct">Friends</div></div>
+          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family + kids</div></div>
+          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👦‍👦</span><div class="ct">Family</div></div>
+        </div>
+        <div class="error-msg" id="err-party">Please select your travel party</div>
+      </div>
+
+      <div class="fg hidden" id="gsw">
+        <label class="fl">How many people?</label>
+        <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="Number of people"/>
+      </div>
+
+      <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
+    </div>
+
+    <!-- ── STEP 2: The Trip ─────────────────────────── -->
+    <div class="step" id="step2">
+      <div class="step-eyebrow">Step 2 of 4</div>
+      <div class="step-title">Your trip details</div>
+      <div class="step-sub">Airports, dates, and how you want to plan your cities.</div>
 
       <div class="r2">
         <div class="fg">
           <label class="fl">Arrival airport <span class="req">*</span></label>
-          <input class="inp" type="text" id="arrivalAirport" placeholder="e.g. LHR, Tokyo Narita, JFK"/>
-          <div class="hint">Airport code or name. <a href="https://www.iata.org/en/publications/directories/code-search/" target="_blank">Look up your code →</a></div>
+          <input class="inp" type="text" id="arrivalAirport" placeholder="e.g. LHR, Tokyo Narita"/>
+          <div class="hint"><a href="https://www.iata.org/en/publications/directories/code-search/" target="_blank">Look up airport code →</a></div>
           <div class="error-msg" id="err-arrivalAirport">Please enter your arrival airport</div>
         </div>
         <div class="fg">
           <label class="fl">Departure airport <span class="req">*</span></label>
-          <input class="inp" type="text" id="departureAirport" placeholder="e.g. FCO, Osaka Kansai, LAX"/>
-          <div class="hint">Can be same as arrival airport.</div>
+          <input class="inp" type="text" id="departureAirport" placeholder="e.g. FCO, Osaka KIX"/>
+          <div class="hint">Can be same as arrival.</div>
           <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
         </div>
       </div>
 
       <div class="r2">
         <div class="fg">
-          <label class="fl">Arrival date <span class="req">*</span></label>
+          <label class="fl">When do you land? <span class="req">*</span></label>
           <input class="inp" type="date" id="arrDate" onblur="onArrDateChange()"/>
-          <div class="error-msg" id="err-arrDate">Please select your arrival date</div>
-          <div class="error-msg" id="err-arrDate-past" style="display:none;">Arrival date can't be in the past</div>
+          <div class="error-msg" id="err-arrDate">Please select arrival date</div>
+          <div class="error-msg" id="err-arrDate-past" style="display:none;">Date can't be in the past</div>
         </div>
         <div class="fg">
-          <label class="fl">Departure date <span class="req">*</span></label>
+          <label class="fl">When do you fly home? <span class="req">*</span></label>
           <input class="inp" type="date" id="depDate" onblur="onDepDateChange()"/>
-          <div class="error-msg" id="err-depDate">Please select your departure date</div>
-          <div class="error-msg" id="err-depDate-before" style="display:none;">Departure date must be after arrival date</div>
+          <div class="error-msg" id="err-depDate">Please select departure date</div>
+          <div class="error-msg" id="err-depDate-before" style="display:none;">Must be after arrival date</div>
         </div>
       </div>
 
       <div class="fg">
         <label class="fl">How would you like to plan your cities? <span class="req">*</span></label>
-        <div class="mode-grid">
-          <div class="mode-card" id="modeKnow" onclick="setMode('know')">
-            <span class="mc-icon">🗺️</span>
-            <div class="mc-title">I have my cities picked — build my day-by-day plan</div>
-            <div class="mc-sub">Tell us your cities and we'll handle the rest</div>
+        <div class="cc-grid g2" style="margin-top:6px;">
+          <div class="mc" id="modeKnow" onclick="setMode('know')">
+            <div class="mc-top"><span class="mc-icon">🗺️</span><span class="mc-title">I know my cities — build the plan</span></div>
+            <div class="mc-sub">Tell us your cities and we'll handle everything else</div>
           </div>
-          <div class="mode-card" id="modeAI" onclick="setMode('ai')">
-            <span class="mc-icon">✨</span>
-            <div class="mc-title">Pick my cities and plan everything</div>
-            <div class="mc-sub">I'll answer a few questions and AI picks the best cities and route</div>
+          <div class="mc" id="modeAI" onclick="setMode('ai')">
+            <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">Pick my cities and plan everything</span></div>
+            <div class="mc-sub">AI selects the best cities based on your interests</div>
           </div>
         </div>
-        <div class="error-msg" id="err-mode">Please select how you want to plan your cities</div>
+        <div class="error-msg" id="err-mode">Please select how you want to plan</div>
       </div>
 
       <div class="fg hidden" id="cityKnowBlock">
-        <label class="fl">Cities you plan to visit <span class="req">*</span></label>
-        <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
-          <input class="tag-inp" id="tagInp" placeholder="Type a city and press Enter or comma..."/>
+        <label class="fl">Cities to visit <span class="req">*</span></label>
+        <div class="tag-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
+          <input class="tag-inp" id="tagInp" placeholder="Type a city and press Enter or comma…"/>
         </div>
-        <div class="hint">Press Enter or comma after each city to add it as a tag</div>
+        <div class="hint">Press Enter after each city</div>
       </div>
 
       <div class="fg hidden" id="cityAIBlock">
-        <div class="ai-confirm">
-          <div class="ai-confirm-title">✨ AI will recommend your cities</div>
-          <div class="ai-confirm-sub">Based on your preferences, interests, and travel dates — AI will select and order the best cities for your trip.</div>
+        <div class="ai-box">
+          <div class="ai-box-title">✨ AI will recommend your cities</div>
+          <div class="ai-box-sub">Based on your interests, travel dates, and budget — AI picks and orders the best cities for your trip.</div>
         </div>
-        <div class="fg" style="margin-top:12px; margin-bottom:0;">
-          <label class="fl">Any cities you definitely want to include? <br/><span class="opt">optional · max 3</span></label>
-          <div class="tag-input-wrap" id="anchorWrap" onclick="document.getElementById('anchorInp').focus()">
-            <input class="tag-inp" id="anchorInp" placeholder="Type an anchor city and press Enter..."/>
+        <div class="fg" style="margin-top:12px;margin-bottom:0;">
+          <label class="fl">Any must-include cities? <span class="opt">optional · max 3</span></label>
+          <div class="tag-wrap" id="anchorWrap" onclick="document.getElementById('anchorInp').focus()">
+            <input class="tag-inp" id="anchorInp" placeholder="Type a city and press Enter…"/>
           </div>
-          <div class="hint">Add up to 3 cities and AI will build the rest around them. Or leave blank and AI decides everything.</div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Travel party <span class="req">*</span></label>
-        <div class="g5" id="pg">
-          <div class="sc" onclick="pick('pg',this,true)"><span class="si">🧍</span><div class="st">Solo</div></div>
-          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👫</span><div class="st">Couple</div></div>
-          <div class="sc" onclick="pick('pg',this,true)"><span class="si">🎉</span><div class="st">Friends group</div></div>
-          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👧</span><div class="st">Family with kids</div></div>
-          <div class="sc" onclick="pick('pg',this,true)"><span class="si">👨‍👩‍👦‍👦</span><div class="st">Family no kids</div></div>
-        </div>
-        <div class="error-msg" id="err-party">Please select your travel party</div>
-      </div>
-
-      <div class="fg hidden" id="gsw">
-        <label class="fl">Number of people</label>
-        <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="How many people?"/>
-      </div>
-
-      <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
-    </div>
-
-    <!-- STEP 2 -->
-    <div class="step" id="step2">
-      <div class="slbl">Step 2 of 3</div>
-      <div class="stit">Your travel style</div>
-      <div class="ssub">Help us tailor your perfect itinerary. <span class="opt">All optional</span></div>
-
-      <div class="fg">
-        <label class="fl">Daily pace <span class="req">*</span></label>
-        <div class="pace-wrap" id="paceGrid">
-          <div class="pace-card" onclick="pickPace(this)">
-            <span class="pc-icon">🏃</span>
-            <div class="pc-title">Full days</div>
-            <div class="pc-sub">Packed schedule, maximum activities each day</div>
-          </div>
-          <div class="pace-card" onclick="pickPace(this)">
-            <span class="pc-icon">🌿</span>
-            <div class="pc-title">Relaxed days</div>
-            <div class="pc-sub">Slower pace, room to breathe and explore</div>
-          </div>
-        </div>
-        <div class="error-msg" id="err-pace">Please select your pace of travel</div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Preferred method of transport between cities <span class="opt">optional</span></label>
-        <div class="hint" style="margin-bottom:8px;">Leave blank and AI will recommend the most efficient transport for each leg based on distance and travel time.</div>
-        <div class="g3" id="tripStructureGrid">
-          <div class="mode-card" onclick="pickTripStructure(this)" data-value="road_trip">
-            <span class="mc-icon">🚗</span>
-            <div class="mc-title">Road trip</div>
-            <div class="mc-sub">I'll drive between cities and stop along the way</div>
-          </div>
-          <div class="mode-card" onclick="pickTripStructure(this)" data-value="train">
-            <span class="mc-icon">🚆</span>
-            <div class="mc-title">Train travel</div>
-            <div class="mc-sub">I'll take trains between cities along a rail corridor</div>
-          </div>
-          <div class="mode-card" onclick="pickTripStructure(this)" data-value="flying">
-            <span class="mc-icon">✈️</span>
-            <div class="mc-title">Flying between cities</div>
-            <div class="mc-sub">I'll fly and explore each city and its surrounds</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Budget tier <span class="req">*</span></label>
-        <div class="g3" id="bg">
-          <div class="sc" onclick="pick('bg',this)"><span class="si">🎒</span><div class="st">Budget</div><div class="ss">~$50–100/day</div></div>
-          <div class="sc" onclick="pick('bg',this)"><span class="si">🧳</span><div class="st">Mid-range</div><div class="ss">~$100–250/day</div></div>
-          <div class="sc" onclick="pick('bg',this)"><span class="si">💼</span><div class="st">Luxury</div><div class="ss">$250+/day</div></div>
-        </div>
-        <div class="error-msg" id="err-budget">Please select your budget tier</div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Accommodation style <span class="opt">optional · pick all that apply</span></label>
-        <div class="g4" id="accom">
-          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏨</span><div class="st">Hotel</div></div>
-          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏡</span><div class="st">Airbnb / Rental</div></div>
-          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🛏️</span><div class="st">Hostel</div></div>
-          <div class="sc" onclick="this.classList.toggle('on')"><span class="si">🏕️</span><div class="st">Glamping / Unique</div></div>
+          <div class="hint">AI builds around these, or leave blank and it decides everything.</div>
         </div>
       </div>
 
@@ -336,520 +589,497 @@
       </div>
     </div>
 
-    <!-- STEP 3 -->
+    <!-- ── STEP 3: Style ────────────────────────────── -->
     <div class="step" id="step3">
-      <div class="slbl">Step 3 of 3</div>
-      <div class="stit">Final details</div>
-      <div class="ssub">The more you share, the better your itinerary. <span class="opt">All optional</span></div>
+      <div class="step-eyebrow">Step 3 of 4</div>
+      <div class="step-title">How do you travel?</div>
+      <div class="step-sub">We'll tailor your itinerary to match your style.</div>
 
       <div class="fg">
-        <label class="fl">Your interest mix <span class="req">*</span> <span class="opt">— set at least one above zero</span></label>
-        <div class="slider-legend-row">
-          <div class="legend-spacer"></div>
-          <div class="legend-labels">
-            <span>Not a priority</span>
-            <span>High priority</span>
+        <label class="fl">Your pace <span class="req">*</span></label>
+        <div class="cc-grid g2">
+          <div class="mc" onclick="pickPace(this)">
+            <div class="mc-top"><span class="mc-icon">🏃</span><span class="mc-title">Pack it in</span></div>
+            <div class="mc-sub">Maximise every day — lots of activities and sights</div>
+          </div>
+          <div class="mc" id="paceGrid" onclick="pickPace(this)">
+            <div class="mc-top"><span class="mc-icon">🌿</span><span class="mc-title">Take it slow</span></div>
+            <div class="mc-sub">Relaxed pace with room to wander and breathe</div>
           </div>
         </div>
-        <div id="sliders">
-          <div class="irow"><span class="ilbl">🏛️ History & heritage</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🍜 Food & drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🌿 Nature & outdoors</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎉 Nightlife & bars</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎭 Culture & museums</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🧘 Wellness & spa</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎢 Adventure & fun</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+        <div class="error-msg" id="err-pace">Please select your pace</div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Budget <span class="req">*</span></label>
+        <div class="cc-grid g3" id="bg">
+          <div class="cc" onclick="pick('bg',this)"><span class="ci">🎒</span><div class="ct">Budget</div><div class="cs">~$50–100/day</div></div>
+          <div class="cc" onclick="pick('bg',this)"><span class="ci">🧳</span><div class="ct">Mid-range</div><div class="cs">~$100–250/day</div></div>
+          <div class="cc" onclick="pick('bg',this)"><span class="ci">💼</span><div class="ct">Luxury</div><div class="cs">$250+/day</div></div>
         </div>
-        <div class="error-msg" id="err-interests">Please set at least one interest slider above zero</div>
+        <div class="error-msg" id="err-budget">Please select your budget</div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Transport between cities <span class="opt">optional — AI recommends if blank</span></label>
+        <div class="cc-grid g3" id="tripStructureGrid">
+          <div class="mc" onclick="pickTripStructure(this)" data-value="road_trip">
+            <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Road trip</span></div>
+            <div class="mc-sub">Drive between cities and stop along the way</div>
+          </div>
+          <div class="mc" onclick="pickTripStructure(this)" data-value="train">
+            <div class="mc-top"><span class="mc-icon">🚆</span><span class="mc-title">Train</span></div>
+            <div class="mc-sub">Rail corridors between cities</div>
+          </div>
+          <div class="mc" onclick="pickTripStructure(this)" data-value="flying">
+            <div class="mc-top"><span class="mc-icon">✈️</span><span class="mc-title">Fly</span></div>
+            <div class="mc-sub">Fly and explore each city independently</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Accommodation <span class="opt">optional · pick all that apply</span></label>
+        <div class="cc-grid g4" id="accom">
+          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
+          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏡</span><div class="ct">Airbnb</div></div>
+          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
+          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏕️</span><div class="ct">Unique</div></div>
+        </div>
+      </div>
+
+      <div class="brow">
+        <button class="bbk" onclick="go(2)">← Back</button>
+        <button class="bnx" onclick="goStep(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Interests ────────────────────────── -->
+    <div class="step" id="step4">
+      <div class="step-eyebrow">Step 4 of 4</div>
+      <div class="step-title">What do you love?</div>
+      <div class="step-sub">Set at least one — this shapes everything. <span class="opt">The more specific, the better.</span></div>
+
+      <div class="fg">
+        <div class="slider-legend">
+          <div class="legend-spacer"></div>
+          <div class="legend-labels"><span>Not a priority</span><span>High priority</span></div>
+        </div>
+        <div id="sliders">
+          <div class="irow"><span class="ilbl">🏛️ History &amp; heritage</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🍜 Food &amp; drink</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🌿 Nature &amp; outdoors</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife &amp; bars</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎭 Culture &amp; museums</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness &amp; spa</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🎢 Adventure &amp; fun</span><input type="range" class="islider" min="0" max="10" step="1" value="0" oninput="updSlider(this)"/></div>
+        </div>
+        <div class="error-msg" id="err-interests">Please set at least one interest above zero</div>
       </div>
 
       <hr class="hdiv"/>
 
       <div class="fg">
-        <label class="fl">Cuisine preferences <span class="opt">optional · pick all that apply</span></label>
+        <label class="fl">Cuisine preferences <span class="opt">optional</span></label>
         <div class="chips">
-          <div class="chip" onclick="this.classList.toggle('on')">Local & traditional</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Local &amp; traditional</div>
           <div class="chip" onclick="this.classList.toggle('on')">Street food</div>
           <div class="chip" onclick="this.classList.toggle('on')">Fine dining</div>
           <div class="chip" onclick="this.classList.toggle('on')">Seafood</div>
           <div class="chip" onclick="this.classList.toggle('on')">Vegetarian-friendly</div>
           <div class="chip" onclick="this.classList.toggle('on')">Plant-based</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Fusion & modern</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Markets & food halls</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Fusion &amp; modern</div>
+          <div class="chip" onclick="this.classList.toggle('on')">Markets &amp; food halls</div>
         </div>
       </div>
 
       <div class="fg">
-        <label class="fl">Must-see destinations or experiences <span class="opt">optional</span></label>
-        <textarea class="inp" rows="3" id="mustSee" placeholder="Any must-see spots, pre-booked tours, or specific experiences? e.g. I already have Colosseum tickets on Oct 3 · I want to see the Northern Lights · Skip tourist traps"></textarea>
+        <label class="fl">Must-see spots <span class="opt">optional</span></label>
+        <textarea class="inp" rows="2" id="mustSee" placeholder="Pre-booked tours, specific experiences, places you've always wanted to go…"></textarea>
       </div>
 
       <div class="fg">
-        <label class="fl">Anything else we should know <span class="opt">optional</span></label>
-        <textarea class="inp" rows="2" id="extraNotes" placeholder="Arrival and departure times, special occasions, dietary needs, mobility considerations, or anything else. e.g. Landing at 10pm on arrival day · Anniversary trip · Vegetarian · Early morning flights"></textarea>
+        <label class="fl">Anything else? <span class="opt">optional</span></label>
+        <textarea class="inp" rows="2" id="extraNotes" placeholder="Arrival/departure times, dietary needs, anniversary trip, mobility considerations…"></textarea>
       </div>
 
       <div class="brow">
-        <button class="bbk" onclick="go(2)">← Back</button>
-        <button class="bnx" onclick="submitForm()">✨ Generate my itinerary</button>
+        <button class="bbk" onclick="go(3)">← Back</button>
+        <button class="bnx" onclick="submitForm()">✨ Generate my preview</button>
       </div>
     </div>
 
-    <!-- STEP 4 — PREVIEW / CONFIRMATION -->
-    <div class="step" id="step4">
-      <div class="slbl">Almost there</div>
-      <div class="stit">Your trip preview</div>
-      <div class="ssub">Review your cities and key info before we build your full itinerary.</div>
+    <!-- ── STEP 5: Preview ──────────────────────────── -->
+    <div class="step" id="step5">
+      <div class="step-eyebrow">Almost there</div>
+      <div class="step-title">Your trip preview</div>
+      <div class="step-sub">Review your cities before we build your full itinerary.</div>
 
-      <!-- Loading state -->
-      <div id="previewLoading" style="text-align:center;padding:2.5rem 0;">
-        <div style="width:44px;height:44px;border:3px solid #e0d9f5;border-top-color:#8b5cf6;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.25rem;"></div>
-        <div id="loadingMsg" style="font-size:14px;color:#6b5fa0;font-weight:600;margin-bottom:6px;transition:opacity 0.3s;">AI is planning your cities...</div>
-        <div style="font-size:12px;color:#b3a8d4;">This takes about 10–20 seconds — hang tight ✨</div>
+      <!-- Loading -->
+      <div id="previewLoading" class="loading-wrap">
+        <div class="spinner"></div>
+        <div class="loading-msg" id="loadingMsg">AI is planning your cities…</div>
+        <div class="loading-hint">This takes about 10–20 seconds — hang tight ✨</div>
       </div>
 
-      <!-- Preview content -->
+      <!-- Content -->
       <div id="previewContent" class="hidden">
+        <div class="prev-section-label">Trip overview</div>
+        <div class="prev-overview" id="previewOverview"></div>
 
-        <div style="background:#f3f0fc;border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Trip overview</div>
-          <div id="previewOverview" style="font-size:13px;color:#1a1640;line-height:1.6;"></div>
-        </div>
+        <div class="prev-section-label">🗺️ Your cities</div>
+        <div id="previewCities" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem;"></div>
 
-        <div class="fg">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🗺️ Your cities</div>
-          <div id="previewCities" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
-        </div>
+        <div class="prev-section-label">🌤️ Weather</div>
+        <div class="info-box" id="previewWeather" style="margin-bottom:1.25rem;"></div>
 
-        <div class="fg">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🌤️ Weather during your trip</div>
-          <div id="previewWeather" style="font-size:13px;color:#1a1640;line-height:1.6;background:#f9f7fe;border-radius:10px;padding:12px 14px;"></div>
-        </div>
-
-        <div class="fg">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🛂 Visa requirements</div>
-          <div id="previewVisa" style="font-size:13px;color:#1a1640;line-height:1.6;background:#f9f7fe;border-radius:10px;padding:12px 14px;"></div>
-        </div>
+        <div class="prev-section-label">🛂 Visa</div>
+        <div class="info-box" id="previewVisa" style="margin-bottom:1.25rem;"></div>
 
         <hr class="hdiv"/>
 
-        <div class="fg">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">📅 A taste of your itinerary</div>
-          <div style="border:1.5px solid #ddd8f5;border-radius:12px;overflow:hidden;">
-            <div style="background:#ede9fe;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;color:#5b21b6;" id="teaserDayLabel">A highlight day</span>
-              <span style="font-size:11px;color:#8b5cf6;font-weight:700;" id="teaserCityLabel"></span>
-            </div>
-            <div style="padding:12px 14px;">
-              <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-                <span style="font-size:14px;flex-shrink:0;">🌅</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserMorning"></div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-                <span style="font-size:14px;flex-shrink:0;">☀️</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserAfternoon"></div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-                <span style="font-size:14px;flex-shrink:0;">🌙</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserEvening"></div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:flex-start;">
-                <span style="font-size:14px;flex-shrink:0;">🍽️</span>
-                <div style="font-size:12px;color:#1a1640;line-height:1.5;" id="teaserRestaurant"></div>
-              </div>
-            </div>
-            <div style="background:#f9f7fe;padding:10px 14px;text-align:center;border-top:1.5px solid #ede9fe;">
-              <span style="font-size:11px;color:#8b5cf6;font-weight:700;" id="teaserCTA">🔒 Your other days are waiting</span>
-            </div>
+        <div class="prev-section-label">📅 A taste of your itinerary</div>
+        <div class="teaser-card">
+          <div class="teaser-head">
+            <span class="teaser-title" id="teaserDayLabel">A highlight day</span>
+            <span class="teaser-city" id="teaserCityLabel"></span>
           </div>
+          <div class="teaser-body">
+            <div class="teaser-row"><span class="teaser-emoji">🌅</span><div class="teaser-text" id="teaserMorning"></div></div>
+            <div class="teaser-row"><span class="teaser-emoji">☀️</span><div class="teaser-text" id="teaserAfternoon"></div></div>
+            <div class="teaser-row"><span class="teaser-emoji">🌙</span><div class="teaser-text" id="teaserEvening"></div></div>
+            <div class="teaser-row"><span class="teaser-emoji">🍽️</span><div class="teaser-text" id="teaserRestaurant"></div></div>
+          </div>
+          <div class="teaser-foot" id="teaserCTA">🔒 Your other days are waiting</div>
         </div>
 
-        <div class="fg">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">📋 Your full itinerary includes</div>
-          <div style="background:#f9f7fe;border:1.5px solid #ddd8f5;border-radius:12px;padding:14px 16px;" id="inclusionsList"></div>
+        <div class="prev-section-label">📋 What's included</div>
+        <div class="info-box" style="margin-bottom:1.25rem;" id="inclusionsList"></div>
+
+        <div class="time-saved">
+          <div class="time-saved-num" id="timeSaved"></div>
+          <div class="time-saved-sub">saved vs planning this yourself</div>
         </div>
 
-        <div style="background:linear-gradient(135deg,#ede9fe,#dbeafe);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;text-align:center;">
-          <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:36px;color:#5b21b6;" id="timeSaved"></div>
-          <div style="font-size:12px;color:#6b5fa0;margin-top:4px;">saved vs planning this manually</div>
-        </div>
-
-        <div style="background:#f9f7fe;border:1.5px solid #ddd8f5;border-radius:12px;padding:14px 16px;margin-bottom:1.25rem;">
-          <div style="font-size:12px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🔗 Share this preview with your travel crew</div>
-          <div style="font-size:12px;color:#6b5fa0;margin-bottom:10px;">Send your friends this exact preview — they'll see your cities and sample day before you buy.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="copyPreviewLink()" id="copyLinkBtn" style="padding:8px 14px;border-radius:8px;border:1.5px solid #c4b5fd;background:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#5b21b6;cursor:pointer;">📋 Copy link</button>
-            <a id="whatsappShareBtn" href="#" target="_blank" style="padding:8px 14px;border-radius:8px;border:1.5px solid #c4b5fd;background:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#5b21b6;cursor:pointer;text-decoration:none;">💬 Share on WhatsApp</a>
-            <a id="xShareBtn" href="#" target="_blank" style="padding:8px 14px;border-radius:8px;border:1.5px solid #c4b5fd;background:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:#5b21b6;cursor:pointer;text-decoration:none;">𝕏 Share on X</a>
+        <div class="info-box" style="margin-bottom:1.25rem;">
+          <div class="prev-section-label" style="margin-bottom:8px;">🔗 Share with your travel crew</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">Send this preview to your friends before you buy.</div>
+          <div class="share-row">
+            <button class="share-btn" onclick="copyPreviewLink()" id="copyLinkBtn">📋 Copy link</button>
+            <a class="share-btn" id="whatsappShareBtn" href="#" target="_blank">💬 WhatsApp</a>
+            <a class="share-btn" id="xShareBtn" href="#" target="_blank">𝕏 Share</a>
           </div>
         </div>
 
         <div class="fg">
           <label class="fl">Want to change something? <span class="opt">optional</span></label>
-          <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. I'd prefer Rome instead of Milan · Add more days in Tokyo · Remove the beach city..."></textarea>
+          <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. Swap Milan for Rome · More days in Tokyo · Remove the beach city…"></textarea>
         </div>
 
         <div class="brow">
-          <button class="bbk" onclick="go(3)">← Back</button>
-          <div style="display:flex;gap:8px;margin-left:auto;">
-            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="background:#f3f0fc;border-color:#c4b5fd;color:#5b21b6;">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()" style="background:#7c3aed;white-space:nowrap;">Get Itinerary — $29</button>
+          <button class="bbk" onclick="go(4)">← Back</button>
+          <div class="prev-actions">
+            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);">↺ Regenerate</button>
+            <button class="bnx" onclick="confirmAndGenerate()">Get Itinerary — $29</button>
           </div>
         </div>
       </div>
 
-      <!-- Error state -->
-      <div id="previewError" class="hidden" style="text-align:center;padding:1.5rem 0;">
-        <div style="font-size:13px;color:#e74c4c;margin-bottom:6px;">Something went wrong generating your preview.</div>
-        <div style="font-size:12px;color:#9b87d4;margin-bottom:1rem;">This can happen on slower connections — it usually works on the second attempt.</div>
-        <button class="bnx" onclick="generatePreview()">Try again</button>
+      <!-- Error -->
+      <div id="previewError" class="error-wrap hidden">
+        <div class="error-icon">⚡</div>
+        <div class="error-title">Something went wrong</div>
+        <div class="error-sub">This can happen on slower connections — it usually works on the second attempt.</div>
+        <button class="bnx" onclick="generatePreview()" style="margin:0 auto;display:block;">Try again</button>
       </div>
-
     </div>
 
-    <!-- STEP 5 — SUCCESS -->
-    <div class="step" id="step5">
-      <div style="text-align:center;padding:2rem 0;">
-        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="display:block;margin:0 auto 1.25rem">
-          <defs>
-            <linearGradient id="lg2" x1="12" y1="6" x2="54" y2="62" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#a78bfa"/>
-              <stop offset="100%" stop-color="#38bdf8"/>
-            </linearGradient>
-          </defs>
-          <path d="M32 6C32 6 54 26 54 40C54 52.15 44.15 62 32 62C19.85 62 10 52.15 10 40C10 26 32 6 32 6Z" fill="url(#lg2)"/>
-          <path d="M22 40L29 47L43 33" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div style="font-family:'Nunito',sans-serif;font-size:24px;font-weight:800;color:#1a1640;margin:0 0 8px;">You're all set!</div>
-        <p style="color:#6b5fa0;font-size:14px;margin:0 0 1.5rem;line-height:1.6;">Your personalized itinerary is being generated.<br/>Check your email — your Google Sheet will be ready shortly.</p>
-        <div style="background:#f3f0fc;border-radius:12px;padding:14px 18px;font-size:13px;color:#5b21b6;font-weight:600;display:inline-block;text-align:left;margin-bottom:1rem;">
+    <!-- ── STEP 6: Success ──────────────────────────── -->
+    <div class="step" id="step6">
+      <div class="success-wrap">
+        <div class="success-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div class="success-title">You're all set!</div>
+        <p class="success-sub">Your personalised itinerary is being generated.<br/>Check your email — your Google Sheet will arrive shortly.</p>
+        <div class="success-box">
           Your itinerary includes:<br/>
-          <span style="font-weight:400;color:#6b5fa0;line-height:2.2;">📅 Day-by-day plan &nbsp;·&nbsp; 🏨 Accommodations &nbsp;·&nbsp; 🚆 Transport<br/>🍜 Restaurants &nbsp;·&nbsp; 🗺️ City activity guide &nbsp;·&nbsp; 📋 Booking tracker</span>
+          <span style="font-weight:400;color:var(--muted);">📅 Day-by-day plan · 🏨 Accommodation · 🚆 Transport<br/>🍜 Restaurants · 🗺️ City guide · 📋 Booking tracker</span>
         </div>
-        <div style="background:#fef3c7;border-radius:12px;padding:12px 16px;font-size:12px;color:#92400e;text-align:left;">
-          🎉 <strong>Beta friends get it free!</strong> Use code <strong>BWSBETA</strong> at checkout to apply your 100% discount.
-        </div>
+        <div class="beta-box">🎉 <strong>Beta friends get it free!</strong> Use code <strong>BWSBETA</strong> at checkout for 100% off.</div>
       </div>
     </div>
 
-  </div>
+  </div><!-- /card -->
+</div><!-- /formWrap -->
 
-  <script>
-    // ── MODE SELECTOR ──────────────────────────────────────────
-    let currentMode = null;
+<script>
+  // ── LANDING / FORM TOGGLE ──────────────────────────
+  function startPlanning() {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('formWrap').classList.add('on');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function backToLanding() {
+    document.getElementById('formWrap').classList.remove('on');
+    document.getElementById('landing').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
-    function setMode(mode) {
-      currentMode = mode;
-      document.getElementById('modeKnow').classList.toggle('on', mode === 'know');
-      document.getElementById('modeAI').classList.toggle('on', mode === 'ai');
-      document.getElementById('cityKnowBlock').classList.toggle('hidden', mode !== 'know');
-      document.getElementById('cityAIBlock').classList.toggle('hidden', mode !== 'ai');
+  // ── MODE SELECTOR ──────────────────────────────────
+  let currentMode = null;
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeKnow').classList.toggle('on', mode === 'know');
+    document.getElementById('modeAI').classList.toggle('on', mode === 'ai');
+    document.getElementById('cityKnowBlock').classList.toggle('hidden', mode !== 'know');
+    document.getElementById('cityAIBlock').classList.toggle('hidden', mode !== 'ai');
+  }
+
+  // ── TAGS ───────────────────────────────────────────
+  const tags = [], anchorTags = [];
+  const tagInp = document.getElementById('tagInp');
+  const tagWrap = document.getElementById('tagWrap');
+  const anchorInp = document.getElementById('anchorInp');
+  const anchorWrap = document.getElementById('anchorWrap');
+
+  function addTag(val, arr, wrap, inp, max) {
+    const v = val.trim().replace(/,+$/, '').trim();
+    if (!v || arr.includes(v)) { inp.value = ''; return; }
+    if (max && arr.length >= max) { inp.value = ''; inp.placeholder = 'Max ' + max + ' cities'; return; }
+    arr.push(v);
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g,"\\'") + '\',' + (arr===tags?'true':'false') + ')">&times;</span>';
+    wrap.insertBefore(t, inp);
+    inp.value = '';
+  }
+  function removeTag(el, val, isMain) {
+    const arr = isMain ? tags : anchorTags;
+    const i = arr.indexOf(val); if (i > -1) arr.splice(i, 1);
+    el.parentElement.remove();
+    const inp = isMain ? tagInp : anchorInp;
+    if (arr.length === 0) inp.placeholder = isMain ? 'Type a city and press Enter or comma…' : 'Type a city and press Enter…';
+  }
+  tagInp.addEventListener('keydown', e => {
+    if (e.key==='Enter'||e.key===',') { e.preventDefault(); addTag(tagInp.value, tags, tagWrap, tagInp, null); }
+    else if (e.key==='Backspace'&&tagInp.value===''&&tags.length>0) { tagWrap.querySelectorAll('.tag')[tags.length-1].remove(); tags.pop(); }
+  });
+  tagInp.addEventListener('blur', () => { if (tagInp.value.trim()) addTag(tagInp.value, tags, tagWrap, tagInp, null); });
+  tagInp.addEventListener('input', () => { if (tagInp.value.endsWith(',')) addTag(tagInp.value, tags, tagWrap, tagInp, null); });
+  anchorInp.addEventListener('keydown', e => {
+    if (e.key==='Enter'||e.key===',') { e.preventDefault(); addTag(anchorInp.value, anchorTags, anchorWrap, anchorInp, 3); }
+    else if (e.key==='Backspace'&&anchorInp.value===''&&anchorTags.length>0) { anchorWrap.querySelectorAll('.tag')[anchorTags.length-1].remove(); anchorTags.pop(); }
+  });
+  anchorInp.addEventListener('blur', () => { if (anchorInp.value.trim()) addTag(anchorInp.value, anchorTags, anchorWrap, anchorInp, 3); });
+  anchorInp.addEventListener('input', () => { if (anchorInp.value.endsWith(',')) addTag(anchorInp.value, anchorTags, anchorWrap, anchorInp, 3); });
+
+  // ── COUNTRY TAG ────────────────────────────────────
+  let countryTag = null;
+  function addCountryTag(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const inp = document.getElementById('countryInp');
+    const val = inp.value.trim();
+    if (!val) return;
+    if (countryTag) { document.getElementById('err-country-max').style.display='block'; inp.value=''; return; }
+    countryTag = val;
+    inp.value = ''; inp.placeholder = '';
+    document.getElementById('err-country-max').style.display='none';
+    document.getElementById('err-country').classList.remove('on');
+    const wrap = document.getElementById('countryWrap');
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
+    wrap.insertBefore(tag, inp);
+  }
+  function removeCountryTag() {
+    countryTag = null;
+    const wrap = document.getElementById('countryWrap');
+    const ex = wrap.querySelector('.tag'); if (ex) ex.remove();
+    const inp = document.getElementById('countryInp');
+    inp.placeholder = 'Type a country and press Enter…'; inp.focus();
+    document.getElementById('err-country-max').style.display='none';
+  }
+  function autoSaveCountryTag() {
+    const inp = document.getElementById('countryInp');
+    const val = inp.value.trim(); if (!val) return;
+    if (countryTag) { inp.value=''; document.getElementById('err-country-max').style.display='block'; return; }
+    addCountryTag({ key:'Enter', preventDefault:()=>{} });
+  }
+
+  // ── ERRORS ─────────────────────────────────────────
+  function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
+    document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
+  }
+  function showError(id, inputId) {
+    const err = document.getElementById(id); if (err) err.classList.add('on');
+    if (inputId) { const inp = document.getElementById(inputId); if (inp) inp.classList.add('field-error'); }
+  }
+
+  // ── DATES ──────────────────────────────────────────
+  function onArrDateChange() {
+    const arrVal = document.getElementById('arrDate').value;
+    const depInput = document.getElementById('depDate');
+    if (arrVal) depInput.min = arrVal;
+    if (depInput.value && depInput.value <= arrVal) { depInput.value = ''; document.getElementById('err-depDate-before').style.display='block'; }
+    else document.getElementById('err-depDate-before').style.display='none';
+    document.getElementById('err-arrDate').classList.remove('on');
+    document.getElementById('err-arrDate-past').style.display='none';
+  }
+  function onDepDateChange() {
+    const arrVal = document.getElementById('arrDate').value;
+    const depVal = document.getElementById('depDate').value;
+    if (arrVal && depVal && depVal <= arrVal) { document.getElementById('err-depDate-before').style.display='block'; document.getElementById('depDate').value=''; }
+    else document.getElementById('err-depDate-before').style.display='none';
+    document.getElementById('err-depDate').classList.remove('on');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('arrDate').min = new Date().toISOString().split('T')[0];
+  });
+
+  // ── VALIDATION ─────────────────────────────────────
+  function validateStep1() {
+    clearErrors(); let ok = true;
+    if (!document.getElementById('firstName').value.trim()) { showError('err-firstName','firstName'); ok=false; }
+    if (!document.getElementById('lastName').value.trim()) { showError('err-lastName','lastName'); ok=false; }
+    if (!document.getElementById('email').value.trim()) { showError('err-email','email'); ok=false; }
+    if (!countryTag) { showError('err-country','countryWrap'); ok=false; }
+    if (!document.querySelector('#pg .cc.on')) { showError('err-party',null); ok=false; }
+    if (!ok) window.scrollTo({top:0,behavior:'smooth'});
+    return ok;
+  }
+  function validateStep2() {
+    clearErrors(); let ok = true;
+    const today = new Date().toISOString().split('T')[0];
+    const arr = document.getElementById('arrDate').value;
+    const dep = document.getElementById('depDate').value;
+    if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport','arrivalAirport'); ok=false; }
+    if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport','departureAirport'); ok=false; }
+    if (!arr) { showError('err-arrDate','arrDate'); ok=false; }
+    else if (arr < today) { document.getElementById('err-arrDate-past').style.display='block'; ok=false; }
+    if (!dep) { showError('err-depDate','depDate'); ok=false; }
+    else if (arr && dep <= arr) { document.getElementById('err-depDate-before').style.display='block'; ok=false; }
+    if (!currentMode) { showError('err-mode',null); ok=false; }
+    if (currentMode==='know' && tags.length===0) { showError('err-cities',null); ok=false; }
+    if (!ok) window.scrollTo({top:0,behavior:'smooth'});
+    return ok;
+  }
+  function validateStep3() {
+    clearErrors(); let ok = true;
+    if (!document.querySelector('.mc.pace-selected')) {
+      const paces = document.querySelectorAll('#step3 .cc-grid .mc');
+      const anyPace = Array.from(paces).some(p => p.classList.contains('on') && (p.querySelector('.mc-title').textContent.includes('Pack') || p.querySelector('.mc-title').textContent.includes('slow')));
+      if (!anyPace) { showError('err-pace',null); ok=false; }
     }
+    if (!document.querySelector('#bg .cc.on')) { showError('err-budget',null); ok=false; }
+    if (!ok) window.scrollTo({top:0,behavior:'smooth'});
+    return ok;
+  }
+  function validateStep4() {
+    clearErrors(); let ok = true;
+    const anyInterest = Array.from(document.querySelectorAll('.islider')).some(s => parseInt(s.value) > 0);
+    if (!anyInterest) { showError('err-interests',null); ok=false; }
+    if (!ok) window.scrollTo({top:0,behavior:'smooth'});
+    return ok;
+  }
 
-    // ── CITY TAG INPUT (Mode 1) ────────────────────────────────
-    const tags = [];
-    const tagInp = document.getElementById('tagInp');
-    const tagWrap = document.getElementById('tagWrap');
-
-    function addTag(val, arr, wrap, inp, max) {
-      const v = val.trim().replace(/,+$/, '').trim();
-      if (!v || arr.includes(v)) { inp.value = ''; return; }
-      if (max && arr.length >= max) {
-        inp.value = '';
-        inp.placeholder = `Max ${max} cities reached`;
-        return;
-      }
-      arr.push(v);
-      const t = document.createElement('span');
-      t.className = 'tag';
-      t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g, "\\'") + '\',' + (arr === tags ? 'true' : 'false') + ')">&times;</span>';
-      wrap.insertBefore(t, inp);
-      inp.value = '';
-      inp.placeholder = '';
+  // ── NAVIGATION ─────────────────────────────────────
+  function goStep(n) {
+    const cur = parseInt(document.querySelector('.step.on').id.replace('step',''));
+    if (n > cur) {
+      if (cur===1 && !validateStep1()) return;
+      if (cur===2 && !validateStep2()) return;
+      if (cur===3 && !validateStep3()) return;
+      if (cur===4 && !validateStep4()) return;
     }
-
-    function removeTag(el, val, isMain) {
-      const arr = isMain ? tags : anchorTags;
-      const i = arr.indexOf(val);
-      if (i > -1) arr.splice(i, 1);
-      el.parentElement.remove();
-      const inp = isMain ? tagInp : anchorInp;
-      const max = isMain ? null : 3;
-      if (arr.length === 0) {
-        inp.placeholder = isMain ? 'Type a city and press Enter or comma...' : 'Type an anchor city and press Enter...';
-      } else if (max && arr.length < max) {
-        inp.placeholder = 'Type an anchor city and press Enter...';
-      }
+    go(n);
+  }
+  function go(n) {
+    for (let i=1; i<=6; i++) {
+      const s = document.getElementById('step'+i); if (s) s.classList.toggle('on', i===n);
+      const p = document.getElementById('p'+i); if (p) p.classList.toggle('on', i<=n);
     }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
 
-    tagInp.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value, tags, tagWrap, tagInp, null); }
-      else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
-        tagWrap.querySelectorAll('.tag')[tags.length - 1].remove();
-        tags.pop();
-      }
-    });
-    tagInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, tags, tagWrap, tagInp, null); });
-    tagInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, tags, tagWrap, tagInp, null); });
-
-    // ── ANCHOR TAG INPUT (Mode 2) ──────────────────────────────
-    const anchorTags = [];
-    const anchorInp = document.getElementById('anchorInp');
-    const anchorWrap = document.getElementById('anchorWrap');
-
-    anchorInp.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); }
-      else if (e.key === 'Backspace' && this.value === '' && anchorTags.length > 0) {
-        anchorWrap.querySelectorAll('.tag')[anchorTags.length - 1].remove();
-        anchorTags.pop();
-      }
-    });
-    anchorInp.addEventListener('blur', function() { if (this.value.trim()) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
-    anchorInp.addEventListener('input', function() { if (this.value.endsWith(',')) addTag(this.value, anchorTags, anchorWrap, anchorInp, 3); });
-
-    // ── COUNTRY TAG ─────────────────────────────────────────────
-    let countryTag = null;
-
-    function addCountryTag(e) {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      const inp = document.getElementById('countryInp');
-      const val = inp.value.trim();
-      if (!val) return;
-      if (countryTag) {
-        document.getElementById('err-country-max').style.display = 'block';
-        inp.value = '';
-        return;
-      }
-      countryTag = val;
-      inp.value = '';
-      inp.placeholder = '';
-      document.getElementById('err-country-max').style.display = 'none';
-      document.getElementById('err-country').classList.remove('on');
-      const wrap = document.getElementById('countryWrap');
-      const tag = document.createElement('span');
-      tag.className = 'tag';
-      tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
-      wrap.insertBefore(tag, inp);
+  // ── PICKERS ────────────────────────────────────────
+  function pick(gridId, el, isParty) {
+    document.getElementById(gridId).querySelectorAll('.cc').forEach(c => c.classList.remove('on'));
+    el.classList.add('on');
+    if (isParty) {
+      const t = el.querySelector('.ct').textContent;
+      document.getElementById('gsw').classList.toggle('hidden', !(t==='Friends'||t==='Family + kids'||t==='Family'));
     }
+  }
+  let tripStructure = null;
+  function pickTripStructure(el) {
+    const wasOn = el.classList.contains('on');
+    document.getElementById('tripStructureGrid').querySelectorAll('.mc').forEach(c => c.classList.remove('on'));
+    if (!wasOn) { el.classList.add('on'); tripStructure = el.dataset.value; }
+    else tripStructure = null;
+  }
+  let selectedPaceEl = null;
+  function pickPace(el) {
+    document.querySelectorAll('#step3 .cc-grid .mc').forEach(c => c.classList.remove('on'));
+    el.classList.add('on');
+    selectedPaceEl = el;
+  }
+  function getPace() {
+    const el = document.querySelector('#step3 .cc-grid .mc.on .mc-title');
+    return el ? el.textContent.trim() : '';
+  }
+  function updSlider(s) {
+    const pct = (parseInt(s.value)/10)*100;
+    s.style.background = 'linear-gradient(to right,var(--accent) '+pct+'%,var(--border) '+pct+'%)';
+  }
+  document.querySelectorAll('.islider').forEach(s => updSlider(s));
 
-    function removeCountryTag() {
-      countryTag = null;
-      const wrap = document.getElementById('countryWrap');
-      const existing = wrap.querySelector('.tag');
-      if (existing) existing.remove();
-      const inp = document.getElementById('countryInp');
-      inp.placeholder = 'Type a country and press Enter...';
-      inp.focus();
-      document.getElementById('err-country-max').style.display = 'none';
-    }
+  // ── FORM DATA ──────────────────────────────────────
+  function collectFormData() {
+    const getSelected = id => { const el = document.querySelector('#'+id+' .cc.on .ct'); return el ? el.textContent : ''; };
+    const getMultiSelected = id => Array.from(document.querySelectorAll('#'+id+' .cc.on .ct')).map(e => e.textContent);
+    const getChips = () => Array.from(document.querySelectorAll('.chip.on')).map(e => e.textContent);
+    const getInterests = () => {
+      const result = {}; let total = 0;
+      document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
+      if (total===0) return result;
+      const labels = ['History & heritage','Food & drink','Nature & outdoors','Nightlife & bars','Culture & museums','Wellness & spa','Shopping','Adventure & fun'];
+      document.querySelectorAll('.islider').forEach((s,i) => { const v=parseInt(s.value); if (v>0) result[labels[i]]=Math.round((v/total)*100)+'%'; });
+      return result;
+    };
+    return {
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName: document.getElementById('lastName').value.trim(),
+      country: countryTag,
+      arrivalAirport: document.getElementById('arrivalAirport').value,
+      departureAirport: document.getElementById('departureAirport').value,
+      arrivalDate: document.getElementById('arrDate').value,
+      departureDate: document.getElementById('depDate').value,
+      cityPlanningMode: currentMode==='ai' ? 'AI recommended' : 'Traveler selected',
+      tripStructure: tripStructure,
+      citiesToVisit: currentMode==='know' ? tags : [],
+      aiCityRecommendation: currentMode==='ai',
+      anchorCities: currentMode==='ai' ? anchorTags : [],
+      travelParty: getSelected('pg'),
+      groupSize: document.getElementById('groupSize').value || null,
+      email: document.getElementById('email').value,
+      paceOfTravel: getPace(),
+      budgetTier: getSelected('bg'),
+      accommodationStyle: getMultiSelected('accom'),
+      interests: getInterests(),
+      cuisinePreferences: getChips(),
+      mustSee: document.getElementById('mustSee').value,
+      extraNotes: document.getElementById('extraNotes').value
+    };
+  }
 
-    function autoSaveCountryTag() {
-      const inp = document.getElementById('countryInp');
-      const val = inp.value.trim();
-      if (!val) return;
-      if (countryTag) {
-        inp.value = '';
-        document.getElementById('err-country-max').style.display = 'block';
-        return;
-      }
-      addCountryTag({ key: 'Enter', preventDefault: () => {} });
-    }
+  // ── PREVIEW PROMPT ─────────────────────────────────
+  let formData = null, approvedPreview = null;
 
-    function clearErrors() {
-      document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
-      document.querySelectorAll('.field-error').forEach(e => e.classList.remove('field-error'));
-    }
-
-    function showError(id, inputId) {
-      const err = document.getElementById(id);
-      if (err) err.classList.add('on');
-      if (inputId) {
-        const inp = document.getElementById(inputId);
-        if (inp) inp.classList.add('field-error');
-      }
-    }
-
-    // ── DATE VALIDATION ──────────────────────────────────────────
-    function onArrDateChange() {
-      const arrVal = document.getElementById('arrDate').value;
-      const depInput = document.getElementById('depDate');
-      if (arrVal) depInput.min = arrVal;
-      if (depInput.value && depInput.value <= arrVal) {
-        depInput.value = '';
-        document.getElementById('err-depDate-before').style.display = 'block';
-      } else {
-        document.getElementById('err-depDate-before').style.display = 'none';
-      }
-      document.getElementById('err-arrDate').classList.remove('on');
-      document.getElementById('err-arrDate-past').style.display = 'none';
-    }
-
-    function onDepDateChange() {
-      const arrVal = document.getElementById('arrDate').value;
-      const depVal = document.getElementById('depDate').value;
-      const errBefore = document.getElementById('err-depDate-before');
-      if (arrVal && depVal && depVal <= arrVal) {
-        errBefore.style.display = 'block';
-        document.getElementById('depDate').value = '';
-      } else {
-        errBefore.style.display = 'none';
-      }
-      document.getElementById('err-depDate').classList.remove('on');
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('arrDate').min = today;
-    });
-
-    // ── STEP VALIDATION ────────────────────────────────────────
-    function validateStep1() {
-      clearErrors();
-      let valid = true;
-      if (!countryTag) { showError('err-country', 'countryWrap'); valid = false; }
-      if (!document.getElementById('firstName').value.trim()) { showError('err-firstName', 'firstName'); valid = false; }
-      if (!document.getElementById('lastName').value.trim()) { showError('err-lastName', 'lastName'); valid = false; }
-      if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport', 'arrivalAirport'); valid = false; }
-      if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport', 'departureAirport'); valid = false; }
-      const today = new Date().toISOString().split('T')[0];
-      const arrVal = document.getElementById('arrDate').value;
-      const depVal = document.getElementById('depDate').value;
-      if (!arrVal) { showError('err-arrDate', 'arrDate'); valid = false; }
-      else if (arrVal < today) { document.getElementById('err-arrDate-past').style.display = 'block'; valid = false; }
-      if (!depVal) { showError('err-depDate', 'depDate'); valid = false; }
-      else if (arrVal && depVal <= arrVal) { document.getElementById('err-depDate-before').style.display = 'block'; valid = false; }
-      if (!currentMode) { showError('err-mode', null); valid = false; }
-      if (currentMode === 'know' && tags.length === 0) { showError('err-cities', null); valid = false; }
-      if (!document.querySelector('#pg .sc.on')) { showError('err-party', null); valid = false; }
-      if (!document.getElementById('email').value.trim()) { showError('err-email', 'email'); valid = false; }
-      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
-      return valid;
-    }
-
-    function validateStep2() {
-      clearErrors();
-      let valid = true;
-      if (!document.querySelector('#paceGrid .pace-card.on')) { showError('err-pace', null); valid = false; }
-      if (!document.querySelector('#bg .sc.on')) { showError('err-budget', null); valid = false; }
-      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
-      return valid;
-    }
-
-    function validateStep3() {
-      clearErrors();
-      let valid = true;
-      const sliders = document.querySelectorAll('.islider');
-      const anyInterest = Array.from(sliders).some(s => parseInt(s.value) > 0);
-      if (!anyInterest) { showError('err-interests', null); valid = false; }
-      if (!valid) window.scrollTo({ top: 0, behavior: 'smooth' });
-      return valid;
-    }
-
-    function goStep(n) {
-      const current = parseInt(document.querySelector('.step.on').id.replace('step', ''));
-      if (n > current) {
-        if (current === 1 && !validateStep1()) return;
-        if (current === 2 && !validateStep2()) return;
-        if (current === 3 && !validateStep3()) return;
-      }
-      go(n);
-    }
-
-    function go(n) {
-      for (let i = 1; i <= 5; i++) {
-        const s = document.getElementById('step' + i);
-        if (s) s.classList.toggle('on', i === n);
-        const p = document.getElementById('p' + i);
-        if (p) p.classList.toggle('on', i <= n);
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function pick(gridId, el, isParty) {
-      document.getElementById(gridId).querySelectorAll('.sc').forEach(c => c.classList.remove('on'));
-      el.classList.add('on');
-      if (isParty) {
-        const t = el.querySelector('.st').textContent;
-        document.getElementById('gsw').classList.toggle('hidden', !(t === 'Friends group' || t === 'Family with kids' || t === 'Family no kids'));
-      }
-    }
-
-    let tripStructure = null;
-
-    function pickTripStructure(el) {
-      const isSelected = el.classList.contains('on');
-      document.getElementById('tripStructureGrid').querySelectorAll('.mode-card').forEach(c => c.classList.remove('on'));
-      if (!isSelected) {
-        el.classList.add('on');
-        tripStructure = el.dataset.value;
-      } else {
-        tripStructure = null;
-      }
-    }
-
-    function pickPace(el) {
-      document.getElementById('paceGrid').querySelectorAll('.pace-card').forEach(c => c.classList.remove('on'));
-      el.classList.add('on');
-    }
-
-    function updSlider(s) {
-      const pct = (parseInt(s.value) / 10) * 100;
-      s.style.background = 'linear-gradient(to right,#8b5cf6 ' + pct + '%,#e0d9f5 ' + pct + '%)';
-    }
-    document.querySelectorAll('.islider').forEach(s => updSlider(s));
-
-    // ── FORM DATA COLLECTION ───────────────────────────────────
-    function collectFormData() {
-      const getSelected = id => { const el = document.querySelector('#' + id + ' .sc.on .st'); return el ? el.textContent : ''; };
-      const getMultiSelected = id => Array.from(document.querySelectorAll('#' + id + ' .sc.on .st')).map(e => e.textContent);
-      const getChips = () => Array.from(document.querySelectorAll('.chip.on')).map(e => e.textContent);
-      const getPace = () => { const el = document.querySelector('#paceGrid .pace-card.on .pc-title'); return el ? el.textContent : ''; };
-      const getInterests = () => {
-        const result = {};
-        let total = 0;
-        document.querySelectorAll('.islider').forEach(s => total += parseInt(s.value));
-        if (total === 0) return result;
-        const labels = ['History & heritage','Food & drink','Nature & outdoors','Nightlife & bars','Culture & museums','Wellness & spa','Shopping','Adventure & fun'];
-        document.querySelectorAll('.islider').forEach((s, i) => {
-          const val = parseInt(s.value);
-          if (val > 0) result[labels[i]] = Math.round((val / total) * 100) + '%';
-        });
-        return result;
-      };
-
-      return {
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        country: countryTag,
-        arrivalAirport: document.getElementById('arrivalAirport').value,
-        departureAirport: document.getElementById('departureAirport').value,
-        arrivalDate: document.getElementById('arrDate').value,
-        departureDate: document.getElementById('depDate').value,
-        cityPlanningMode: currentMode === 'ai' ? 'AI recommended' : 'Traveler selected',
-        tripStructure: tripStructure,
-        citiesToVisit: currentMode === 'know' ? tags : [],
-        aiCityRecommendation: currentMode === 'ai',
-        anchorCities: currentMode === 'ai' ? anchorTags : [],
-        travelParty: getSelected('pg'),
-        groupSize: document.getElementById('groupSize').value || null,
-        email: document.getElementById('email').value,
-        paceOfTravel: getPace(),
-        budgetTier: getSelected('bg'),
-        accommodationStyle: getMultiSelected('accom'),
-        interests: getInterests(),
-        cuisinePreferences: getChips(),
-        mustSee: document.getElementById('mustSee').value,
-        extraNotes: document.getElementById('extraNotes').value
-      };
-    }
-
-    // ── PREVIEW GENERATION ─────────────────────────────────────
-    let formData = null;
-    let approvedPreview = null;
-
-    const PREVIEW_PROMPT = (d) => `You are an expert travel planner. Generate a quick trip preview only.
+  const PREVIEW_PROMPT = (d) => `You are an expert travel planner. Generate a quick trip preview only.
 Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
 
 STEP 1 — NIGHT ALLOCATION
@@ -873,73 +1103,47 @@ Calculate total trip days from arrival to departure date.
 
 STEP 3 — TRIP STRUCTURE
 Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
-
 - road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking.
 - train → cities along logical rail corridor, major train stations only, no car/bus connections.
 - flying → each city fully independent, selected by interest profile not geography.
-- Not provided → MANDATORY: evaluate every leg using actual train and flight times. Under 3 hours by train → always recommend train (airport overhead makes flying slower door-to-door). 3–5 hours → recommend whichever is faster door-to-door. Over 5 hours or no rail → flying. Never recommend flying where high-speed rail is under 4 hours. China: always check HSR (高铁) times first. Europe: always check Eurostar/TGV/ICE/Frecciarossa times first. Japan: always recommend Shinkansen for legs under 4 hours. Do not default to flying just because the country is large.
+- Not provided → MANDATORY: evaluate every leg using actual train and flight times. Under 3 hours by train → always recommend train. 3–5 hours → recommend whichever is faster door-to-door. Over 5 hours or no rail → flying. Never recommend flying where high-speed rail is under 4 hours. China: always check HSR first. Europe: always check Eurostar/TGV/ICE/Frecciarossa first. Japan: always recommend Shinkansen for legs under 4 hours.
 
 STEP 4 — TRAVEL PARTY RULES
-Apply to teaser day activities and restaurant suggestion:
 - Couple → romantic, intimate venues only.
-- Family with kids → kid-friendly without exception. No adult-only venues.
-- Family no kids → adult experiences fine.
+- Family with kids → kid-friendly without exception.
 - Friends group → social, communal, group-capacity venues.
 - Solo → flexible, independent, safe venues.
 
 STEP 5 — INTEREST WEIGHTS
-Apply to teaser day activity and restaurant selection:
-- 20%+ → feature prominently in teaser day.
-- 11–19% → include if it fits the day naturally.
-- 1–10% → only if nothing higher priority fits.
-- 0% → exclude entirely. Never suggest activity from a 0% interest category.
+- 20%+ → feature prominently. 11–19% → include if fits naturally. 1–10% → only if nothing higher fits. 0% → exclude entirely.
 
 STEP 6 — BUDGET
-Apply strictly to teaser day restaurant and activities:
-- Budget → ~$50–100/day. Street food, casual dining, free attractions.
-- Mid-range → ~$100–250/day. Mid-tier restaurants, paid attractions.
-- Luxury → $250+/day. Fine dining, premium experiences.
-Never recommend a venue that exceeds the traveler's budget tier.
+- Budget → ~$50–100/day. Mid-range → ~$100–250/day. Luxury → $250+/day. Never exceed budget tier.
 
 STEP 7 — TEASER DAY RULES
-- Pick the single most exciting city on the trip for the teaser.
-- Never pick a city the traveler only passes through or spends less than 1 night in.
-- Never pick a travel day or a day trip destination as the teaser day.
-- Always label the teaser day as "Sample Day in [City]" — never use Day 1, Day 3, or any specific day number.
-- Morning, afternoon, evening must be in the same or adjacent neighborhoods — no zigzagging.
-- Activities must match travel party, interest weights, and budget tier.
-- Restaurant suggestion must be geographically close to that day's activities.
-- Pick lunch or dinner based on what suits the day's flow — label clearly as Lunch or Dinner.
-- Every activity: "[Activity name] — [what it is and why it suits this traveler]." Max 20 words. Enticing and specific.
-- Restaurant: "Lunch/Dinner: [Restaurant name] — [one line why it's special for this traveler]." Max 20 words.
-- Never recommend a bar or nightlife venue as morning or afternoon activity.
-- why_recommended for every city: "[City] is [known for] — chosen for your [specific interest or travel style]." Max 25 words. Never generic. Never logistical.
+- Pick the single most exciting city. Never a pass-through or <1 night city.
+- Label as "Sample Day in [City]" — never Day 1/2/3.
+- Morning, afternoon, evening in same or adjacent neighborhoods.
+- Every activity: "[Name] — [what it is and why it suits this traveler]." Max 20 words.
+- Restaurant: "Lunch/Dinner: [Name] — [one line why special]." Max 20 words.
+- Never bars/nightlife as morning or afternoon activity.
+- why_recommended: "[City] is [known for] — chosen for your [specific interest]." Max 25 words. Never generic.
 
-STEP 8 — TEASER DAY TIME BUDGET
-Validate the teaser day activities against a realistic time budget before finalizing:
-- Full days → ~10 hours of activity time available. Populate morning, afternoon AND evening.
-- Relaxed days → ~6 hours of activity time available. Populate morning and ONE of afternoon or evening.
-- Full-day activity (theme park, long trek, major day trip) → that is the teaser day's only activity. Add one light nearby evening activity max. Never pair with 2 other independent activities.
-- Day trip (90+ min each way) → counts as the full teaser day. No other activities.
-- Never schedule 3 time-intensive activities (each 3+ hours) on the teaser day regardless of pace.
+STEP 8 — TEASER TIME BUDGET
+- Full days → populate morning, afternoon AND evening.
+- Relaxed days → morning and ONE of afternoon or evening.
+- Full-day activity → that's the day. One light evening max.
+- Never 3 time-intensive activities (3+ hrs each) in one day.
 
-WEATHER: City-by-city for exact travel dates. Temperature range in Fahrenheit (°F). Include conditions and flag any seasonal highlights or issues.
-VISA: Never assume or infer the traveler's nationality from their name or any other detail. Provide general visa requirements for the destination country covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time. Always address the traveler directly as "you" — never refer to them by name or in third person.
-
-TONE: Always write in second person throughout — "you", "your". Never "the couple", "the traveler", "the group", or the traveler's name. This applies to overview, city descriptions, teaser day content, weather, and visa.
-
-HARD INSTRUCTIONS: Treat mustSee and extraNotes as hard instructions that override all defaults:
-- If the traveler already has accommodations → do not recommend any.
-- If they name specific places, restaurants, or dates → include them exactly.
-- If they specify transport (e.g. "we have a car", "taking trains") → apply to all relevant legs.
-- If they exclude something → remove it from all output entirely.
-- If they mention pre-booked items → treat as confirmed and include in the plan.
-Never ignore mustSee or extraNotes or treat them as optional.
+WEATHER: City-by-city for exact travel dates. Fahrenheit. Flag seasonal highlights.
+VISA: General requirements for US/Canada, UK, EU, Australia passports. Never assume nationality. Address as "you"/"your" throughout.
+TONE: Always second person. Never traveler's name or "the couple/group/traveler".
+HARD INSTRUCTIONS: mustSee and extraNotes override all defaults. Never ignore them.
 
 Return exactly this JSON:
-{"overview":"max 3 sentences — cities chosen, trip tone, seasonal highlight. Written in second person as 'you' and 'your'.","cities":[{"city":"string","nights":0,"why_recommended":"string — max 25 words"}],"teaser_day":{"city":"string — most exciting city on the trip","day_label":"string — always Sample Day in [City]","morning":"string — max 20 words","afternoon":"string — max 20 words","evening":"string — max 20 words","restaurant_suggestion":"string — Lunch/Dinner: Restaurant name — one line why it's special. Max 20 words."},"weather":"string — city by city, 2-3 sentences","visa":"string — one short paragraph"}
+{"overview":"max 3 sentences","cities":[{"city":"string","nights":0,"why_recommended":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"weather":"string","visa":"string"}
 
-TRAVELER PREFERENCES:
+TRAVELER:
 First name: ${d.firstName}
 Last name: ${d.lastName}
 Country: ${d.country}
@@ -959,280 +1163,171 @@ Interests: ${JSON.stringify(d.interests)}
 Must see: ${d.mustSee}
 Extra notes: ${d.extraNotes}`;
 
-    async function generatePreview(retryCount = 0) {
-      go(4);
-      document.getElementById('previewLoading').classList.remove('hidden');
-      document.getElementById('previewContent').classList.add('hidden');
-      document.getElementById('previewError').classList.add('hidden');
+  // ── GENERATE PREVIEW ───────────────────────────────
+  async function generatePreview(retryCount = 0) {
+    go(5);
+    document.getElementById('previewLoading').classList.remove('hidden');
+    document.getElementById('previewContent').classList.add('hidden');
+    document.getElementById('previewError').classList.add('hidden');
 
-      // Rotating loading messages — keeps users engaged so they don't disconnect
-      const messages = [
-        'AI is planning your cities...',
-        'Researching visa requirements...',
-        'Checking weather for your dates...',
-        'Picking your best day highlight...',
-        'Crafting your teaser itinerary...',
-        'Almost ready...'
-      ];
-      let msgIndex = 0;
-      const loadingMsg = document.getElementById('loadingMsg');
-      const msgInterval = setInterval(() => {
-        if (loadingMsg) {
-          loadingMsg.style.opacity = '0';
-          setTimeout(() => {
-            msgIndex = (msgIndex + 1) % messages.length;
-            loadingMsg.textContent = messages[msgIndex];
-            loadingMsg.style.opacity = '1';
-          }, 300);
-        }
-      }, 4000);
-
-      const d = formData;
-      const userMessage = PREVIEW_PROMPT(d);
-
-      // 25-second timeout — prevents 499 client disconnect on slow connections
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-      try {
-        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 2000,
-            messages: [{ role: 'user', content: userMessage }]
-          })
-        });
-
-        clearTimeout(timeoutId);
-        clearInterval(msgInterval);
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error('Worker error:', response.status, errText);
-          throw new Error('Worker returned ' + response.status + ': ' + errText);
-        }
-
-        const data = await response.json();
-        console.log('Claude response:', data);
-
-        if (!data.content || !data.content[0]) {
-          console.error('Unexpected response structure:', data);
-          throw new Error('Unexpected response: ' + JSON.stringify(data));
-        }
-
-        const text = data.content[0].text;
-        const preview = JSON.parse(text);
-        renderPreview(preview);
-
-      } catch (err) {
-        clearTimeout(timeoutId);
-        clearInterval(msgInterval);
-        console.error('Preview error:', err);
-
-        // Auto-retry once — handles slow first responses
-        if (retryCount < 1) {
-          console.log('Retrying preview generation...');
-          if (loadingMsg) loadingMsg.textContent = 'Taking a bit longer — retrying...';
-          document.getElementById('previewLoading').classList.remove('hidden');
-          setTimeout(() => generatePreview(retryCount + 1), 2000);
-          return;
-        }
-
-        document.getElementById('previewLoading').classList.add('hidden');
-        document.getElementById('previewError').classList.remove('hidden');
+    const messages = ['AI is planning your cities…','Researching visa requirements…','Checking weather for your dates…','Picking your best day highlight…','Crafting your teaser itinerary…','Almost ready…'];
+    let msgIndex = 0;
+    const loadingMsg = document.getElementById('loadingMsg');
+    const msgInterval = setInterval(() => {
+      if (loadingMsg) {
+        loadingMsg.style.opacity = '0';
+        setTimeout(() => { msgIndex=(msgIndex+1)%messages.length; loadingMsg.textContent=messages[msgIndex]; loadingMsg.style.opacity='1'; }, 300);
       }
-    }
+    }, 4000);
 
-    function copyPreviewLink() {
-      const url = window._previewShareUrl || window.location.href;
-      navigator.clipboard.writeText(url).then(() => {
-        const btn = document.getElementById('copyLinkBtn');
-        btn.textContent = '✅ Copied!';
-        setTimeout(() => btn.textContent = '📋 Copy link', 2000);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    try {
+      const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:2000, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
       });
-    }
-
-    // ── Auto-load preview from URL param ───────────────────────
-    window.addEventListener('load', () => {
-      const params = new URLSearchParams(window.location.search);
-      const encoded = params.get('preview');
-      if (encoded) {
-        try {
-          const preview = JSON.parse(decodeURIComponent(atob(encoded)));
-          setTimeout(() => loadSharedPreview(preview), 100);
-        } catch(e) { console.warn('Could not decode preview from URL', e); }
-      }
-    });
-
-    function loadSharedPreview(preview) {
-      go(4);
-      document.getElementById('previewLoading').classList.add('hidden');
-      document.getElementById('previewContent').classList.remove('hidden');
-      approvedPreview = preview;
-      formData = {};
+      clearTimeout(timeoutId); clearInterval(msgInterval);
+      if (!response.ok) throw new Error('Worker ' + response.status);
+      const data = await response.json();
+      if (!data.content || !data.content[0]) throw new Error('Bad response');
+      const preview = JSON.parse(data.content[0].text);
       renderPreview(preview);
-      const banner = document.createElement('div');
-      banner.style.cssText = 'background:#ede9fe;border:1.5px solid #c4b5fd;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#5b21b6;font-weight:600;text-align:center;';
-      banner.textContent = '👀 You\'re viewing a shared trip preview — click below to build your own itinerary!';
-      document.getElementById('previewContent').prepend(banner);
-    }
-
-    function renderPreview(preview) {
-      approvedPreview = preview;
-
-      try {
-        const jsonStr = JSON.stringify(preview);
-        const encoded = btoa(encodeURIComponent(jsonStr));
-        const longUrl = `${window.location.origin}${window.location.pathname}?preview=${encoded}`;
-        window._previewShareUrl = longUrl;
-
-        fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ preview })
-        })
-        .then(r => r.json())
-        .then(({ id }) => {
-          if (id) {
-            const shortUrl = `https://bws-travel-proxy.springlam-co.workers.dev/p/${id}`;
-            window._previewShareUrl = shortUrl;
-            document.getElementById('whatsappShareBtn').href =
-              `https://wa.me/?text=${encodeURIComponent('Check out the trip preview I just generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ ' + shortUrl)}`;
-            document.getElementById('xShareBtn').href =
-              `https://twitter.com/intent/tweet?text=${encodeURIComponent('Just generated an AI travel itinerary preview ✈️ Check it out:')}&url=${encodeURIComponent(shortUrl)}`;
-          }
-        })
-        .catch(() => {});
-
-        document.getElementById('whatsappShareBtn').href =
-          `https://wa.me/?text=${encodeURIComponent('Check out the trip preview I just generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ ' + longUrl)}`;
-        document.getElementById('xShareBtn').href =
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent('Just generated an AI travel itinerary preview ✈️ Check it out:')}&url=${encodeURIComponent(longUrl)}`;
-      } catch(e) { console.warn('Could not generate share URL', e); }
-
+    } catch (err) {
+      clearTimeout(timeoutId); clearInterval(msgInterval);
+      if (retryCount < 1) {
+        if (loadingMsg) loadingMsg.textContent = 'Taking a bit longer — retrying…';
+        document.getElementById('previewLoading').classList.remove('hidden');
+        setTimeout(() => generatePreview(retryCount+1), 2000);
+        return;
+      }
       document.getElementById('previewLoading').classList.add('hidden');
-      document.getElementById('previewOverview').textContent = preview.overview;
+      document.getElementById('previewError').classList.remove('hidden');
+    }
+  }
 
-      const citiesEl = document.getElementById('previewCities');
-      citiesEl.innerHTML = preview.cities.map(c => `
-        <div style="border:1.5px solid #ddd8f5;border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#f9f7fe;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;color:#1a1640;">${c.city}</span>
-            <span style="font-size:12px;font-weight:700;color:#8b5cf6;background:#ede9fe;padding:2px 10px;border-radius:99px;">${c.nights} nights</span>
-          </div>
-          <div style="font-size:12px;color:#6b5fa0;line-height:1.5;">${c.why_recommended}</div>
-        </div>
-      `).join('');
+  // ── RENDER PREVIEW ─────────────────────────────────
+  function renderPreview(preview) {
+    approvedPreview = preview;
+    try {
+      const encoded = btoa(encodeURIComponent(JSON.stringify(preview)));
+      const longUrl = window.location.origin + window.location.pathname + '?preview=' + encoded;
+      window._previewShareUrl = longUrl;
+      fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({preview}) })
+        .then(r=>r.json()).then(({id})=>{
+          if (id) {
+            const shortUrl = 'https://bws-travel-proxy.springlam-co.workers.dev/p/'+id;
+            window._previewShareUrl = shortUrl;
+            document.getElementById('whatsappShareBtn').href = 'https://wa.me/?text='+encodeURIComponent('Check out the trip preview I generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ '+shortUrl);
+            document.getElementById('xShareBtn').href = 'https://twitter.com/intent/tweet?text='+encodeURIComponent('Just generated an AI travel preview ✈️')+('&url='+encodeURIComponent(shortUrl));
+          }
+        }).catch(()=>{});
+      document.getElementById('whatsappShareBtn').href = 'https://wa.me/?text='+encodeURIComponent('Check out the trip preview I generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ '+longUrl);
+      document.getElementById('xShareBtn').href = 'https://twitter.com/intent/tweet?text='+encodeURIComponent('Just generated an AI travel preview ✈️')+('&url='+encodeURIComponent(longUrl));
+    } catch(e) {}
 
-      document.getElementById('previewWeather').textContent = preview.weather;
-      document.getElementById('previewVisa').textContent = preview.visa;
+    document.getElementById('previewLoading').classList.add('hidden');
+    document.getElementById('previewOverview').textContent = preview.overview;
 
-      if (preview.teaser_day) {
-        const teaserCity = preview.teaser_day.city || '';
-        document.getElementById('teaserCityLabel').textContent = teaserCity;
-        document.getElementById('teaserDayLabel').textContent = `Sample Day in ${teaserCity}`;
-        document.getElementById('teaserMorning').textContent = preview.teaser_day.morning || '';
-        const teaserAfternoon = document.getElementById('teaserAfternoon');
-        const teaserEvening = document.getElementById('teaserEvening');
-        if (teaserAfternoon && preview.teaser_day.afternoon) teaserAfternoon.textContent = preview.teaser_day.afternoon;
-        if (teaserEvening && preview.teaser_day.evening) teaserEvening.textContent = preview.teaser_day.evening;
-        const teaserRestaurant = document.getElementById('teaserRestaurant');
-        if (teaserRestaurant && preview.teaser_day.restaurant_suggestion) teaserRestaurant.textContent = preview.teaser_day.restaurant_suggestion;
-      } else if (preview.cities && preview.cities.length > 0) {
-        const fallbackCity = preview.cities[0].city;
-        document.getElementById('teaserCityLabel').textContent = fallbackCity;
-        document.getElementById('teaserDayLabel').textContent = `Sample Day in ${fallbackCity}`;
-        document.getElementById('teaserMorning').textContent = 'Your itinerary is packed with hand-picked experiences for your interests.';
-      }
+    const citiesEl = document.getElementById('previewCities');
+    citiesEl.innerHTML = (preview.cities||[]).map(c => `<div class="city-card"><div class="city-card-top"><span class="city-name">${c.city}</span><span class="city-nights">${c.nights} nights</span></div><div class="city-why">${c.why_recommended}</div></div>`).join('');
 
-      const totalDays = formData.arrivalDate && formData.departureDate
-        ? Math.round((new Date(formData.departureDate) - new Date(formData.arrivalDate)) / (1000 * 60 * 60 * 24))
-        : 7;
-      const totalCities = preview.cities ? preview.cities.length : 3;
-      const inclusions = [
-        `✅ ${totalDays}-day day by day itinerary`,
-        `✅ Booking tracker — sorted by urgency`,
-        `✅ Restaurant picks across ${totalCities} cities`,
-        `✅ Full transport with booking tips`,
-        `✅ City activity guide for every stop`,
-        `✅ Visa, weather and packing info`,
-      ];
-      document.getElementById('inclusionsList').innerHTML = inclusions.map(i =>
-        `<div style="font-size:13px;color:#1a1640;padding:4px 0;line-height:1.5;">${i}</div>`
-      ).join('');
+    document.getElementById('previewWeather').textContent = preview.weather;
+    document.getElementById('previewVisa').textContent = preview.visa;
 
-      const baseHours = 2;
-      const hoursPerCity = 1;
-      const minutesPerDay = 20;
-      const totalHours = Math.round(baseHours + (totalCities * hoursPerCity) + (totalDays * minutesPerDay / 60));
-      document.getElementById('timeSaved').textContent = `~${totalHours} hours`;
-
-      const remainingDays = totalDays - 1;
-      const ctaEl = document.getElementById('teaserCTA');
-      if (ctaEl) ctaEl.textContent = `🔒 Your other ${remainingDays} days are waiting`;
-
-      document.getElementById('previewContent').classList.remove('hidden');
+    if (preview.teaser_day) {
+      const td = preview.teaser_day;
+      document.getElementById('teaserCityLabel').textContent = td.city||'';
+      document.getElementById('teaserDayLabel').textContent = 'Sample Day in '+(td.city||'');
+      document.getElementById('teaserMorning').textContent = td.morning||'';
+      document.getElementById('teaserAfternoon').textContent = td.afternoon||'';
+      document.getElementById('teaserEvening').textContent = td.evening||'';
+      document.getElementById('teaserRestaurant').textContent = td.restaurant_suggestion||'';
     }
 
-    async function regeneratePreview() {
-      const feedback = document.getElementById('previewFeedback').value.trim();
-      if (feedback) {
-        formData.extraNotes = (formData.extraNotes ? formData.extraNotes + ' · ' : '') + 'Feedback: ' + feedback;
-        document.getElementById('previewFeedback').value = '';
-      }
-      await generatePreview();
-    }
+    const totalDays = formData&&formData.arrivalDate&&formData.departureDate ? Math.round((new Date(formData.departureDate)-new Date(formData.arrivalDate))/(1000*60*60*24)) : 7;
+    const totalCities = (preview.cities||[]).length||3;
+    document.getElementById('inclusionsList').innerHTML = [
+      '✅ '+totalDays+'-day day-by-day itinerary',
+      '✅ Booking tracker — sorted by urgency',
+      '✅ Restaurant picks across '+totalCities+' cities',
+      '✅ Full transport with booking tips',
+      '✅ City activity guide for every stop',
+      '✅ Visa, weather and packing info'
+    ].map(i=>'<div class="incl-row">'+i+'</div>').join('');
 
-    // ── STRIPE CHECKOUT ─────────────────────────────────────────
-    async function confirmAndGenerate() {
-      const btn = document.querySelector('.bnx[onclick="confirmAndGenerate()"]');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ Setting up checkout...';
-      btn.disabled = true;
+    const totalHours = Math.round(2+(totalCities*1)+(totalDays*20/60));
+    document.getElementById('timeSaved').textContent = '~'+totalHours+' hours';
+    const ctaEl = document.getElementById('teaserCTA');
+    if (ctaEl) ctaEl.textContent = '🔒 Your other '+(totalDays-1)+' days are waiting';
 
-      try {
-        const approvedCities = approvedPreview ? approvedPreview.cities : [];
-        const teaserDay = approvedPreview ? approvedPreview.teaser_day : null;
+    document.getElementById('previewContent').classList.remove('hidden');
+  }
 
-        const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/create-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ formData, approvedCities, teaserDay })
-        });
-
-        const data = await response.json();
-
-        if (data.error) throw new Error(data.error);
-
-        window.location.href = data.url;
-
-      } catch (err) {
-        console.error('Checkout error:', err);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert('Something went wrong setting up checkout. Please try again.');
-      }
-    }
-
-    // ── SUBMIT FORM ─────────────────────────────────────────────
-    function submitForm() {
-      if (!validateStep3()) return;
-      formData = collectFormData();
-      console.log('Submitting form data:', formData.country, formData.arrivalAirport, formData.departureAirport);
-      generatePreview();
-    }
-
-    // ── RESET ON PAGE RESTORE FROM CACHE ────────────────────────
-    window.addEventListener('pageshow', function(e) {
-      if (e.persisted) {
-        formData = null;
-        go(1);
-      }
+  function copyPreviewLink() {
+    navigator.clipboard.writeText(window._previewShareUrl||window.location.href).then(()=>{
+      const btn=document.getElementById('copyLinkBtn'); btn.textContent='✅ Copied!';
+      setTimeout(()=>btn.textContent='📋 Copy link',2000);
     });
-  </script>
+  }
 
+  window.addEventListener('load', () => {
+    const encoded = new URLSearchParams(window.location.search).get('preview');
+    if (encoded) {
+      try {
+        const preview = JSON.parse(decodeURIComponent(atob(encoded)));
+        setTimeout(()=>loadSharedPreview(preview),100);
+      } catch(e) {}
+    }
+  });
+
+  function loadSharedPreview(preview) {
+    startPlanning();
+    go(5);
+    document.getElementById('previewLoading').classList.add('hidden');
+    approvedPreview = preview; formData = {};
+    renderPreview(preview);
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;font-size:12.5px;color:var(--accent2);font-weight:600;text-align:center;';
+    banner.textContent = '👀 Viewing a shared preview — build your own itinerary below!';
+    document.getElementById('previewContent').prepend(banner);
+  }
+
+  async function regeneratePreview() {
+    const fb = document.getElementById('previewFeedback').value.trim();
+    if (fb) { formData.extraNotes=(formData.extraNotes?formData.extraNotes+' · ':'')+('Feedback: '+fb); document.getElementById('previewFeedback').value=''; }
+    await generatePreview();
+  }
+
+  // ── CHECKOUT ───────────────────────────────────────
+  async function confirmAndGenerate() {
+    const btn = document.querySelector('.bnx[onclick="confirmAndGenerate()"]');
+    const orig = btn.innerHTML; btn.innerHTML='⏳ Setting up checkout…'; btn.disabled=true;
+    try {
+      const res = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/create-checkout', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ formData, approvedCities:approvedPreview?approvedPreview.cities:[], teaserDay:approvedPreview?approvedPreview.teaser_day:null })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      window.location.href = data.url;
+    } catch(err) {
+      btn.innerHTML=orig; btn.disabled=false;
+      alert('Something went wrong. Please try again.');
+    }
+  }
+
+  // ── SUBMIT ─────────────────────────────────────────
+  function submitForm() {
+    if (!validateStep4()) return;
+    formData = collectFormData();
+    generatePreview();
+  }
+
+  window.addEventListener('pageshow', e => { if (e.persisted) { formData=null; backToLanding(); } });
+</script>
 </body>
 </html>
