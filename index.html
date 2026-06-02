@@ -1123,16 +1123,19 @@ Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 
 - If cities × minimum nights > total trip days → remove lowest-priority cities.
 - Travel days over 4 hours = full day lost → add 1 night to that city.
 - Departure city classified Large or Mega → minimum 2 nights.
+- Arrival and departure cities always get at least 1 night each — apply rules in Step 2.
 
 STEP 2 — CITY SELECTION
 Calculate total trip days from arrival to departure date.
 - All cities must be within the submitted country unless traveler explicitly listed others.
 - Always consider arrival and departure airport cities as candidates.
+- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it in mustSee or extraNotes. They need time to land, clear customs, reach accommodation, and decompress. If the arrival city is a well-known destination, allocate nights based on city size classification adjusted for their pace.
+- DEPARTURE CITY RULE: Always include the departure airport city for at least 1 night unless the traveler explicitly says to skip it. Never route a traveler out of any city they have not spent at least one night in — they need accommodation, time to reach the airport, and a buffer for their flight. Compress other cities in the middle before dropping arrival or departure cities.
 - cityPlanningMode "know" → respect listed cities exactly. Adjust count if needed.
 - aiCityRecommendation true + anchorCities → anchors are fixed, fill remaining with best-fit.
 - aiCityRecommendation true + no cities → select from scratch weighted by interests, budget, travel dates, routing.
 - Large countries (USA, Australia, Canada, Brazil, China) + flying + no anchors → same region or coast only.
-- Prefer well-known cities unless Adventure or Arts interest exceeds 25%.
+- Prefer well-known cities unless Adventure interest exceeds 25%.
 - Verify cities suit exact travel dates — flag festivals or seasonal highlights in overview.
 
 STEP 3 — TRIP STRUCTURE
@@ -1191,6 +1194,7 @@ Cities requested: ${JSON.stringify(d.citiesToVisit)}
 AI recommendation: ${d.aiCityRecommendation}
 Anchor cities: ${JSON.stringify(d.anchorCities)}
 Travel party: ${d.travelParty}
+Group size: ${d.groupSize || "not specified"}
 Pace: ${d.paceOfTravel}
 Budget: ${d.budgetTier}
 Interests: ${JSON.stringify(d.interests)}
