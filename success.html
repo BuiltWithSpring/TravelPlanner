@@ -3,349 +3,516 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>You're all set — BuiltWithSpring</title>
+  <title>Your trip is being planned — BuiltWithSpring</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/BWSLogo.png"/>
   <link rel="apple-touch-icon" href="/BWSLogo.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
+    :root {
+      --ink: #0f0c1e;
+      --ink2: #3d3660;
+      --muted: #7c72a0;
+      --border: #e4e0f5;
+      --bg: #f7f5ff;
+      --card: #ffffff;
+      --accent: #7c3aed;
+      --accent2: #6d28d9;
+      --accent-light: #ede9fe;
+      --accent-mid: #c4b5fd;
+      --green: #059669;
+      --green-light: #d1fae5;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow-lg: 0 2px 8px rgba(124,58,237,.08), 0 24px 64px rgba(124,58,237,.12);
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #eeeaf8;
-      font-family: 'Nunito Sans', sans-serif;
-      color: #1a1640;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
       min-height: 100vh;
-      padding: 2rem 1rem 3rem;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,.13) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 90% 60%, rgba(167,139,250,.07) 0%, transparent 60%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.25rem 5rem;
     }
 
-    #hdr {
-      text-align: center;
-      padding-bottom: 1.5rem;
+    /* ── NAV ── */
+    .nav {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
     }
-
-    #tgl {
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
       font-size: 13px;
-      color: #6b5fa0;
       font-weight: 600;
-      margin-top: 6px;
+      color: var(--muted);
+      text-decoration: none;
     }
+    .nav-brand:hover { color: var(--accent); }
+    .nav-support {
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .nav-support a { color: var(--accent); text-decoration: none; font-weight: 500; }
 
-    #card {
-      background: #fff;
-      border-radius: 20px;
-      max-width: 620px;
-      margin: 0 auto;
-      padding: 2.5rem 2rem 2rem;
-      box-shadow: 0 4px 32px rgba(90,60,180,.09);
+    /* ── HERO ── */
+    .hero {
+      width: 100%;
+      max-width: 560px;
       text-align: center;
-      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+      margin-bottom: 2rem;
+      animation: fadeUp .5s .05s ease both;
     }
-
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .hero-icon {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
     }
-
-    .check-wrap {
-      width: 72px;
-      height: 72px;
+    .hero-ring {
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      background: #ede9fe;
-      border: 2px solid #c4b5fd;
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 1.5rem;
-      animation: pop 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+      box-shadow: 0 0 0 12px rgba(124,58,237,.1), 0 8px 28px rgba(124,58,237,.35);
+      animation: ringPulse 2.5s ease-in-out infinite;
     }
-    @keyframes pop {
-      from { opacity: 0; transform: scale(0.5); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-    .check-path {
-      stroke-dasharray: 50;
-      stroke-dashoffset: 50;
-      animation: draw 0.45s ease 0.6s forwards;
-    }
-    @keyframes draw { to { stroke-dashoffset: 0; } }
-
-    .stit {
-      font-family: 'Nunito', sans-serif;
-      font-size: 22px;
+    .hero-ring svg { width: 34px; height: 34px; }
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
       font-weight: 800;
-      color: #1a1640;
-      margin-bottom: 6px;
+      color: var(--ink);
+      line-height: 1.15;
+      margin-bottom: 10px;
     }
-    .ssub {
-      font-size: 13px;
-      color: #6b5fa0;
+    .hero-headline em { font-style: italic; color: var(--accent); }
+    .hero-sub {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      max-width: 560px;
+      width: 100%;
+      padding: 0;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(124,58,237,.08);
+      overflow: hidden;
+      animation: fadeUp .5s .15s ease both;
+    }
+
+    /* ── WHAT'S BEING BUILT ── */
+    .building {
+      padding: 1.75rem 1.75rem 0;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .build-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
       margin-bottom: 1.75rem;
+    }
+    .build-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: #faf9ff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink2);
+    }
+    .build-item-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* ── DIVIDER ── */
+    .card-divider { height: 1px; background: var(--border); margin: 0 1.75rem; }
+
+    /* ── DELIVERY STATUS ── */
+    .delivery {
+      padding: 1.5rem 1.75rem;
+    }
+    .status-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      padding: 12px 0;
+      position: relative;
+    }
+    .status-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 40px;
+      bottom: -12px;
+      width: 2px;
+      background: var(--border);
+    }
+    .status-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+    .dot-done { background: var(--green); color: #fff; }
+    .dot-active {
+      background: var(--accent-light);
+      border: 2px solid var(--accent);
+      color: var(--accent2);
+    }
+    .dot-active::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-mid);
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+    .dot-pending { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+    .status-body { flex: 1; padding-top: 5px; }
+    .status-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-badge {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .badge-done { background: var(--green-light); color: #065f46; }
+    .badge-active { background: var(--accent-light); color: var(--accent2); }
+    .status-sub { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+
+    /* ── ETA BANNER ── */
+    .eta {
+      margin: 0 1.75rem 1.5rem;
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      border: 1px solid var(--accent-mid);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .eta-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .eta-text { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+    .eta-text strong { color: var(--accent2); font-weight: 600; }
+
+    /* ── SPAM ── */
+    .spam {
+      margin: 0 1.75rem 1.75rem;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 12.5px;
+      color: #78350f;
       line-height: 1.6;
     }
 
-    .hdiv {
-      border: none;
-      border-top: 1.5px solid #ede9fe;
-      margin: 1.5rem 0;
+    /* ── SHARE CTA ── */
+    .share-section {
+      background: var(--accent);
+      padding: 1.5rem 1.75rem;
     }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      text-align: left;
-      margin-bottom: 1.5rem;
-    }
-    .step-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      padding: 14px 0;
-      border-bottom: 1.5px solid #ede9fe;
-    }
-    .step-row:last-child { border-bottom: none; }
-
-    .step-num {
-      flex-shrink: 0;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1.5px solid #ddd8f5;
-      background: #f9f7fe;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Nunito', sans-serif;
-      font-size: 12px;
-      font-weight: 800;
-      color: #9b87d4;
-      margin-top: 1px;
-    }
-    .step-num.done {
-      background: #ede9fe;
-      border-color: #8b5cf6;
-      color: #5b21b6;
-    }
-    .step-num.active {
-      background: #8b5cf6;
-      border-color: #8b5cf6;
+    .share-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
       color: #fff;
-      animation: pulse 2s ease infinite;
+      margin-bottom: 5px;
     }
-    @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); }
-      70%  { box-shadow: 0 0 0 8px rgba(139,92,246,0); }
-      100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+    .share-sub {
+      font-size: 12.5px;
+      color: rgba(255,255,255,.75);
+      margin-bottom: 14px;
+      line-height: 1.55;
     }
-
-    .step-label {
-      font-family: 'Nunito', sans-serif;
+    .share-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
       font-size: 13px;
-      font-weight: 800;
-      color: #1a1640;
-      margin-bottom: 2px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .15s;
+      border: none;
     }
-    .step-desc {
-      font-size: 12px;
-      color: #9b87d4;
+    .share-btn-primary {
+      background: #fff;
+      color: var(--accent2);
+    }
+    .share-btn-primary:hover { background: var(--accent-light); }
+    .share-btn-secondary {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,.3);
+    }
+    .share-btn-secondary:hover { background: rgba(255,255,255,.25); }
+
+    /* ── FOLLOW ── */
+    .follow-section {
+      padding: 1.5rem 1.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .follow-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .follow-desc {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
       line-height: 1.5;
     }
-
-    .timer-box {
-      background: #f9f7fe;
-      border: 1.5px solid #ddd8f5;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 1.25rem;
-      text-align: left;
-    }
-    .timer-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #9b87d4;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-bottom: 10px;
-    }
-    .timer-bar-bg {
-      height: 6px;
-      background: #e0d9f5;
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .timer-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #8b5cf6, #38bdf8);
-      border-radius: 99px;
-      animation: fill-bar 1800s linear forwards;
-    }
-    @keyframes fill-bar {
-      from { width: 0%; }
-      to   { width: 100%; }
-    }
-    .timer-caption {
-      font-size: 12px;
-      color: #9b87d4;
-      margin-top: 8px;
-    }
-    .timer-caption strong {
-      color: #5b21b6;
-      font-weight: 700;
-    }
-
-    .spam-note {
-      display: flex;
+    .follow-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .follow-btn {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-      background: #f3f0fc;
-      border: 1.5px solid #c4b5fd;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 12px;
-      color: #6b5fa0;
-      text-align: left;
-      margin-bottom: 1.5rem;
-    }
-    .spam-note strong { color: #5b21b6; font-weight: 700; }
-
-    #foot {
-      text-align: center;
-      margin-top: 1.25rem;
-      font-size: 12px;
-      color: #9b87d4;
-    }
-    #foot a {
-      color: #8b5cf6;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink2);
       text-decoration: none;
-      font-weight: 600;
+      transition: all .15s;
     }
-    #foot a:hover { text-decoration: underline; }
+    .follow-btn:hover { border-color: var(--accent-mid); background: var(--accent-light); color: var(--accent2); }
+    .follow-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+      animation: fadeUp .5s .25s ease both;
+    }
+    .footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ringPulse {
+      0%, 100% { box-shadow: 0 0 0 12px rgba(124,58,237,.1), 0 8px 28px rgba(124,58,237,.35); }
+      50% { box-shadow: 0 0 0 18px rgba(124,58,237,.06), 0 8px 28px rgba(124,58,237,.35); }
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0; transform: scale(1.4); }
+    }
 
     @media (max-width: 480px) {
-      #card { padding: 2rem 1.25rem 1.5rem; }
-      .stit { font-size: 19px; }
+      body { padding: 1.5rem 1rem 4rem; }
+      .build-grid { grid-template-columns: 1fr; }
+      .building, .delivery, .follow-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .card-divider, .eta, .spam { margin-left: 1.25rem; margin-right: 1.25rem; }
+      .share-section { padding: 1.25rem; }
+      .share-btns, .follow-links { flex-direction: column; }
+      .share-btn, .follow-btn { justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-  <div id="hdr">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="52" height="52" style="display:block;margin:0 auto;">
-      <defs>
-        <linearGradient id="gfinal" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#F9A8D4"/>
-          <stop offset="45%" stop-color="#A855F7"/>
-          <stop offset="100%" stop-color="#38BDF8"/>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="500" height="500" rx="100" fill="#F8F5FF"/>
-      <ellipse cx="250" cy="250" r="190" fill="#EDE9FE" opacity="0.2"/>
-      <polygon points="250,58 374,120 374,246 250,308 126,246 126,120" fill="none" stroke="#E879F9" stroke-width="2.5" opacity="0.4"/>
-      <polygon points="250,80 350,136 350,248 250,304 150,248 150,136" fill="none" stroke="#C084FC" stroke-width="1.5" opacity="0.25"/>
-      <path d="M250 90 C250 90 358 200 358 260 C358 320 310 354 250 354 C190 354 142 320 142 260 C142 200 250 90 250 90 Z" fill="url(#gfinal)" opacity="0.95"/>
-      <circle cx="250" cy="264" r="12" fill="white" opacity="0.6"/>
-      <circle cx="250" cy="58" r="6" fill="#F9A8D4" opacity="0.8"/>
-      <circle cx="374" cy="120" r="5" fill="#C084FC" opacity="0.6"/>
-      <circle cx="374" cy="246" r="5" fill="#A855F7" opacity="0.6"/>
-      <circle cx="250" cy="308" r="6" fill="#38BDF8" opacity="0.8"/>
-      <circle cx="126" cy="246" r="5" fill="#818CF8" opacity="0.6"/>
-      <circle cx="126" cy="120" r="5" fill="#E879F9" opacity="0.6"/>
-    </svg>
-    <div id="tgl">BuiltWithSpring · AI-Powered Travel Planner</div>
-  </div>
-
-  <div id="card">
-
-    <div class="check-wrap">
-      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-        <polyline class="check-path" points="6,18 14,26 28,10"
-          stroke="#8b5cf6" stroke-width="3"
-          stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Nav -->
+  <div class="nav">
+    <a href="https://builtwithspring.com" class="nav-brand">
+      <svg width="18" height="18" viewBox="0 0 100 100" fill="none">
+        <path d="M50 20C50 20 75 42 75 60C75 73.8 63.8 85 50 85C36.2 85 25 73.8 25 60C25 42 50 20 50 20Z" fill="#7c3aed" opacity=".8"/>
+        <polygon points="50,18 72,30 72,55 50,67 28,55 28,30" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.6"/>
       </svg>
+      BuiltWithSpring
+    </a>
+    <div class="nav-support">Need help? <a href="mailto:hello@builtwithspring.com">Email us</a></div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-icon">
+      <div class="hero-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="hero-headline">Your trip is being<br/><em>planned right now.</em></h1>
+    <p class="hero-sub">Payment confirmed. Your personalised itinerary is on its way — check your inbox in the next 10–15 minutes.</p>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+
+    <!-- What's being built -->
+    <div class="building">
+      <div class="section-label">What we're building for you</div>
+      <div class="build-grid">
+        <div class="build-item"><span class="build-item-icon">📅</span> Day-by-day itinerary</div>
+        <div class="build-item"><span class="build-item-icon">🍜</span> Restaurant picks</div>
+        <div class="build-item"><span class="build-item-icon">🚆</span> Transport guide</div>
+        <div class="build-item"><span class="build-item-icon">📋</span> Booking tracker</div>
+        <div class="build-item"><span class="build-item-icon">🗺️</span> City activity guides</div>
+        <div class="build-item"><span class="build-item-icon">🛂</span> Visa &amp; packing info</div>
+      </div>
     </div>
 
-    <div class="stit">You're all set! 🎉</div>
-    <p class="ssub">Payment confirmed. Your personalized AI travel itinerary is being generated right now.</p>
+    <div class="card-divider"></div>
 
-    <hr class="hdiv"/>
+    <!-- Status -->
+    <div class="delivery">
+      <div class="section-label">Delivery status</div>
 
-    <div class="steps">
-      <div class="step-row">
-        <div class="step-num done">✓</div>
-        <div class="step-body">
-          <div class="step-label">Payment received</div>
-          <div class="step-desc">Your order has been confirmed and recorded.</div>
+      <div class="status-row">
+        <div class="status-dot dot-done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div class="status-body">
+          <div class="status-title">Payment confirmed <span class="status-badge badge-done">Done ✓</span></div>
+          <div class="status-sub">Your order is recorded and confirmed.</div>
         </div>
       </div>
-      <div class="step-row">
-        <div class="step-num active">2</div>
-        <div class="step-body">
-          <div class="step-label" style="color:#5b21b6;">Generating your itinerary</div>
-          <div class="step-desc">AI is building your day-by-day plan, booking tracker, restaurants, transport, and city guides.</div>
+
+      <div class="status-row">
+        <div class="status-dot dot-active">2</div>
+        <div class="status-body">
+          <div class="status-title">Generating your itinerary <span class="status-badge badge-active">In progress</span></div>
+          <div class="status-sub">AI is writing your day-by-day plan, selecting restaurants, mapping transport, and building your booking tracker.</div>
         </div>
       </div>
-      <div class="step-row">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <div class="step-label">Delivered to your inbox</div>
-          <div class="step-desc">Your Google Sheet itinerary link will arrive by email within 30 minutes.</div>
+
+      <div class="status-row">
+        <div class="status-dot dot-pending">3</div>
+        <div class="status-body">
+          <div class="status-title">Sent to your inbox</div>
+          <div class="status-sub">You'll get an email with your Google Sheet link — ready to save, edit, and share.</div>
         </div>
       </div>
     </div>
 
-    <div class="timer-box">
-      <div class="timer-label">Estimated delivery</div>
-      <div class="timer-bar-bg">
-        <div class="timer-bar-fill"></div>
+    <!-- ETA -->
+    <div class="eta">
+      <div class="eta-icon">⏱️</div>
+      <div class="eta-text">
+        <strong>Estimated delivery: 10–15 minutes.</strong> Most arrive within 15 minutes. If yours takes longer, it's still on the way — maximum 30 minutes.
       </div>
-      <div class="timer-caption">Within <strong>30 minutes</strong> — most arrive in 10–15 minutes ✨</div>
     </div>
 
-    <div class="spam-note">
-      <span style="font-size:1.1rem;">📬</span>
-      <span>Can't find it? Check your <strong>spam or promotions folder</strong> — sometimes it ends up there.</span>
+    <!-- Spam -->
+    <div class="spam">
+      📁 <strong>Can't find it?</strong> Check your <strong>spam or promotions folder.</strong> The email comes from <strong>hello@builtwithspring.com</strong> — add it to your contacts so it never misses again.
     </div>
 
-    <div id="foot">
-      Questions? <a href="mailto:hello@builtwithspring.com">hello@builtwithspring.com</a>
-      &nbsp;·&nbsp; <a href="https://builtwithspring.com">builtwithspring.com</a>
+    <div class="card-divider"></div>
+
+    <!-- Share CTA -->
+    <div class="share-section">
+      <div class="share-title">Know someone who needs this?</div>
+      <div class="share-sub">Send them the planner — free preview, no signup required.</div>
+      <div class="share-btns">
+        <button class="share-btn share-btn-primary" onclick="copyLink()">📋 Copy the link</button>
+        <a class="share-btn share-btn-secondary" href="https://wa.me/?text=Just%20used%20this%20AI%20travel%20planner%20to%20plan%20my%20trip%20%F0%9F%97%BA%EF%B8%8F%20%E2%80%94%20it%20builds%20a%20full%20personalised%20itinerary%20in%20under%2060%20seconds.%20Try%20the%20free%20preview%3A%20https%3A%2F%2Ftravel.builtwithspring.com" target="_blank">💬 Share on WhatsApp</a>
+        <a class="share-btn share-btn-secondary" href="https://twitter.com/intent/tweet?text=Just%20used%20an%20AI%20travel%20planner%20that%20built%20my%20full%20trip%20itinerary%20in%20minutes%20%F0%9F%97%BA%EF%B8%8F%20%E2%80%94%20day-by-day%20plan%2C%20restaurants%2C%20transport%2C%20booking%20tracker.%20Free%20preview%3A&url=https%3A%2F%2Ftravel.builtwithspring.com" target="_blank">𝕏 Share on X</a>
+      </div>
     </div>
 
-    <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1.5px solid #ede9fe;">
-      <div style="font-size:11px;font-weight:700;color:#9b87d4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Follow along while you wait</div>
-      <div style="display:flex;justify-content:center;gap:12px;">
-
-        <a href="https://www.instagram.com/BuiltWithSpring" target="_blank" style="text-decoration:none;">
-          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
-          </div>
+    <!-- Follow -->
+    <div class="follow-section">
+      <div class="follow-label">See example itineraries &amp; behind the build</div>
+      <div class="follow-desc">Follow along on Instagram for real itinerary examples, or watch how this was built on YouTube.</div>
+      <div class="follow-links">
+        <a class="follow-btn" href="https://www.instagram.com/BuiltWithSpring" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".5" fill="currentColor"/></svg>
+          Instagram
         </a>
-
-        <a href="https://www.linkedin.com/in/springlam/" target="_blank" style="text-decoration:none;">
-          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
-            </svg>
-          </div>
+        <a class="follow-btn" href="https://www.linkedin.com/in/springlam/" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          LinkedIn
         </a>
-
-        <a href="https://www.youtube.com/@BuiltWithSpring" target="_blank" style="text-decoration:none;">
-          <div style="width:40px;height:40px;background:#f3f0fc;border:1.5px solid #ddd8f5;border-radius:10px;display:flex;align-items:center;justify-content:center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#8b5cf6" stroke="none"/>
-            </svg>
-          </div>
+        <a class="follow-btn" href="https://www.youtube.com/@BuiltWithSpring" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/></svg>
+          YouTube
         </a>
-
       </div>
     </div>
 
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="https://builtwithspring.com">builtwithspring.com</a> · <a href="mailto:hello@builtwithspring.com">hello@builtwithspring.com</a><br/>
+    Built with ❤️ in Austin, TX
+  </div>
+
+  <script>
+    function copyLink() {
+      navigator.clipboard.writeText('https://travel.builtwithspring.com').then(() => {
+        const btn = document.querySelector('.share-btn-primary');
+        const orig = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = orig, 2000);
+      });
+    }
+  </script>
 
 </body>
 </html>
