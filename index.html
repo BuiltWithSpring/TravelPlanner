@@ -406,7 +406,7 @@
 <div id="landing">
   <div class="l-badge"><span></span> AI-Powered · Instant Itinerary</div>
 
-  <h1 class="l-headline">Your trip planned in<br/><em>under 60 seconds.</em></h1>
+  <h1 class="l-headline">Your trip,<br/><em>expertly planned.</em></h1>
 
   <p class="l-sub">Tell us where you're going and what you love. We'll build a personalised day-by-day itinerary — cities, restaurants, transport, and a booking tracker — delivered straight to your inbox.</p>
 
@@ -600,7 +600,7 @@
         <div class="cc-grid g2">
           <div class="mc" onclick="pickPace(this)">
             <div class="mc-top"><span class="mc-icon">🏃</span><span class="mc-title">Pack it in</span></div>
-            <div class="mc-sub">Maximise every day — lots of activities and sights</div>
+            <div class="mc-sub">Maximise every day with activities and sights</div>
           </div>
           <div class="mc" id="paceGrid" onclick="pickPace(this)">
             <div class="mc-top"><span class="mc-icon">🌿</span><span class="mc-title">Take it slow</span></div>
@@ -621,19 +621,23 @@
       </div>
 
       <div class="fg">
-        <label class="fl">Transport between cities <span class="opt">optional — AI recommends if blank</span></label>
-        <div class="cc-grid g3" id="tripStructureGrid">
-          <div class="mc" onclick="pickTripStructure(this)" data-value="road_trip">
-            <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Road trip</span></div>
-            <div class="mc-sub">Drive between cities and stop along the way</div>
+        <label class="fl">Any transport preferences? <span class="opt">optional</span></label>
+        <div class="cc-grid g2" id="tripStructureGrid">
+          <div class="mc on" onclick="pickTripStructure(this,'ai')" data-value="ai" id="ts-ai">
+            <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">AI optimises for me</span></div>
+            <div class="mc-sub">Best mix of train, flight, and car per leg</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this)" data-value="train">
+          <div class="mc" onclick="pickTripStructure(this,'road_trip')" data-value="road_trip" id="ts-road">
+            <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Road trip</span></div>
+            <div class="mc-sub">Drive between cities, stop along the way</div>
+          </div>
+          <div class="mc" onclick="pickTripStructure(this,'train')" data-value="train" id="ts-train">
             <div class="mc-top"><span class="mc-icon">🚆</span><span class="mc-title">Train</span></div>
             <div class="mc-sub">Rail corridors between cities</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this)" data-value="flying">
+          <div class="mc" onclick="pickTripStructure(this,'flying')" data-value="flying" id="ts-fly">
             <div class="mc-top"><span class="mc-icon">✈️</span><span class="mc-title">Fly</span></div>
-            <div class="mc-sub">Fly and explore each city independently</div>
+            <div class="mc-sub">Fly between cities independently</div>
           </div>
         </div>
       </div>
@@ -1014,12 +1018,42 @@
       document.getElementById('gsw').classList.toggle('hidden', !(t==='Friends'||t==='Family + kids'||t==='Family'));
     }
   }
-  let tripStructure = null;
-  function pickTripStructure(el) {
-    const wasOn = el.classList.contains('on');
-    document.getElementById('tripStructureGrid').querySelectorAll('.mc').forEach(c => c.classList.remove('on'));
-    if (!wasOn) { el.classList.add('on'); tripStructure = el.dataset.value; }
-    else tripStructure = null;
+  let tripStructure = 'ai'; // default — AI optimises
+  function pickTripStructure(el, val) {
+    const aiBtn   = document.getElementById('ts-ai');
+    const roadBtn = document.getElementById('ts-road');
+    const trainBtn= document.getElementById('ts-train');
+    const flyBtn  = document.getElementById('ts-fly');
+
+    if (val === 'ai') {
+      // AI selected — deselect everything else
+      [aiBtn, roadBtn, trainBtn, flyBtn].forEach(b => b.classList.remove('on'));
+      aiBtn.classList.add('on');
+      tripStructure = 'ai';
+      return;
+    }
+
+    if (val === 'road_trip') {
+      // Road trip is mutually exclusive — deselect train, fly, ai
+      const wasOn = roadBtn.classList.contains('on');
+      [aiBtn, roadBtn, trainBtn, flyBtn].forEach(b => b.classList.remove('on'));
+      if (!wasOn) { roadBtn.classList.add('on'); tripStructure = 'road_trip'; }
+      else { aiBtn.classList.add('on'); tripStructure = 'ai'; }
+      return;
+    }
+
+    // Train or Fly — multi-select, deselect AI and road trip
+    aiBtn.classList.remove('on');
+    roadBtn.classList.remove('on');
+    el.classList.toggle('on');
+
+    const trainOn = trainBtn.classList.contains('on');
+    const flyOn   = flyBtn.classList.contains('on');
+
+    if (trainOn && flyOn)   tripStructure = 'train, flying';
+    else if (trainOn)       tripStructure = 'train';
+    else if (flyOn)         tripStructure = 'flying';
+    else { aiBtn.classList.add('on'); tripStructure = 'ai'; } // nothing selected — revert to AI
   }
   let selectedPaceEl = null;
   function pickPace(el) {
@@ -1059,7 +1093,7 @@
       arrivalDate: document.getElementById('arrDate').value,
       departureDate: document.getElementById('depDate').value,
       cityPlanningMode: currentMode==='ai' ? 'AI recommended' : 'Traveler selected',
-      tripStructure: tripStructure,
+      tripStructure: tripStructure === 'ai' ? null : tripStructure,
       citiesToVisit: currentMode==='know' ? tags : [],
       aiCityRecommendation: currentMode==='ai',
       anchorCities: currentMode==='ai' ? anchorTags : [],
