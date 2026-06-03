@@ -408,7 +408,7 @@
 
   <h1 class="l-headline">Your trip,<br/><em>expertly planned.</em></h1>
 
-  <p class="l-sub">Meet Spring, your personal AI travel agent. Tell us where you're going and what you love — Spring builds a personalised day-by-day itinerary with cities, restaurants, transport, and a booking tracker, delivered straight to your inbox.</p>
+  <p class="l-sub">Meet Spring, your personal AI travel agent. Tell us where you're going — Spring handles the rest.</p>
 
   <button class="l-cta" onclick="startPlanning()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -725,7 +725,7 @@
       <div id="previewLoading" class="loading-wrap">
         <div class="spinner"></div>
         <div class="loading-msg" id="loadingMsg">AI is planning your cities…</div>
-        <div class="loading-hint">This takes about 10–20 seconds — hang tight ✨</div>
+        <div class="loading-hint">This usually takes 15–40 seconds depending on your trip ✨</div>
       </div>
 
       <!-- Content -->
@@ -793,7 +793,7 @@
 
       <!-- Error -->
       <div id="previewError" class="error-wrap hidden">
-        <div class="error-icon">⚡</div>
+        <div class="error-icon">⚠️</div>
         <div class="error-title">Something went wrong</div>
         <div class="error-sub">Spring is working hard on your preview — this can happen on complex trips or slower connections. It usually works on the second attempt.</div>
         <button class="bnx" onclick="generatePreview()" style="margin:0 auto;display:block;">Try again</button>
