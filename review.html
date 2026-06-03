@@ -433,6 +433,7 @@
     const params = new URLSearchParams(window.location.search);
     const pName = params.get('name') || '';
     const pCountry = params.get('country') || '';
+    const pEmail = params.get('email') || '';
     const pRating = parseInt(params.get('rating') || '0');
 
     if (pName) document.getElementById('firstName').value = pName;
@@ -499,23 +500,23 @@
       btn.textContent = 'Submitting…';
 
       const review = {
-        id: Date.now().toString(),
+        email: pEmail,
         rating,
         firstName: document.getElementById('firstName').value.trim() || 'Anonymous',
         country: document.getElementById('country').value.trim() || '',
         reviewText: document.getElementById('reviewText').value.trim(),
-        recommend,
+        recommend: recommend || '',
         date: new Date().toISOString(),
       };
 
       try {
-        let reviews = [];
-        try {
-          const existing = await window.storage.get('bws_reviews');
-          if (existing) reviews = JSON.parse(existing.value);
-        } catch(e) {}
-        reviews.push(review);
-        await window.storage.set('bws_reviews', JSON.stringify(reviews), true);
+        const res = await fetch('https://hook.us2.make.com/endpd72y5mzaq9eqx2i2robtv46cvza8', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(review)
+        });
+
+        if (!res.ok) throw new Error('Server returned ' + res.status);
 
         // Show success
         document.getElementById('formState').style.display = 'none';
