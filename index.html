@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="/favicon.svg"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
   <style>
     :root {
       --ink: #0f0c1e;
@@ -72,10 +72,11 @@
     }
     .l-badge span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
     .l-headline {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Bricolage Grotesque', sans-serif;
       font-size: clamp(2.4rem, 6vw, 3.8rem);
-      font-weight: 700;
-      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
       color: var(--ink);
       margin-bottom: 1.25rem;
       max-width: 700px;
@@ -179,9 +180,10 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif;
-      font-size: 14px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 15px;
       font-weight: 700;
+      letter-spacing: -0.02em;
       color: var(--ink);
       cursor: pointer;
       text-decoration: none;
@@ -217,7 +219,7 @@
 
     /* ── STEP HEADER ─────────────────────────────────── */
     .step-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
-    .step-title { font-family: 'DM Sans', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; line-height: 1.2; letter-spacing: -0.01em; }
+    .step-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; line-height: 1.2; letter-spacing: -0.02em; }
     .step-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.6; }
 
     /* ── FORM ELEMENTS ───────────────────────────────── */
@@ -351,7 +353,7 @@
     .incl-row { font-size: 13px; color: var(--ink2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
     .incl-row:last-child { border-bottom: none; }
     .time-saved { background: var(--accent); border-radius: var(--radius-sm); padding: 18px; text-align: center; margin-bottom: 1.25rem; }
-    .time-saved-num { font-family: 'DM Sans', sans-serif; font-size: 2.75rem; font-weight: 600; color: #fff; letter-spacing: -0.03em; }
+    .time-saved-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 2.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; }
     .time-saved-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 4px; }
     .share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .share-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--accent-mid); background: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: var(--accent2); cursor: pointer; text-decoration: none; display: inline-block; transition: all .15s; }
@@ -373,7 +375,7 @@
     /* ── SUCCESS ─────────────────────────────────────── */
     .success-wrap { text-align: center; padding: 2rem 0; }
     .success-icon { width: 64px; height: 64px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
-    .success-title { font-family: 'DM Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.02em; }
+    .success-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.02em; }
     .success-sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; }
     .success-box { background: var(--accent-light); border: 1px solid var(--accent-mid); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 13px; color: var(--ink2); text-align: left; margin-bottom: 1rem; line-height: 1.8; }
     .beta-box { background: #fef9ec; border: 1px solid #fcd34d; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: #78350f; text-align: left; }
@@ -444,9 +446,9 @@
   <div class="topbar">
     <div class="topbar-brand" onclick="backToLanding()">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#7c3aed;border-radius:9px;flex-shrink:0;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <polygon points="12,2 20.66,7 20.66,17 12,22 3.34,17 3.34,7" stroke="white" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-          <circle cx="12" cy="12" r="4" fill="white"/>
+        <svg viewBox="0 0 18 18" fill="none" width="18" height="18">
+          <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" fill-opacity="0.95"/>
+          <circle cx="9" cy="9" r="2.5" fill="white" fill-opacity="0.4"/>
         </svg>
       </span>
       BuiltWithSpring
