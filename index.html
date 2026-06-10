@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src 'self' https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-src https://js.stripe.com https://checkout.stripe.com;"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src 'self' https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://countriesnow.space; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-src https://js.stripe.com https://checkout.stripe.com;"/>
   <title>BuiltWithSpring · AI Travel Planner</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <link rel="apple-touch-icon" href="/favicon.svg"/>
@@ -1667,80 +1667,68 @@ Extra notes: ${d.extraNotes}`;
     return starts.concat(contains).slice(0, 8);
   }
 
-  // ── CITY DATA (top world cities) ───────────────────
-  const CITIES = [
-    // Europe
-    ["London","United Kingdom"],["Manchester","United Kingdom"],["Edinburgh","United Kingdom"],["Liverpool","United Kingdom"],["Glasgow","United Kingdom"],["Birmingham","United Kingdom"],["Oxford","United Kingdom"],["Cambridge","United Kingdom"],["Bath","United Kingdom"],["York","United Kingdom"],["Brighton","United Kingdom"],
-    ["Dublin","Ireland"],["Galway","Ireland"],["Cork","Ireland"],
-    ["Paris","France"],["Nice","France"],["Lyon","France"],["Marseille","France"],["Bordeaux","France"],["Toulouse","France"],["Strasbourg","France"],["Cannes","France"],["Avignon","France"],["Lille","France"],
-    ["Amsterdam","Netherlands"],["Rotterdam","Netherlands"],["The Hague","Netherlands"],["Utrecht","Netherlands"],
-    ["Brussels","Belgium"],["Bruges","Belgium"],["Antwerp","Belgium"],["Ghent","Belgium"],
-    ["Berlin","Germany"],["Munich","Germany"],["Frankfurt","Germany"],["Hamburg","Germany"],["Cologne","Germany"],["Düsseldorf","Germany"],["Stuttgart","Germany"],["Dresden","Germany"],["Heidelberg","Germany"],["Nuremberg","Germany"],
-    ["Madrid","Spain"],["Barcelona","Spain"],["Seville","Spain"],["Valencia","Spain"],["Granada","Spain"],["Malaga","Spain"],["Bilbao","Spain"],["San Sebastián","Spain"],["Córdoba","Spain"],["Palma","Spain"],["Ibiza","Spain"],
-    ["Lisbon","Portugal"],["Porto","Portugal"],["Faro","Portugal"],["Sintra","Portugal"],["Funchal","Portugal"],
-    ["Rome","Italy"],["Milan","Italy"],["Venice","Italy"],["Florence","Italy"],["Naples","Italy"],["Bologna","Italy"],["Turin","Italy"],["Verona","Italy"],["Pisa","Italy"],["Palermo","Italy"],["Genoa","Italy"],["Amalfi","Italy"],["Sorrento","Italy"],
-    ["Athens","Greece"],["Santorini","Greece"],["Mykonos","Greece"],["Thessaloniki","Greece"],["Heraklion","Greece"],["Rhodes","Greece"],["Corfu","Greece"],
-    ["Zurich","Switzerland"],["Geneva","Switzerland"],["Lucerne","Switzerland"],["Interlaken","Switzerland"],["Bern","Switzerland"],["Zermatt","Switzerland"],
-    ["Vienna","Austria"],["Salzburg","Austria"],["Innsbruck","Austria"],["Hallstatt","Austria"],
-    ["Prague","Czechia"],["Brno","Czechia"],["Budapest","Hungary"],
-    ["Warsaw","Poland"],["Krakow","Poland"],["Gdansk","Poland"],["Wroclaw","Poland"],
-    ["Copenhagen","Denmark"],["Stockholm","Sweden"],["Gothenburg","Sweden"],["Oslo","Norway"],["Bergen","Norway"],["Tromsø","Norway"],["Helsinki","Finland"],["Reykjavik","Iceland"],
-    ["Istanbul","Turkey"],["Cappadocia","Turkey"],["Antalya","Turkey"],["Izmir","Turkey"],["Bodrum","Turkey"],
-    ["Moscow","Russia"],["St Petersburg","Russia"],["Kyiv","Ukraine"],
-    ["Riga","Latvia"],["Tallinn","Estonia"],["Vilnius","Lithuania"],
-    ["Bucharest","Romania"],["Sofia","Bulgaria"],["Belgrade","Serbia"],
-    ["Zagreb","Croatia"],["Dubrovnik","Croatia"],["Split","Croatia"],["Hvar","Croatia"],
-    ["Ljubljana","Slovenia"],["Bled","Slovenia"],["Tirana","Albania"],
-    ["Luxembourg","Luxembourg"],["Monaco","Monaco"],["Valletta","Malta"],
-    // Middle East & Africa
-    ["Dubai","United Arab Emirates"],["Abu Dhabi","United Arab Emirates"],["Doha","Qatar"],
-    ["Jeddah","Saudi Arabia"],["Riyadh","Saudi Arabia"],["Muscat","Oman"],
-    ["Amman","Jordan"],["Petra","Jordan"],["Jerusalem","Israel"],["Tel Aviv","Israel"],["Beirut","Lebanon"],
-    ["Cairo","Egypt"],["Luxor","Egypt"],["Aswan","Egypt"],["Sharm el-Sheikh","Egypt"],["Hurghada","Egypt"],
-    ["Marrakesh","Morocco"],["Casablanca","Morocco"],["Fez","Morocco"],["Chefchaouen","Morocco"],["Tunis","Tunisia"],
-    ["Cape Town","South Africa"],["Johannesburg","South Africa"],["Durban","South Africa"],
-    ["Nairobi","Kenya"],["Mombasa","Kenya"],["Dar es Salaam","Tanzania"],["Zanzibar","Tanzania"],["Arusha","Tanzania"],
-    ["Addis Ababa","Ethiopia"],["Lagos","Nigeria"],["Accra","Ghana"],["Victoria Falls","Zimbabwe"],["Windhoek","Namibia"],["Port Louis","Mauritius"],
-    // North America
-    ["New York","United States"],["Los Angeles","United States"],["San Francisco","United States"],["Chicago","United States"],["Miami","United States"],["Las Vegas","United States"],["Boston","United States"],["Seattle","United States"],["Washington","United States"],["Orlando","United States"],["New Orleans","United States"],["Honolulu","United States"],["San Diego","United States"],["Denver","United States"],["Austin","United States"],["Nashville","United States"],["Portland","United States"],["Philadelphia","United States"],["Atlanta","United States"],["Dallas","United States"],["Houston","United States"],["Phoenix","United States"],["Savannah","United States"],["Charleston","United States"],
-    ["Toronto","Canada"],["Vancouver","Canada"],["Montreal","Canada"],["Quebec City","Canada"],["Calgary","Canada"],["Ottawa","Canada"],["Banff","Canada"],
-    ["Mexico City","Mexico"],["Cancun","Mexico"],["Tulum","Mexico"],["Playa del Carmen","Mexico"],["Guadalajara","Mexico"],["Oaxaca","Mexico"],["Cabo San Lucas","Mexico"],["Puerto Vallarta","Mexico"],["Mérida","Mexico"],
-    ["Havana","Cuba"],["Punta Cana","Dominican Republic"],["Santo Domingo","Dominican Republic"],["San Juan","Puerto Rico"],["Montego Bay","Jamaica"],["Kingston","Jamaica"],["Nassau","Bahamas"],
-    ["Panama City","Panama"],["San José","Costa Rica"],["Antigua","Guatemala"],["Guatemala City","Guatemala"],
-    // South America
-    ["Bogotá","Colombia"],["Medellín","Colombia"],["Cartagena","Colombia"],["Lima","Peru"],["Cusco","Peru"],["Quito","Ecuador"],["La Paz","Bolivia"],["Santiago","Chile"],["Buenos Aires","Argentina"],["Mendoza","Argentina"],["Bariloche","Argentina"],["São Paulo","Brazil"],["Rio de Janeiro","Brazil"],["Salvador","Brazil"],["Brasília","Brazil"],["Montevideo","Uruguay"],
-    // Asia
-    ["Tokyo","Japan"],["Osaka","Japan"],["Kyoto","Japan"],["Hiroshima","Japan"],["Sapporo","Japan"],["Nagoya","Japan"],["Fukuoka","Japan"],["Nara","Japan"],["Okinawa","Japan"],["Hakone","Japan"],
-    ["Seoul","South Korea"],["Busan","South Korea"],["Jeju","South Korea"],
-    ["Beijing","China"],["Shanghai","China"],["Guangzhou","China"],["Shenzhen","China"],["Chengdu","China"],["Xi'an","China"],["Hangzhou","China"],["Guilin","China"],["Suzhou","China"],
-    ["Hong Kong","Hong Kong"],["Macau","Macau"],["Taipei","Taiwan"],["Kaohsiung","Taiwan"],
-    ["Bangkok","Thailand"],["Chiang Mai","Thailand"],["Phuket","Thailand"],["Krabi","Thailand"],["Pattaya","Thailand"],["Koh Samui","Thailand"],
-    ["Singapore","Singapore"],["Kuala Lumpur","Malaysia"],["Penang","Malaysia"],["Langkawi","Malaysia"],["Kota Kinabalu","Malaysia"],
-    ["Jakarta","Indonesia"],["Bali","Indonesia"],["Ubud","Indonesia"],["Yogyakarta","Indonesia"],["Lombok","Indonesia"],
-    ["Manila","Philippines"],["Cebu","Philippines"],["Boracay","Philippines"],["Palawan","Philippines"],
-    ["Hanoi","Vietnam"],["Ho Chi Minh City","Vietnam"],["Da Nang","Vietnam"],["Hoi An","Vietnam"],["Ha Long","Vietnam"],["Hue","Vietnam"],
-    ["Siem Reap","Cambodia"],["Phnom Penh","Cambodia"],["Vientiane","Laos"],["Luang Prabang","Laos"],["Yangon","Myanmar"],["Bagan","Myanmar"],
-    ["Delhi","India"],["Mumbai","India"],["Bengaluru","India"],["Jaipur","India"],["Agra","India"],["Goa","India"],["Udaipur","India"],["Kolkata","India"],["Chennai","India"],["Varanasi","India"],["Kochi","India"],
-    ["Kathmandu","Nepal"],["Pokhara","Nepal"],["Colombo","Sri Lanka"],["Kandy","Sri Lanka"],["Galle","Sri Lanka"],["Malé","Maldives"],["Thimphu","Bhutan"],
-    ["Dhaka","Bangladesh"],["Islamabad","Pakistan"],["Lahore","Pakistan"],
-    // Oceania
-    ["Sydney","Australia"],["Melbourne","Australia"],["Brisbane","Australia"],["Perth","Australia"],["Adelaide","Australia"],["Gold Coast","Australia"],["Cairns","Australia"],["Hobart","Australia"],["Darwin","Australia"],["Canberra","Australia"],
-    ["Auckland","New Zealand"],["Wellington","New Zealand"],["Christchurch","New Zealand"],["Queenstown","New Zealand"],["Rotorua","New Zealand"],
-    ["Nadi","Fiji"],["Suva","Fiji"],["Papeete","French Polynesia"]
-  ].map(c => ({ city: c[0], co: c[1] }));
+  // ── CITY AUTOCOMPLETE (dynamic, per selected country) ──
+  // Cities are fetched on demand from countriesnow.space for the Step 1 country and
+  // cached for the session. Cache value per country key:
+  //   undefined = not fetched · 'loading' · 'none' (failed/empty → free-type) · string[]
+  const cityCache = {};
 
-  function getCityMatches(q) {
-    if (q.length < 2) return []; // minimum 2 characters before showing results
+  async function fetchCitiesForCountry(country) {
+    try {
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country })
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data && data.error === false && Array.isArray(data.data) && data.data.length) {
+        return Array.from(new Set(data.data.filter(Boolean))); // de-dupe, drop blanks
+      }
+      return null;
+    } catch (e) {
+      return null; // network/CSP/parse failure → silent fallback
+    }
+  }
+
+  function filterCityNames(list, q) {
     q = q.toLowerCase();
     const starts = [], contains = [];
-    for (const c of CITIES) {
-      const l = c.city.toLowerCase();
-      const idx = (l + ' ' + c.co.toLowerCase()).indexOf(q);
-      if (idx < 0) continue;
-      const item = { main: c.city, meta: c.co, value: c.city };
+    for (const name of list) {
+      const l = name.toLowerCase();
+      if (l.indexOf(q) < 0) continue;
+      const item = { main: name, value: name }; // name only — country already chosen
       if (l.startsWith(q)) starts.push(item); else contains.push(item);
     }
     return starts.concat(contains).slice(0, 8);
+  }
+
+  // Build a matcher for the autocomplete engine, bound to one input so it can show
+  // the loading placeholder and re-render the dropdown once the fetch resolves.
+  function makeCityMatcher(inp) {
+    return function (q) {
+      if (q.length < 2) return [];          // minimum 2 characters
+      const country = countryTag;
+      if (!country) return [];              // no country selected yet — free-type
+      const key = country.toLowerCase();
+      const cached = cityCache[key];
+
+      if (cached === undefined) {
+        // First lookup for this country this session — fetch once, show loading state.
+        cityCache[key] = 'loading';
+        const original = inp.placeholder;
+        inp.placeholder = 'Loading cities…';
+        fetchCitiesForCountry(country).then(list => {
+          cityCache[key] = (list && list.length) ? list : 'none';
+          if (inp.placeholder === 'Loading cities…') inp.placeholder = original;
+          if (document.activeElement === inp) inp.dispatchEvent(new Event('input')); // re-render
+        });
+        return [];
+      }
+      if (cached === 'loading') return [];
+      if (cached === 'none') return [];     // failed/empty — free-type silently
+      return filterCityNames(cached, q);
+    };
   }
 
   // ── CROSS-AIRPORT WARNING ──────────────────────────
@@ -1816,10 +1804,10 @@ Extra notes: ${d.extraNotes}`;
     });
     const cityInp = document.getElementById('tagInp');
     const cityWrap = document.getElementById('tagWrap');
-    if (cityInp && cityWrap) attachAutocomplete(cityInp, cityWrap, getCityMatches, m => {
+    if (cityInp && cityWrap) attachAutocomplete(cityInp, cityWrap, makeCityMatcher(cityInp), m => {
       addTag(m.value, tags, tagWrap, tagInp, null); // append as a tag, same as Enter-to-confirm
     });
-    if (anchorInp && anchorWrap) attachAutocomplete(anchorInp, anchorWrap, getCityMatches, m => {
+    if (anchorInp && anchorWrap) attachAutocomplete(anchorInp, anchorWrap, makeCityMatcher(anchorInp), m => {
       addTag(m.value, anchorTags, anchorWrap, anchorInp, 3); // must-include cities — same tag behavior, max 3
     });
   })();
