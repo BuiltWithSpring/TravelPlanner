@@ -567,7 +567,6 @@
           </div>
           <div class="hint">Start typing a city, airport, or code — pick from the list.</div>
           <div class="error-msg" id="err-arrivalAirport">Please enter your arrival airport</div>
-          <div class="error-msg" id="err-arr-country"></div>
         </div>
         <div class="fg">
           <label class="fl">Departure airport <span class="req">*</span></label>
@@ -576,8 +575,7 @@
           </div>
           <div class="hint">Can be same as arrival.</div>
           <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
-          <div class="error-msg" id="err-airport-country">Your arrival and departure airports are in different countries. This planner covers one country per trip — please check your airports.</div>
-          <div class="error-msg" id="err-dep-country"></div>
+          <div class="error-msg" id="err-airport-country">Heads up — your arrival and departure airports are in different countries. This planner covers one country per trip, so it'll focus on your arrival country. You can continue if that's intended.</div>
         </div>
       </div>
 
@@ -618,7 +616,6 @@
           <input class="tag-inp" id="tagInp" placeholder="Type a city — pick from the list or press Enter…"/>
         </div>
         <div class="hint">Type 2+ letters to search, pick from the list, or press Enter after each city.</div>
-        <div class="error-msg" id="err-city-country"></div>
       </div>
 
       <div class="fg hidden" id="cityAIBlock">
@@ -632,7 +629,6 @@
             <input class="tag-inp" id="anchorInp" placeholder="Type a city and press Enter…"/>
           </div>
           <div class="hint">AI builds around these, or leave blank and it decides everything.</div>
-          <div class="error-msg" id="err-anchor-country"></div>
         </div>
       </div>
 
@@ -893,7 +889,6 @@
     document.getElementById('modeAI').classList.toggle('on', mode === 'ai');
     document.getElementById('cityKnowBlock').classList.toggle('hidden', mode !== 'know');
     document.getElementById('cityAIBlock').classList.toggle('hidden', mode !== 'ai');
-    refreshStep2Validity(); // cities-vs-country only applies in "know" mode
   }
 
   // ── TAGS ───────────────────────────────────────────
@@ -913,7 +908,6 @@
     t.innerHTML = v + '<span class="tag-x" onclick="removeTag(this,\'' + v.replace(/'/g,"\\'") + '\',' + (arr===tags?'true':'false') + ')">&times;</span>';
     wrap.insertBefore(t, inp);
     inp.value = '';
-    refreshStep2Validity(); // re-check cities-vs-country when a city tag is added
   }
   function removeTag(el, val, isMain) {
     const arr = isMain ? tags : anchorTags;
@@ -921,7 +915,6 @@
     el.parentElement.remove();
     const inp = isMain ? tagInp : anchorInp;
     if (arr.length === 0) inp.placeholder = isMain ? 'Type a city and press Enter or comma…' : 'Type a city and press Enter…';
-    refreshStep2Validity(); // re-check cities-vs-country when a city tag is removed
   }
   tagInp.addEventListener('keydown', e => {
     if (e.key==='Enter'||e.key===',') { e.preventDefault(); addTag(tagInp.value, tags, tagWrap, tagInp, null); }
@@ -954,7 +947,6 @@
     tag.className = 'tag';
     tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
     wrap.insertBefore(tag, inp);
-    refreshStep2Validity(); // country changed — re-check airports & cities against it
   }
   function removeCountryTag() {
     countryTag = null;
@@ -963,7 +955,6 @@
     const inp = document.getElementById('countryInp');
     inp.placeholder = 'Type a country and press Enter…'; inp.focus();
     document.getElementById('err-country-max').style.display='none';
-    refreshStep2Validity(); // country cleared — clear country-dependent mismatch errors
   }
   function autoSaveCountryTag() {
     const inp = document.getElementById('countryInp');
@@ -1034,7 +1025,7 @@
     const dep = document.getElementById('depDate').value;
     if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport','arrivalAirport'); ok=false; }
     if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport','departureAirport'); ok=false; }
-    if (!refreshStep2Validity()) ok=false; // blocking cross-field country checks (airports vs each other, airports & cities vs selected country)
+    refreshStep2Validity(); // cross-airport mismatch is a non-blocking warning only — never blocks Continue
     if (!arr) { showError('err-arrDate','arrDate'); ok=false; }
     else if (arr < today) { document.getElementById('err-arrDate-past').style.display='block'; ok=false; }
     if (!dep) { showError('err-depDate','depDate'); ok=false; }
@@ -1752,120 +1743,58 @@ Extra notes: ${d.extraNotes}`;
     return starts.concat(contains).slice(0, 8);
   }
 
-  // ── CROSS-COUNTRY VALIDATION ───────────────────────
-  // Reconcile the differing country labels across datasets (airports use "USA"/"UAE",
-  // the country & city lists use the full names) so valid trips aren't falsely flagged.
+  // ── CROSS-AIRPORT WARNING ──────────────────────────
+  // Reconcile the differing country labels across datasets (airports use "USA"/"UAE" etc.).
   const COUNTRY_ALIASES = {
     'usa': 'united states', 'us': 'united states', 'u.s.': 'united states', 'u.s.a.': 'united states',
     'united states of america': 'united states', 'america': 'united states',
     'uae': 'united arab emirates', 'u.a.e.': 'united arab emirates',
     'uk': 'united kingdom', 'u.k.': 'united kingdom', 'great britain': 'united kingdom', 'england': 'united kingdom'
   };
+  // Different political territories commonly used as gateways for the same trip —
+  // mapped to one region so they don't trigger the cross-airport warning.
+  const REGION_EQUIV = {
+    'hong kong': 'china', 'macau': 'china',
+    'vatican city': 'italy', 'vatican': 'italy',
+    'monaco': 'france', 'gibraltar': 'spain'
+  };
   function normalizeCountry(name) {
     if (!name) return '';
     const n = String(name).trim().toLowerCase();
     return COUNTRY_ALIASES[n] || n;
   }
-  function selectedCountryNorm() { return normalizeCountry(countryTag); }
-
+  function regionOf(country) {
+    const n = normalizeCountry(country);
+    return REGION_EQUIV[n] || n;
+  }
   function airportCountryOf(val) {
     if (!val) return null;
     const code = val.trim().toUpperCase();
     const a = AIRPORTS.find(x => x.code === code);
     return a ? a.co : null;
   }
-  function cityCountryOf(name) {
-    if (!name) return null;
-    const n = name.trim().toLowerCase();
-    const c = CITIES.find(x => x.city.toLowerCase() === n);
-    return c ? c.co : null;
-  }
-  function setStep2Continue(enabled) {
-    const btn = document.getElementById('step2Continue');
-    if (!btn) return;
-    btn.disabled = !enabled;
-    btn.style.opacity = enabled ? '' : '0.5';
-    btn.style.cursor = enabled ? '' : 'not-allowed';
-  }
 
-  // Each check shows/clears only its own error and returns true (OK) / false (blocking mismatch).
-  // None of them touch the Continue button — refreshStep2Validity() owns that.
-
-  // Arrival vs departure airport — must be the same country.
+  // Arrival vs departure airport. Non-blocking WARNING when they're in different
+  // regions — the traveler may intentionally be planning a multi-country trip, so we
+  // surface the red text but never disable Continue. Known gateway pairs
+  // (Hong Kong/Macau ↔ China, Vatican ↔ Italy, Monaco ↔ France, Gibraltar ↔ Spain)
+  // count as the same region.
   function checkAirportCountries() {
     const arrV = (document.getElementById('arrivalAirport').value || '').trim();
     const depV = (document.getElementById('departureAirport').value || '').trim();
     const err = document.getElementById('err-airport-country');
     const depInp = document.getElementById('departureAirport');
-    if (!arrV || !depV) { err.classList.remove('on'); return true; } // only once both have a value
+    err.classList.remove('on'); depInp.classList.remove('field-error');
+    if (!arrV || !depV) return;                  // only once both have a value
     const ca = airportCountryOf(arrV), cd = airportCountryOf(depV);
-    if (ca && cd && normalizeCountry(ca) !== normalizeCountry(cd)) { err.classList.add('on'); depInp.classList.add('field-error'); return false; }
-    err.classList.remove('on'); return true;
+    if (!ca || !cd) return;                       // unknown code(s) — can't determine
+    if (regionOf(ca) === regionOf(cd)) return;    // same region (incl. gateway exceptions)
+    err.classList.add('on'); depInp.classList.add('field-error'); // warn only — do not block
   }
 
-  // Single airport vs the Step 1 country. `which` is 'arr' or 'dep'.
-  function checkAirportVsCountry(which) {
-    const inpId = which === 'arr' ? 'arrivalAirport' : 'departureAirport';
-    const errId = which === 'arr' ? 'err-arr-country' : 'err-dep-country';
-    const inp = document.getElementById(inpId);
-    const err = document.getElementById(errId);
-    const val = (inp.value || '').trim();
-    const sel = selectedCountryNorm();
-    err.classList.remove('on'); inp.classList.remove('field-error');
-    if (!val || !sel) return true; // only once the field has a value and a country is set
-    const ac = airportCountryOf(val);
-    if (ac && normalizeCountry(ac) !== sel) {
-      err.textContent = 'This airport is not in ' + countryTag + '. Please enter an airport within ' + countryTag + '.';
-      err.classList.add('on'); inp.classList.add('field-error');
-      return false;
-    }
-    return true;
-  }
-
-  // Every "Cities to visit" tag must be within the Step 1 country.
-  function checkCitiesVsCountry() {
-    const err = document.getElementById('err-city-country');
-    const wrap = document.getElementById('tagWrap');
-    const sel = selectedCountryNorm();
-    err.classList.remove('on'); if (wrap) wrap.classList.remove('field-error');
-    if (!sel || currentMode !== 'know' || tags.length === 0) return true;
-    const mismatch = tags.some(t => { const cc = cityCountryOf(t); return cc && normalizeCountry(cc) !== sel; });
-    if (mismatch) {
-      err.textContent = "Some cities don't match your selected country (" + countryTag + '). Please only add cities within ' + countryTag + '.';
-      err.classList.add('on'); if (wrap) wrap.classList.add('field-error');
-      return false;
-    }
-    return true;
-  }
-
-  // Every "Any must-include cities?" anchor tag must be within the Step 1 country (AI mode).
-  function checkAnchorsVsCountry() {
-    const err = document.getElementById('err-anchor-country');
-    const wrap = document.getElementById('anchorWrap');
-    const sel = selectedCountryNorm();
-    err.classList.remove('on'); if (wrap) wrap.classList.remove('field-error');
-    if (!sel || currentMode !== 'ai' || anchorTags.length === 0) return true;
-    const mismatch = anchorTags.some(t => { const cc = cityCountryOf(t); return cc && normalizeCountry(cc) !== sel; });
-    if (mismatch) {
-      err.textContent = "Some cities don't match your selected country (" + countryTag + '). Please only add cities within ' + countryTag + '.';
-      err.classList.add('on'); if (wrap) wrap.classList.add('field-error');
-      return false;
-    }
-    return true;
-  }
-
-  // Run all Step 2 cross-field checks, toggle each error, and enable/disable Continue.
-  function refreshStep2Validity() {
-    const ok = [
-      checkAirportCountries(),
-      checkAirportVsCountry('arr'),
-      checkAirportVsCountry('dep'),
-      checkCitiesVsCountry(),
-      checkAnchorsVsCountry()
-    ].every(Boolean);
-    setStep2Continue(ok);
-    return ok;
-  }
+  // Kept as the Step 2 refresh hook for the airport field listeners. Warning only —
+  // it never blocks the Continue button.
+  function refreshStep2Validity() { checkAirportCountries(); }
 
   // ── WIRE UP AUTOCOMPLETE ───────────────────────────
   (function initAutocomplete() {
