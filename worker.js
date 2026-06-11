@@ -146,9 +146,10 @@ export default {
         const event = await verifyStripeWebhook(body, sig, env.STRIPE_WEBHOOK_SECRET);
 
         if (event.type === 'checkout.session.completed') {
-          // Itinerary generation can take 30–120s — far longer than Stripe will
-          // wait for an ack. Run fulfillment in the background and respond 200 now.
-          ctx.waitUntil(fulfillOrder(env, event.data.object));
+          // Enqueue fulfillment. The queue consumer (queue() below) runs in its own
+          // invocation with no waitUntil/timeout limits, so the long Claude call never
+          // races this request. Stripe is acked immediately after the message is queued.
+          await env.ITINERARY_QUEUE.send(event.data.object);
         }
 
         return new Response('OK', { status: 200 });
@@ -164,6 +165,22 @@ export default {
     }
 
     return corsResponse({ error: 'Not found' }, 404);
+  },
+
+  // ── Queue consumer ─────────────────────────────────────────
+  // Bound to ITINERARY_QUEUE. Each message body is the Stripe session object
+  // enqueued by /webhook. Runs in its own invocation, so generateItinerary() has
+  // no waitUntil/timeout pressure. Ack on success; retry on unexpected failure.
+  async queue(batch, env, ctx) {
+    for (const message of batch.messages) {
+      try {
+        await fulfillOrder(env, message.body);
+        message.ack();
+      } catch (err) {
+        console.error('Queue message failed:', err && err.message, '— will retry');
+        message.retry();
+      }
+    }
   }
 };
 
@@ -707,7 +724,9 @@ function hasRequiredKeys(obj) {
 // Single Claude API call. Returns the response text, or null on any failure.
 async function callClaude(env, prompt) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000);
+  // 180s (3 min). Queue consumers have a far more generous time budget than fetch
+  // handlers, so we allow longer for the large itinerary generation.
+  const timeoutId = setTimeout(() => controller.abort(), 180000);
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -719,6 +738,8 @@ async function callClaude(env, prompt) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
+        // 16000 is enough for current itineraries. If responses come back truncated
+        // (stop_reason "max_tokens"), raise this — claude-sonnet-4-6 supports much higher.
         max_tokens: 16000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -762,7 +783,7 @@ async function generateItinerary(env, d) {
   }
 }
 
-// Runs in the background after a confirmed payment: pull form data from KV,
+// Runs in the queue consumer after a confirmed payment: pull form data from KV,
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
   try {
