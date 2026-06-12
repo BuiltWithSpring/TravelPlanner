@@ -3,6 +3,12 @@ main = "worker.js"
 compatibility_date = "2024-09-23"
 account_id = "2c5caa1d8d06877cb21513a03fc0277e"
 
+[observability]
+enabled = true
+
+[observability.logs]
+invocation_logs = true
+
 [[queues.producers]]
 queue = "itinerary-queue"
 binding = "ITINERARY_QUEUE"
