@@ -12,32 +12,24 @@ export default {
       try {
         const body = sanitizeDeep(await request.json());
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 55000);
+        // Same streaming SSE path as the itinerary call — keeps a continuous byte
+        // flow so larger previews never trip Cloudflare's outbound idle timeout.
+        // 300s abort matches callClaude's backstop; it should rarely fire.
+        const result = await streamAnthropic(env, body, 300000);
 
-        let response;
-        try {
-          response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            signal: controller.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': env.ANTHROPIC_API_KEY,
-              'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify(body)
-          });
-          clearTimeout(timeoutId);
-        } catch (fetchErr) {
-          clearTimeout(timeoutId);
-          if (fetchErr.name === 'AbortError') {
+        if (result.error) {
+          if (result.error.type === 'timeout') {
             return corsResponse({ error: 'timeout', message: 'Preview generation timed out — please try again.' }, 504);
           }
-          throw fetchErr;
+          return corsResponse({ error: result.error.detail || result.error.type || 'Preview generation failed.' }, 500);
         }
 
-        const data = await response.json();
-        return corsResponse(data, 200);
+        // Re-wrap the assembled text into the non-streaming Anthropic shape the
+        // front-end still expects: data.content[0].text.
+        return corsResponse({
+          content: [{ type: 'text', text: result.text }],
+          stop_reason: result.stopReason
+        }, 200);
       } catch (err) {
         return corsResponse({ error: err.message }, 500);
       }
@@ -721,12 +713,19 @@ function hasRequiredKeys(obj) {
   return !!obj && typeof obj === 'object' && !Array.isArray(obj) && REQUIRED_KEYS.every(k => k in obj);
 }
 
-// Single Claude API call. Returns the response text, or null on any failure.
-async function callClaude(env, prompt) {
+// Shared streaming Anthropic call. Forces stream:true, reads the SSE stream,
+// accumulates content_block_delta text, captures stop_reason from message_delta,
+// stops on message_stop, and surfaces error events. Always resolves to
+// { text, stopReason, error }: text is the assembled string (null on failure),
+// error is null on success or { type, ... } on failure where type is one of
+// 'http' | 'stream' | 'timeout' | 'exception'.
+//
+// Streaming keeps a continuous byte flow so Cloudflare's ~90s outbound-fetch
+// idle timeout (524) never trips. timeoutMs is just a backstop AbortController
+// for a genuinely stuck connection — it should rarely fire.
+async function streamAnthropic(env, body, timeoutMs) {
   const controller = new AbortController();
-  // 180s (3 min). Queue consumers have a far more generous time budget than fetch
-  // handlers, so we allow longer for the large itinerary generation.
-  const timeoutId = setTimeout(() => controller.abort(), 180000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -736,26 +735,96 @@ async function callClaude(env, prompt) {
         'x-api-key': env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        // 16000 is enough for current itineraries. If responses come back truncated
-        // (stop_reason "max_tokens"), raise this — claude-sonnet-4-6 supports much higher.
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ ...body, stream: true })
     });
-    clearTimeout(timeoutId);
-    const data = await response.json();
+
     if (!response.ok) {
-      console.error('Anthropic API error:', response.status, JSON.stringify(data));
-      return null;
+      // Errors before the stream opens come back as a normal JSON body.
+      let errBody = '';
+      try { errBody = await response.text(); } catch (_) {}
+      clearTimeout(timeoutId);
+      console.error('Anthropic API error:', response.status, errBody);
+      return { text: null, stopReason: null, error: { type: 'http', status: response.status, detail: errBody } };
     }
-    return (data && data.content && data.content[0] && data.content[0].text) || null;
+
+    // Read the SSE stream: accumulate text from content_block_delta events,
+    // stop on message_stop, and surface any error events.
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let assembled = '';
+    let stopReason = null;
+    let streamError = null;
+    let done = false;
+
+    while (!done) {
+      const { value, done: readerDone } = await reader.read();
+      if (readerDone) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by blank lines; process complete lines only,
+      // leaving any partial trailing line in the buffer.
+      let nlIndex;
+      while ((nlIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, nlIndex).trim();
+        buffer = buffer.slice(nlIndex + 1);
+        if (!line.startsWith('data:')) continue;
+
+        const dataStr = line.slice(5).trim();
+        if (!dataStr) continue;
+
+        let event;
+        try {
+          event = JSON.parse(dataStr);
+        } catch (_) {
+          // Ignore unparseable data lines rather than aborting the whole stream.
+          continue;
+        }
+
+        if (event.type === 'content_block_delta') {
+          if (event.delta && typeof event.delta.text === 'string') {
+            assembled += event.delta.text;
+          }
+        } else if (event.type === 'message_delta') {
+          if (event.delta && event.delta.stop_reason) {
+            stopReason = event.delta.stop_reason;
+          }
+        } else if (event.type === 'error') {
+          streamError = event.error || event;
+        } else if (event.type === 'message_stop') {
+          done = true;
+          break;
+        }
+      }
+    }
+    clearTimeout(timeoutId);
+
+    if (streamError) {
+      console.error('Anthropic stream error:', JSON.stringify(streamError));
+      return { text: null, stopReason, error: { type: 'stream', detail: streamError } };
+    }
+
+    console.log('Claude stream complete — length:', assembled.length, 'stop_reason:', stopReason);
+    return { text: assembled || null, stopReason, error: null };
   } catch (err) {
     clearTimeout(timeoutId);
-    console.error('Anthropic call failed:', err.name === 'AbortError' ? 'timeout' : err.message);
-    return null;
+    const isTimeout = err.name === 'AbortError';
+    console.error('Anthropic call failed:', isTimeout ? 'timeout' : err.message);
+    return { text: null, stopReason: null, error: { type: isTimeout ? 'timeout' : 'exception', detail: err.message } };
   }
+}
+
+// Single Claude API call for itinerary generation. Returns the response text,
+// or null on any failure (errors are logged inside streamAnthropic).
+async function callClaude(env, prompt) {
+  const { text } = await streamAnthropic(env, {
+    model: 'claude-sonnet-4-6',
+    // 16000 is enough for current itineraries. If responses come back truncated
+    // (stop_reason "max_tokens"), raise this — claude-sonnet-4-6 supports much higher.
+    max_tokens: 16000,
+    messages: [{ role: 'user', content: prompt }]
+  }, 300000);
+  return text || null;
 }
 
 // Generate, parse, validate, and (once) retry the full itinerary.
