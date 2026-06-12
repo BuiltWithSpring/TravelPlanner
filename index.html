@@ -868,6 +868,7 @@
   </div><!-- /card -->
 </div><!-- /formWrap -->
 
+<script src="airports.js"></script>
 <script>
   // ── LANDING / FORM TOGGLE ──────────────────────────
   function startPlanning() {
@@ -1513,181 +1514,23 @@ Extra notes: ${d.extraNotes}`;
     document.addEventListener('mousedown', e => { if (!wrap.contains(e.target)) close(); }); // dismiss on outside click
   }
 
-  // ── AIRPORT DATA (static IATA list) ────────────────
-  const AIRPORTS = [
-    // ── United Kingdom & Ireland ──
-    ["LHR","London","Heathrow","United Kingdom"],["LGW","London","Gatwick","United Kingdom"],
-    ["STN","London","Stansted","United Kingdom"],["LTN","London","Luton","United Kingdom"],
-    ["MAN","Manchester","Manchester","United Kingdom"],["EDI","Edinburgh","Edinburgh","United Kingdom"],
-    ["BHX","Birmingham","Birmingham","United Kingdom"],["GLA","Glasgow","Glasgow","United Kingdom"],
-    ["BRS","Bristol","Bristol","United Kingdom"],["NCL","Newcastle","Newcastle","United Kingdom"],
-    ["DUB","Dublin","Dublin","Ireland"],["ORK","Cork","Cork","Ireland"],
-    // ── France & Benelux ──
-    ["CDG","Paris","Charles de Gaulle","France"],["ORY","Paris","Orly","France"],
-    ["NCE","Nice","Côte d'Azur","France"],["LYS","Lyon","Saint-Exupéry","France"],
-    ["MRS","Marseille","Provence","France"],["TLS","Toulouse","Blagnac","France"],
-    ["BOD","Bordeaux","Mérignac","France"],["NTE","Nantes","Atlantique","France"],
-    ["AMS","Amsterdam","Schiphol","Netherlands"],["RTM","Rotterdam","Rotterdam The Hague","Netherlands"],
-    ["BRU","Brussels","Brussels","Belgium"],["CRL","Brussels","Charleroi","Belgium"],
-    ["LUX","Luxembourg","Findel","Luxembourg"],
-    // ── Germany, Austria, Switzerland ──
-    ["FRA","Frankfurt","Frankfurt","Germany"],["MUC","Munich","Munich","Germany"],
-    ["BER","Berlin","Brandenburg","Germany"],["HAM","Hamburg","Hamburg","Germany"],
-    ["DUS","Düsseldorf","Düsseldorf","Germany"],["CGN","Cologne","Cologne Bonn","Germany"],
-    ["STR","Stuttgart","Stuttgart","Germany"],["ZRH","Zurich","Zurich","Switzerland"],
-    ["GVA","Geneva","Geneva","Switzerland"],["BSL","Basel","EuroAirport","Switzerland"],
-    ["VIE","Vienna","Vienna","Austria"],["SZG","Salzburg","W.A. Mozart","Austria"],
-    ["INN","Innsbruck","Innsbruck","Austria"],
-    // ── Spain & Portugal ──
-    ["MAD","Madrid","Barajas","Spain"],["BCN","Barcelona","El Prat","Spain"],
-    ["AGP","Malaga","Costa del Sol","Spain"],["SVQ","Seville","San Pablo","Spain"],
-    ["VLC","Valencia","Valencia","Spain"],["BIO","Bilbao","Bilbao","Spain"],
-    ["PMI","Palma","Palma de Mallorca","Spain"],["IBZ","Ibiza","Ibiza","Spain"],
-    ["ALC","Alicante","Alicante-Elche","Spain"],["LIS","Lisbon","Humberto Delgado","Portugal"],
-    ["OPO","Porto","Francisco Sá Carneiro","Portugal"],["FAO","Faro","Faro","Portugal"],
-    ["FNC","Funchal","Madeira","Portugal"],
-    // ── Italy & Greece ──
-    ["FCO","Rome","Fiumicino","Italy"],["MXP","Milan","Malpensa","Italy"],
-    ["LIN","Milan","Linate","Italy"],["BGY","Bergamo","Orio al Serio","Italy"],
-    ["VCE","Venice","Marco Polo","Italy"],["NAP","Naples","Naples","Italy"],
-    ["BLQ","Bologna","Guglielmo Marconi","Italy"],["FLR","Florence","Peretola","Italy"],
-    ["PSA","Pisa","Galileo Galilei","Italy"],["CTA","Catania","Fontanarossa","Italy"],
-    ["TRN","Turin","Caselle","Italy"],["ATH","Athens","Eleftherios Venizelos","Greece"],
-    ["SKG","Thessaloniki","Makedonia","Greece"],["JTR","Santorini","Santorini","Greece"],
-    ["HER","Heraklion","Nikos Kazantzakis","Greece"],["RHO","Rhodes","Diagoras","Greece"],
-    ["CFU","Corfu","Ioannis Kapodistrias","Greece"],
-    // ── Nordics & Baltics ──
-    ["CPH","Copenhagen","Kastrup","Denmark"],["ARN","Stockholm","Arlanda","Sweden"],
-    ["GOT","Gothenburg","Landvetter","Sweden"],["OSL","Oslo","Gardermoen","Norway"],
-    ["BGO","Bergen","Flesland","Norway"],["TRD","Trondheim","Værnes","Norway"],
-    ["HEL","Helsinki","Vantaa","Finland"],["KEF","Reykjavik","Keflavík","Iceland"],
-    ["RIX","Riga","Riga","Latvia"],["TLL","Tallinn","Lennart Meri","Estonia"],
-    ["VNO","Vilnius","Vilnius","Lithuania"],
-    // ── Central & Eastern Europe ──
-    ["PRG","Prague","Václav Havel","Czechia"],["BUD","Budapest","Ferenc Liszt","Hungary"],
-    ["WAW","Warsaw","Chopin","Poland"],["KRK","Krakow","John Paul II","Poland"],
-    ["GDN","Gdansk","Lech Wałęsa","Poland"],["OTP","Bucharest","Henri Coandă","Romania"],
-    ["SOF","Sofia","Sofia","Bulgaria"],["BEG","Belgrade","Nikola Tesla","Serbia"],
-    ["ZAG","Zagreb","Franjo Tuđman","Croatia"],["DBV","Dubrovnik","Dubrovnik","Croatia"],
-    ["SPU","Split","Split","Croatia"],["LJU","Ljubljana","Jože Pučnik","Slovenia"],
-    ["TIA","Tirana","Tirana","Albania"],["SVO","Moscow","Sheremetyevo","Russia"],
-    ["LED","St Petersburg","Pulkovo","Russia"],["KBP","Kyiv","Boryspil","Ukraine"],
-    ["MLA","Valletta","Malta","Malta"],
-    // ── Middle East ──
-    ["IST","Istanbul","Istanbul","Turkey"],["SAW","Istanbul","Sabiha Gökçen","Turkey"],
-    ["AYT","Antalya","Antalya","Turkey"],["ESB","Ankara","Esenboğa","Turkey"],
-    ["DXB","Dubai","Dubai Intl","UAE"],["AUH","Abu Dhabi","Zayed Intl","UAE"],
-    ["DOH","Doha","Hamad","Qatar"],["JED","Jeddah","King Abdulaziz","Saudi Arabia"],
-    ["RUH","Riyadh","King Khalid","Saudi Arabia"],["KWI","Kuwait City","Kuwait","Kuwait"],
-    ["BAH","Manama","Bahrain","Bahrain"],["MCT","Muscat","Muscat","Oman"],
-    ["AMM","Amman","Queen Alia","Jordan"],["BEY","Beirut","Rafic Hariri","Lebanon"],
-    ["TLV","Tel Aviv","Ben Gurion","Israel"],
-    // ── Africa ──
-    ["CAI","Cairo","Cairo","Egypt"],["HRG","Hurghada","Hurghada","Egypt"],
-    ["SSH","Sharm el-Sheikh","Sharm el-Sheikh","Egypt"],["CMN","Casablanca","Mohammed V","Morocco"],
-    ["RAK","Marrakesh","Menara","Morocco"],["TUN","Tunis","Carthage","Tunisia"],
-    ["JNB","Johannesburg","O.R. Tambo","South Africa"],["CPT","Cape Town","Cape Town","South Africa"],
-    ["DUR","Durban","King Shaka","South Africa"],["NBO","Nairobi","Jomo Kenyatta","Kenya"],
-    ["MBA","Mombasa","Moi","Kenya"],["DAR","Dar es Salaam","Julius Nyerere","Tanzania"],
-    ["ZNZ","Zanzibar","Abeid Amani Karume","Tanzania"],["JRO","Kilimanjaro","Kilimanjaro","Tanzania"],
-    ["ADD","Addis Ababa","Bole","Ethiopia"],["LOS","Lagos","Murtala Muhammed","Nigeria"],
-    ["ACC","Accra","Kotoka","Ghana"],["MRU","Port Louis","Sir S. Ramgoolam","Mauritius"],
-    ["SEZ","Mahé","Seychelles","Seychelles"],
-    // ── United States ──
-    ["JFK","New York","John F. Kennedy","USA"],["EWR","New York","Newark","USA"],
-    ["LGA","New York","LaGuardia","USA"],["LAX","Los Angeles","Los Angeles","USA"],
-    ["SFO","San Francisco","San Francisco","USA"],["ORD","Chicago","O'Hare","USA"],
-    ["MIA","Miami","Miami","USA"],["FLL","Fort Lauderdale","Hollywood","USA"],
-    ["BOS","Boston","Logan","USA"],["SEA","Seattle","Seattle-Tacoma","USA"],
-    ["LAS","Las Vegas","Harry Reid","USA"],["DEN","Denver","Denver","USA"],
-    ["ATL","Atlanta","Hartsfield-Jackson","USA"],["DFW","Dallas","Fort Worth","USA"],
-    ["IAH","Houston","George Bush","USA"],["PHX","Phoenix","Sky Harbor","USA"],
-    ["MCO","Orlando","Orlando","USA"],["IAD","Washington","Dulles","USA"],
-    ["DCA","Washington","Reagan National","USA"],["PHL","Philadelphia","Philadelphia","USA"],
-    ["SAN","San Diego","San Diego","USA"],["TPA","Tampa","Tampa","USA"],
-    ["AUS","Austin","Bergstrom","USA"],["MSP","Minneapolis","St Paul","USA"],
-    ["DTW","Detroit","Metro Wayne County","USA"],["SLC","Salt Lake City","Salt Lake City","USA"],
-    ["PDX","Portland","Portland","USA"],["BNA","Nashville","Nashville","USA"],
-    ["HNL","Honolulu","Daniel K. Inouye","USA"],["MSY","New Orleans","Louis Armstrong","USA"],
-    // ── Canada ──
-    ["YYZ","Toronto","Pearson","Canada"],["YVR","Vancouver","Vancouver","Canada"],
-    ["YUL","Montreal","Trudeau","Canada"],["YYC","Calgary","Calgary","Canada"],
-    ["YEG","Edmonton","Edmonton","Canada"],["YOW","Ottawa","Macdonald-Cartier","Canada"],
-    ["YQB","Quebec City","Jean Lesage","Canada"],
-    // ── Mexico, Central America & Caribbean ──
-    ["MEX","Mexico City","Benito Juárez","Mexico"],["CUN","Cancun","Cancún","Mexico"],
-    ["GDL","Guadalajara","Guadalajara","Mexico"],["MTY","Monterrey","Monterrey","Mexico"],
-    ["SJD","Los Cabos","Los Cabos","Mexico"],["PVR","Puerto Vallarta","Puerto Vallarta","Mexico"],
-    ["PTY","Panama City","Tocumen","Panama"],["SJO","San José","Juan Santamaría","Costa Rica"],
-    ["HAV","Havana","José Martí","Cuba"],["PUJ","Punta Cana","Punta Cana","Dominican Republic"],
-    ["SJU","San Juan","Luis Muñoz Marín","Puerto Rico"],["MBJ","Montego Bay","Sangster","Jamaica"],
-    ["NAS","Nassau","Lynden Pindling","Bahamas"],["GUA","Guatemala City","La Aurora","Guatemala"],
-    // ── South America ──
-    ["GRU","São Paulo","Guarulhos","Brazil"],["GIG","Rio de Janeiro","Galeão","Brazil"],
-    ["BSB","Brasília","Brasília","Brazil"],["SSA","Salvador","Deputado Luís Eduardo","Brazil"],
-    ["EZE","Buenos Aires","Ezeiza","Argentina"],["SCL","Santiago","Arturo Merino Benítez","Chile"],
-    ["LIM","Lima","Jorge Chávez","Peru"],["CUZ","Cusco","Alejandro Velasco Astete","Peru"],
-    ["BOG","Bogotá","El Dorado","Colombia"],["MDE","Medellín","José María Córdova","Colombia"],
-    ["CTG","Cartagena","Rafael Núñez","Colombia"],["UIO","Quito","Mariscal Sucre","Ecuador"],
-    ["MVD","Montevideo","Carrasco","Uruguay"],["LPB","La Paz","El Alto","Bolivia"],
-    // ── Japan & Korea ──
-    ["NRT","Tokyo","Narita","Japan"],["HND","Tokyo","Haneda","Japan"],
-    ["KIX","Osaka","Kansai","Japan"],["ITM","Osaka","Itami","Japan"],
-    ["NGO","Nagoya","Chubu Centrair","Japan"],["CTS","Sapporo","New Chitose","Japan"],
-    ["FUK","Fukuoka","Fukuoka","Japan"],["OKA","Okinawa","Naha","Japan"],
-    ["ICN","Seoul","Incheon","South Korea"],["GMP","Seoul","Gimpo","South Korea"],
-    ["PUS","Busan","Gimhae","South Korea"],["CJU","Jeju","Jeju","South Korea"],
-    // ── China, HK, Taiwan ──
-    ["PEK","Beijing","Capital","China"],["PKX","Beijing","Daxing","China"],
-    ["PVG","Shanghai","Pudong","China"],["SHA","Shanghai","Hongqiao","China"],
-    ["CAN","Guangzhou","Baiyun","China"],["SZX","Shenzhen","Bao'an","China"],
-    ["CTU","Chengdu","Tianfu","China"],["XIY","Xi'an","Xianyang","China"],
-    ["HGH","Hangzhou","Xiaoshan","China"],["KMG","Kunming","Changshui","China"],
-    ["HKG","Hong Kong","Hong Kong Intl","Hong Kong"],["MFM","Macau","Macau","Macau"],
-    ["TPE","Taipei","Taoyuan","Taiwan"],["KHH","Kaohsiung","Kaohsiung","Taiwan"],
-    // ── Southeast Asia ──
-    ["BKK","Bangkok","Suvarnabhumi","Thailand"],["DMK","Bangkok","Don Mueang","Thailand"],
-    ["HKT","Phuket","Phuket","Thailand"],["CNX","Chiang Mai","Chiang Mai","Thailand"],
-    ["USM","Koh Samui","Samui","Thailand"],["SIN","Singapore","Changi","Singapore"],
-    ["KUL","Kuala Lumpur","KLIA","Malaysia"],["PEN","Penang","Penang","Malaysia"],
-    ["BKI","Kota Kinabalu","Kota Kinabalu","Malaysia"],["LGK","Langkawi","Langkawi","Malaysia"],
-    ["CGK","Jakarta","Soekarno-Hatta","Indonesia"],["DPS","Bali","Ngurah Rai","Indonesia"],
-    ["SUB","Surabaya","Juanda","Indonesia"],["MNL","Manila","Ninoy Aquino","Philippines"],
-    ["CEB","Cebu","Mactan-Cebu","Philippines"],["HAN","Hanoi","Noi Bai","Vietnam"],
-    ["SGN","Ho Chi Minh City","Tan Son Nhat","Vietnam"],["DAD","Da Nang","Da Nang","Vietnam"],
-    ["REP","Siem Reap","Siem Reap-Angkor","Cambodia"],["PNH","Phnom Penh","Phnom Penh","Cambodia"],
-    ["VTE","Vientiane","Wattay","Laos"],["RGN","Yangon","Yangon","Myanmar"],
-    // ── South Asia ──
-    ["DEL","Delhi","Indira Gandhi","India"],["BOM","Mumbai","Chhatrapati Shivaji","India"],
-    ["BLR","Bengaluru","Kempegowda","India"],["MAA","Chennai","Chennai","India"],
-    ["HYD","Hyderabad","Rajiv Gandhi","India"],["CCU","Kolkata","Netaji Subhas Chandra Bose","India"],
-    ["GOI","Goa","Dabolim","India"],["JAI","Jaipur","Jaipur","India"],
-    ["COK","Kochi","Cochin","India"],["CMB","Colombo","Bandaranaike","Sri Lanka"],
-    ["MLE","Malé","Velana","Maldives"],["KTM","Kathmandu","Tribhuvan","Nepal"],
-    ["DAC","Dhaka","Hazrat Shahjalal","Bangladesh"],["ISB","Islamabad","Islamabad","Pakistan"],
-    ["KHI","Karachi","Jinnah","Pakistan"],["LHE","Lahore","Allama Iqbal","Pakistan"],
-    // ── Oceania ──
-    ["SYD","Sydney","Kingsford Smith","Australia"],["MEL","Melbourne","Tullamarine","Australia"],
-    ["BNE","Brisbane","Brisbane","Australia"],["PER","Perth","Perth","Australia"],
-    ["ADL","Adelaide","Adelaide","Australia"],["OOL","Gold Coast","Gold Coast","Australia"],
-    ["CNS","Cairns","Cairns","Australia"],["HBA","Hobart","Hobart","Australia"],
-    ["CBR","Canberra","Canberra","Australia"],["AKL","Auckland","Auckland","New Zealand"],
-    ["WLG","Wellington","Wellington","New Zealand"],["CHC","Christchurch","Christchurch","New Zealand"],
-    ["ZQN","Queenstown","Queenstown","New Zealand"],["NAN","Nadi","Nadi","Fiji"],
-    ["PPT","Papeete","Faa'a","French Polynesia"]
-  ].map(a => ({ code: a[0], city: a[1], name: a[2], co: a[3] }));
+  // ── AIRPORT DATA ───────────────────────────────────
+  // Raw tuples [IATA, city, name, country] are loaded from airports.js (window.AIRPORTS_RAW),
+  // derived from the OurAirports public-domain dataset. Same shape/map/matching as before.
+  const AIRPORTS = (window.AIRPORTS_RAW || []).map(a => ({ code: a[0], city: a[1], name: a[2], co: a[3] }));
 
   function getAirportMatches(q) {
     q = q.toLowerCase();
-    const starts = [], contains = [];
+    const exact = [], starts = [], contains = [];
     for (const a of AIRPORTS) {
       const hay = (a.code + ' ' + a.city + ' ' + a.name + ' ' + a.co).toLowerCase();
       if (hay.indexOf(q) < 0) continue;
       const item = { code: a.code, main: '— ' + a.name + ', ' + a.city + ', ' + a.co, value: a.code };
-      if (a.code.toLowerCase().startsWith(q) || a.city.toLowerCase().startsWith(q)) starts.push(item);
+      if (a.code.toLowerCase() === q) exact.push(item); // exact 3-letter IATA match wins
+      else if (a.code.toLowerCase().startsWith(q) || a.city.toLowerCase().startsWith(q)) starts.push(item);
       else contains.push(item);
     }
-    return starts.concat(contains).slice(0, 8);
+    return exact.concat(starts, contains).slice(0, 8);
   }
 
   // ── COUNTRY DATA ───────────────────────────────────
