@@ -547,6 +547,13 @@ Pace density rules — apply to every day-by-day entry:
 
 All day-by-day activity fields: "[Activity name] — [one line what it is and why it suits this traveler]." No duration, category label, neighborhood tag, or pipes. Max 20 words.
 
+STEP 14.5 — NO REPETITION RULE (applies across the ENTIRE trip)
+Every activity, attraction, and restaurant must be unique across all days. Never schedule the same place, sight, or restaurant more than once, even across different days in the same city. This applies to morning, afternoon, and evening slots equally.
+- For multi-day stays in one city, treat the city's attractions as a finite set you are distributing across days — once a place is used on one day, it is unavailable for every other day.
+- Before finalizing each day, check it against all previous days and confirm no activity, attraction, or restaurant has already appeared.
+- If a city has more days than distinct marquee attractions, fill remaining slots with neighborhoods, local experiences, day trips, markets, parks, or lesser-known spots rather than repeating a famous site.
+- The single exception is unavoidable logistics (e.g. the same airport for arrival and departure) — transport hubs may recur, but no activity, sight, or restaurant ever may.
+
 STEP 15 — SPREADSHEET FORMATTING
 - Activities: clean sentence, max 20 words, no pipes
 - Transport booking_tip: one sentence only
