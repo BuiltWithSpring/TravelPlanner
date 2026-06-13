@@ -136,17 +136,23 @@ export default {
         const sig = request.headers.get('stripe-signature');
 
         const event = await verifyStripeWebhook(body, sig, env.STRIPE_WEBHOOK_SECRET);
+        console.log('[webhook] verified event.type:', event.type, '| has queue binding:', !!env.ITINERARY_QUEUE);
 
         if (event.type === 'checkout.session.completed') {
           // Enqueue fulfillment. The queue consumer (queue() below) runs in its own
           // invocation with no waitUntil/timeout limits, so the long Claude call never
           // races this request. Stripe is acked immediately after the message is queued.
+          console.log('[webhook] sending to ITINERARY_QUEUE, session:', event.data.object && event.data.object.id);
           await env.ITINERARY_QUEUE.send(event.data.object);
+          console.log('[webhook] queue.send() resolved OK');
+        } else {
+          console.log('[webhook] event.type not checkout.session.completed — nothing queued');
         }
 
         return new Response('OK', { status: 200 });
 
       } catch (err) {
+        console.error('[webhook] handler threw:', err && err.message);
         return new Response(`Webhook error: ${err.message}`, { status: 400 });
       }
     }
@@ -288,6 +294,18 @@ const ITINERARY_PROMPT = (d) => {
   const interests = JSON.stringify(d.interests || {});
   const cuisinePreferences = JSON.stringify(d.cuisinePreferences || []);
   const travelStyle = d.travelStyle || d.budgetTier || '';
+  // Total trip nights, derived from arrival/departure dates. Falls back to the sum of
+  // approved-city nights if the dates are missing/unparseable. Drives the per-tier
+  // output caps in STEP 6 (accommodation), STEP 7 (food), and STEP 13 (city guide).
+  const tripNights = (() => {
+    const a = Date.parse(d.arrivalDate), b = Date.parse(d.departureDate);
+    if (!isNaN(a) && !isNaN(b) && b > a) return Math.round((b - a) / 86400000);
+    const sum = (d.approvedCities || []).reduce((n, c) => n + (Number(c.nights) || 0), 0);
+    return sum || 0;
+  })();
+  const tripTier = tripNights >= 11 ? 'LONG (11–14 nights)'
+    : tripNights >= 8 ? 'MEDIUM (8–10 nights)'
+    : 'STANDARD (≤7 nights)';
   return `You are an expert travel planner. Generate a personalized travel itinerary following every step below in order.
 
 ──────────────────────────────────────────────
@@ -388,14 +406,12 @@ STEP 5 — INTEREST WEIGHTS
 Relaxed days pace reduces frequency one tier: High → every 2–3 days, Medium → once per city stay.
 
 STEP 6 — ACCOMMODATION
-Generate 3–5 accommodation options per city, diversified across the traveler's selected styles.
+The NUMBER of accommodations is driven entirely by how many accommodation styles the traveler selected (see "Accommodation style" in the trip details below). This SUPERSEDES any earlier per-city count or trip-length accommodation cap:
+- 0 styles selected → generate NO accommodations. Output "accommodations": [] — a clean, present empty array (never null, never a missing key). Do NOT invent a default style or add any property.
+- 1 style selected → 2 accommodations of that type, per city.
+- 2+ styles selected → 1 accommodation of EACH selected type, per city.
 
-Style distribution rules:
-- One style selected → provide 3–5 options all of that type, ranging from best value to premium within the travel style tier
-- Two styles selected → provide 2–3 options of each type, minimum 2 per style
-- Three or more styles → provide at least 1–2 options per style, prioritizing styles that best suit the destination and travel party
-
-Quality and safety rules:
+When accommodations are generated (1+ styles selected), apply these quality and safety rules:
 - Only recommend accommodations with strong reputations — minimum 3.8 stars or equivalent
 - Never recommend a property with known safety concerns, poor reviews, or in an unsafe area
 - Always recommend neighborhoods that are safe, well-located, and convenient for planned activities
@@ -416,14 +432,20 @@ Every accommodation entry must include:
 STEP 7 — FOOD & DRINK
 Scale to Food & drink interest weight. These are HARD MINIMUMS per city — never go below them. Each venue type below is a SEPARATE entry in the restaurants array:
 
+NO DUPLICATION OF DAY-BY-DAY DINNERS: The restaurants array is a reference tab of ADDITIONAL dining options. Do NOT re-list any restaurant that already appears as a day's restaurant_suggestion in the day-by-day plan. Every entry in the restaurants array must be a DIFFERENT venue, not already named in any day's restaurant_suggestion — together the two sets widen the traveler's options rather than repeat. The per-day restaurant_suggestion itself is preserved exactly as is; this rule governs ONLY the separate restaurants array. The per-city minimum counts below describe this additional restaurants array.
+
 - 20%+ → MINIMUM per city (6 entries flat):
   · 1 breakfast spot (set venue_type: "Breakfast") — or Brunch in cities where brunch culture is strong e.g. New York, London, Sydney, Melbourne, Cape Town
   · 1 cafe or specialty coffee shop (set venue_type: "Cafe")
   · 1 bakery or patisserie (set venue_type: "Bakery")
   · 1 lunch spot (set venue_type: "Lunch")
   · 2 dinner restaurants (set venue_type: "Dinner")
-  · For every additional 2 nights in the same city beyond the first 2, add 1 more dinner entry
   · Street food and dessert are BONUS entries — add them where highly culturally relevant (e.g. street food in Asia/Mexico/Middle East, gelato in Italy, bubble tea in Asia) but they are not required minimums
+  · TRIP-LENGTH SCALING for this 20%+ tier (by TRIP LENGTH TIER above):
+    - STANDARD (≤7 nights) → keep the 6 entries above AND add 1 more dinner entry for every additional 2 nights in the same city beyond the first 2.
+    - MEDIUM (8–10 nights) → cap at 5 per city: 1 breakfast, 1 cafe, 1 lunch, 2 dinner. NO per-night dinner escalator.
+    - LONG (11–14 nights) → cap at 4 per city: 1 breakfast, 1 lunch, 2 dinner (drop cafe and bakery). NO per-night dinner escalator.
+    On MEDIUM and LONG trips these caps OVERRIDE the 6-entry minimum and the "cafes/bakeries are REQUIRED" note below.
 
 - 11–19% → MINIMUM per city (4 entries flat):
   · 1 breakfast or brunch spot (set venue_type: "Breakfast" or "Brunch")
@@ -469,13 +491,13 @@ Every booking_tip is one sentence including booking window. Never label a road s
 
 STEP 10 — GEOGRAPHIC CLUSTERING
 Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On travel days all activities near hotel or departure point only. Assign neighborhood_focus and restaurant_suggestion per day using this logic:
-- Regular days → pick the most appropriate meal based on the day's flow. Label clearly as Breakfast, Lunch, or Dinner. Always pick from the restaurants array for that city.
+- Regular days → pick the most appropriate meal based on the day's flow. Label clearly as Breakfast, Lunch, or Dinner. Name a specific, real, well-regarded restaurant suited to that city and meal.
 - Departure day → pick a restaurant near the departure hotel or point — last meal in that city before leaving.
 - Arrival day → pick a restaurant near the arrival accommodation — first meal in the new city.
 - Full travel day → pick a restaurant near the arrival accommodation for dinner on arrival.
 - Never repeat the same venue on consecutive days across both restaurant_suggestion and restaurants array.
 - Restaurant suggestion should always be geographically logical for that day's context.
-- Restaurant suggestion must always be a venue already listed in the restaurants array for that city.
+- Restaurant suggestion must be a specific real venue and must NOT duplicate any venue in the restaurants array (Food & Drink tab) — the day-by-day picks and the Food & Drink list are disjoint sets, so together they broaden the traveler's dining options.
 
 STEP 11 — ACTIVITY TIME BUDGET VALIDATION
 Before finalizing each day, validate the day's activities against a realistic time budget.
@@ -501,11 +523,10 @@ STEP 12 — BOOKING TRACKER
 Every item requiring booking sorted: Book now → 4–6 weeks ahead → On arrival. Include all flights, accommodation, restaurants needing advance booking, activities needing advance booking. Every entry needs: category, item_name, city, date, est_cost, booking_priority, booking_tip (one sentence with where and how to book), booking_link (official URL where bookable — use the most direct official booking source; leave empty string if no reliable URL exists).
 
 STEP 13 — CITY GUIDE
-A comprehensive reference pool of everything worth visiting, weighted by interest scores. Richer and broader than the day-by-day plan.
+A reference pool of EXTRA options not already in your daily plan, weighted by interest scores. These are ADDITIONAL ideas beyond the day-by-day — never the same entries.
 
 Include:
-- All activities from day-by-day
-- Additional options per city beyond what is in day-by-day, scaled by interest weight below
+- ONLY additional options per city beyond what is already in the day-by-day plan, scaled by interest weight below. Do NOT re-list any activity, attraction, or place that already appears in the day-by-day — those live in the day-by-day tab and duplicating them wastes output.
 - Nightlife venues if Nightlife & bars > 0%
 
 Exclude:
@@ -519,6 +540,12 @@ Interest weight scaling per category:
 - 11–19% → 2–3 entries
 - 1–10% → 1 additional entry only
 - 0% → exclude
+
+HARD CAP — MAXIMUM city_guide entries per city total, scaled by TRIP LENGTH TIER (above):
+- STANDARD (≤7 nights) → 12 per city
+- MEDIUM (8–10 nights) → 8 per city
+- LONG (11–14 nights) → 6 per city
+This cap OVERRIDES the per-category guidance above whenever the per-category sums would exceed it. When capped, allocate the available slots by interest weight — highest-weighted categories get their slots first, lower-weighted categories yield remaining slots, and drop the lowest-weighted categories entirely if needed to stay within the cap.
 
 Category to type mapping:
 - History & heritage → Historic Site, Monument, Heritage Walk, Palace, Temple, Ruins
@@ -675,6 +702,8 @@ Arrival airport: ${d.arrivalAirport || ''}
 Departure airport: ${d.departureAirport || ''}
 Arrival date: ${d.arrivalDate || ''}
 Departure date: ${d.departureDate || ''}
+Total trip nights: ${tripNights || 'unknown'} (derived from arrival/departure dates)
+TRIP LENGTH TIER: ${tripTier} — apply the per-tier output caps in STEP 6, STEP 7, and STEP 13. STANDARD trips keep the full current experience; only longer trips get leaner.
 City planning mode: ${d.cityPlanningMode || ''}
 Trip structure: ${d.tripStructure || 'not specified'}
 Cities requested: ${citiesRequested}
@@ -826,9 +855,11 @@ async function streamAnthropic(env, body, timeoutMs) {
 async function callClaude(env, prompt) {
   const { text } = await streamAnthropic(env, {
     model: 'claude-sonnet-4-6',
-    // 16000 is enough for current itineraries. If responses come back truncated
-    // (stop_reason "max_tokens"), raise this — claude-sonnet-4-6 supports much higher.
-    max_tokens: 16000,
+    // 32000 sizes for the 2-week worst case (14 nights, 5 cities, all interests high):
+    // post-trim output estimates ~18k tokens central, ~24-27k with verbosity overrun.
+    // 32000 clears that with headroom and is half the claude-sonnet-4-6 64000 ceiling,
+    // so nothing within the 2-week cap should truncate. Raise toward 64000 if needed.
+    max_tokens: 32000,
     messages: [{ role: 'user', content: prompt }]
   }, 300000);
   return text || null;
