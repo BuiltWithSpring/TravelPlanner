@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <meta http-equiv="Expires" content="0"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src 'self' https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://countriesnow.space; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-src https://js.stripe.com https://checkout.stripe.com;"/>
+<!-- saved from url=(0035)https://travel.builtwithspring.com/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src &#39;self&#39; https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://countriesnow.space; font-src &#39;self&#39; https://fonts.gstatic.com; style-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com; img-src &#39;self&#39; data: https://images.pexels.com https://source.unsplash.com; frame-src https://js.stripe.com https://checkout.stripe.com;">
   <title>BuiltWithSpring · AI Travel Planner</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-  <link rel="apple-touch-icon" href="/favicon.svg"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/svg+xml" href="https://travel.builtwithspring.com/favicon.svg">
+  <link rel="apple-touch-icon" href="https://travel.builtwithspring.com/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="./BuiltWithSpring · AI Travel Planner_files/css2" rel="stylesheet">
   <style>
     :root {
       --ink: #0f0c1e;
@@ -436,20 +436,63 @@
       .time-saved-num { font-size: 3rem; }
       .time-saved-sub { font-size: 13px; }
     }
+
+    /* ── CITY CARDS WITH IMAGES ──────────────────────── */
+    .cities-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.25rem; }
+    .city-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: #faf9ff; }
+    .city-img-wrap { position: relative; height: 90px; overflow: hidden; }
+    .city-card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .city-img-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; }
+    .city-card-body { padding: 10px 12px; }
+    @media (max-width: 480px) { .cities-grid { grid-template-columns: 1fr; } .city-img-wrap { height: 110px; } }
+
+    /* ── LOCAL FINDS ─────────────────────────────────── */
+    .local-finds { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+    .local-find-item { background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 1px solid var(--accent-mid); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+    .local-find-emoji { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+    .local-find-title { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 3px; }
+    .local-find-desc { font-size: 12.5px; color: var(--ink2); line-height: 1.55; }
+
+    /* ── VISA BADGE ──────────────────────────────────── */
+    .visa-badge { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 500; line-height: 1.5; margin-bottom: 1.25rem; }
+    .visa-badge.ok { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+    .visa-badge.warn { background: #fef9ec; border: 1px solid #fcd34d; color: #78350f; }
+
+
+    /* ── EMAIL CAPTURE ───────────────────────────────── */
+    .email-capture { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 1rem; }
+    .email-capture-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .email-capture-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+    .email-capture-row { display: flex; gap: 8px; }
+    .email-capture-inp { flex: 1; min-width: 0; }
+    .email-capture-btn { padding: 11px 16px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .email-capture-btn:hover { background: var(--accent2); }
+    .capture-success { font-size: 13px; color: var(--green); margin-top: 8px; font-weight: 500; }
+
+    /* ── COLLAPSIBLE FEEDBACK ────────────────────────── */
+    .regen-toggle { background: none; border: none; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; display: block; margin-bottom: 6px; }
+    .regen-toggle:hover { color: var(--accent2); }
+
+    /* ── STICKY MOBILE CTA ───────────────────────────── */
+    .sticky-cta { display: none; }
+    @media (max-width: 640px) {
+      .sticky-cta { display: flex; justify-content: center; position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 16px 22px; background: linear-gradient(to top, rgba(255,255,255,1) 65%, rgba(255,255,255,0)); z-index: 50; pointer-events: none; }
+      .sticky-cta .bnx { pointer-events: all; width: 100%; max-width: 400px; }
+    }
   </style>
-</head>
+<style>.village-iframe{width:100%;height:100%;border:none;display:block;position:fixed;top:0;left:0;z-index:2147483647;background:#0000003d;color-scheme:light}.village-iframe.village-loading{display:flex;justify-content:center;align-items:center}.village-iframe>.village-spinner{width:1.5rem;height:1.5rem;border:2px solid #000;border-left-color:transparent;border-bottom-color:transparent;border-radius:50%;animation:spin .45s linear infinite}.village-iframe.village-hidden{display:none}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(360deg)}}.village-hidden{display:none}[village-paths-data=facepiles]{display:flex;align-items:center;padding-right:.5rem}[village-paths-data=facepiles] img{width:1.5rem;height:1.5rem;border-radius:50%;margin-right:-.5rem}[village-paths-data=facepiles] img.village-facepiler-avatar-not-found{filter:blur(7px)}[village-paths-data=facepiles] img:last-child{margin-right:0}[village-paths-data=count]{padding-right:.25rem}[village-paths-availability=error],[village-paths-availability=found],[village-paths-availability=not-found],[village-paths-availability=not-activated]{display:none!important}[village-paths-availability=loading]{display:inline-flex!important}</style></head>
 <body>
 
 <!-- ══ LANDING PAGE ══════════════════════════════════════════ -->
 <div id="landing">
   <div class="l-badge"><span></span> AI-Powered · Up to 14 Nights</div>
 
-  <h1 class="l-headline">Your trip,<br/><em>expertly planned.</em></h1>
+  <h1 class="l-headline">Your trip,<br><em>expertly planned.</em></h1>
 
   <p class="l-sub">Meet Spring, your personal AI travel agent. Tell us where you're going — Spring handles the rest.</p>
 
   <button class="l-cta" onclick="startPlanning()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
     Plan my trip — free preview
   </button>
 
@@ -458,7 +501,7 @@
   <div class="l-cards">
     <div class="l-feat"><span class="l-feat-icon">📅</span> Day-by-day plan</div>
     <div class="l-feat"><span class="l-feat-icon">🍜</span> Restaurant picks</div>
-    <div class="l-feat"><span class="l-feat-icon">🚆</span> Transport sorted</div>
+    <div class="l-feat"><span class="l-feat-icon">🚆</span> Route-optimised transport</div>
     <div class="l-feat"><span class="l-feat-icon">📋</span> Booking tracker</div>
     <div class="l-feat"><span class="l-feat-icon">🛂</span> Visa &amp; weather</div>
   </div>
@@ -481,8 +524,8 @@
     <div class="topbar-brand" onclick="backToLanding()">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:#7c3aed;border-radius:9px;flex-shrink:0;">
         <svg viewBox="0 0 18 18" fill="none" width="18" height="18">
-          <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" fill-opacity="0.95"/>
-          <circle cx="9" cy="9" r="2.5" fill="white" fill-opacity="0.4"/>
+          <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" fill-opacity="0.95"></path>
+          <circle cx="9" cy="9" r="2.5" fill="white" fill-opacity="0.4"></circle>
         </svg>
       </span>
       BuiltWithSpring
@@ -493,9 +536,9 @@
   <div id="card">
     <div class="pbar">
       <div class="pseg on" id="p1"></div>
-      <div class="pseg" id="p2"></div>
-      <div class="pseg" id="p3"></div>
-      <div class="pseg" id="p4"></div>
+      <div class="pseg on" id="p2"></div>
+      <div class="pseg on" id="p3"></div>
+      <div class="pseg on" id="p4"></div>
     </div>
 
     <!-- ── STEP 1: You ──────────────────────────────── -->
@@ -507,27 +550,27 @@
       <div class="r2">
         <div class="fg">
           <label class="fl">First name <span class="req">*</span></label>
-          <input class="inp" type="text" id="firstName" placeholder="First name"/>
+          <input class="inp" type="text" id="firstName" placeholder="First name">
           <div class="error-msg" id="err-firstName">Please enter your first name</div>
         </div>
         <div class="fg">
           <label class="fl">Last name <span class="req">*</span></label>
-          <input class="inp" type="text" id="lastName" placeholder="Last name"/>
+          <input class="inp" type="text" id="lastName" placeholder="Last name">
           <div class="error-msg" id="err-lastName">Please enter your last name</div>
         </div>
       </div>
 
       <div class="fg">
         <label class="fl">Email <span class="req">*</span></label>
-        <input class="inp" type="email" id="email" placeholder="We'll send your itinerary here"/>
+        <input class="inp" type="email" id="email" placeholder="We&#39;ll send your itinerary here">
         <div class="error-msg" id="err-email">Please enter a valid email</div>
       </div>
 
       <div class="fg">
         <label class="fl">Where are you headed? <span class="req">*</span></label>
-        <div class="tag-wrap" id="countryWrap" onclick="document.getElementById('countryInp').focus()">
-          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()"/>
-        </div>
+        <div class="tag-wrap" id="countryWrap" onclick="document.getElementById(&#39;countryInp&#39;).focus()" style="position: relative;">
+          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
+        <div class="ac-list"></div></div>
         <div class="hint">One country per itinerary — press Enter to confirm.</div>
         <div class="error-msg" id="err-country">Please enter a country</div>
         <div class="error-msg" id="err-country-max" style="display:none;">One country only — remove it first to change.</div>
@@ -536,18 +579,18 @@
       <div class="fg">
         <label class="fl">Who's travelling? <span class="req">*</span></label>
         <div class="cc-grid g5" id="pg">
-          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
-          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
-          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">🎉</span><div class="ct">Friends</div></div>
-          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family + kids</div></div>
-          <div class="cc" onclick="pick('pg',this,true)"><span class="ci">👨‍👩‍👦‍👦</span><div class="ct">Family</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">🎉</span><div class="ct">Friends</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family + kids</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👦‍👦</span><div class="ct">Family</div></div>
         </div>
         <div class="error-msg" id="err-party">Please select your travel party</div>
       </div>
 
       <div class="fg hidden" id="gsw">
         <label class="fl">How many people?</label>
-        <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="Number of people"/>
+        <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="Number of people">
       </div>
 
       <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
@@ -563,16 +606,16 @@
         <div class="fg">
           <label class="fl">Arrival airport <span class="req">*</span></label>
           <div class="ac-wrap">
-            <input class="inp" type="text" id="arrivalAirport" autocomplete="off" placeholder="Search city or airport code…"/>
-          </div>
+            <input class="inp" type="text" id="arrivalAirport" autocomplete="off" placeholder="Search city or airport code…">
+          <div class="ac-list"></div></div>
           <div class="hint">Start typing a city, airport, or code — pick from the list.</div>
           <div class="error-msg" id="err-arrivalAirport">Please enter your arrival airport</div>
         </div>
         <div class="fg">
           <label class="fl">Departure airport <span class="req">*</span></label>
           <div class="ac-wrap">
-            <input class="inp" type="text" id="departureAirport" autocomplete="off" placeholder="Search city or airport code…"/>
-          </div>
+            <input class="inp" type="text" id="departureAirport" autocomplete="off" placeholder="Search city or airport code…">
+          <div class="ac-list"></div></div>
           <div class="hint">Can be same as arrival.</div>
           <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
           <div class="error-msg" id="err-airport-country">Heads up — your arrival and departure airports are in different countries. This planner covers one country per trip, so it'll focus on your arrival country. You can continue if that's intended.</div>
@@ -582,13 +625,13 @@
       <div class="r2">
         <div class="fg">
           <label class="fl">When do you land? <span class="req">*</span></label>
-          <input class="inp" type="date" id="arrDate" onblur="onArrDateChange()"/>
+          <input class="inp" type="date" id="arrDate" onblur="onArrDateChange()" min="2026-06-23">
           <div class="error-msg" id="err-arrDate">Please select arrival date</div>
           <div class="error-msg" id="err-arrDate-past" style="display:none;">Date can't be in the past</div>
         </div>
         <div class="fg">
           <label class="fl">When do you fly home? <span class="req">*</span></label>
-          <input class="inp" type="date" id="depDate" onblur="onDepDateChange()"/>
+          <input class="inp" type="date" id="depDate" onblur="onDepDateChange()" min="2026-10-30">
           <div class="error-msg" id="err-depDate">Please select departure date</div>
           <div class="error-msg" id="err-depDate-before" style="display:none;">Must be after arrival date</div>
           <div class="error-msg" id="err-depDate-toolong" style="display:none;">Spring plans trips up to 14 nights — for longer trips, split by region for best results</div>
@@ -598,11 +641,11 @@
       <div class="fg">
         <label class="fl">How would you like to plan your cities? <span class="req">*</span></label>
         <div class="cc-grid g2" style="margin-top:6px;">
-          <div class="mc" id="modeKnow" onclick="setMode('know')">
+          <div class="mc" id="modeKnow" onclick="setMode(&#39;know&#39;)">
             <div class="mc-top"><span class="mc-icon">🗺️</span><span class="mc-title">I know my cities — build the plan</span></div>
             <div class="mc-sub">Tell us your cities and we'll handle everything else</div>
           </div>
-          <div class="mc" id="modeAI" onclick="setMode('ai')">
+          <div class="mc" id="modeAI" onclick="setMode(&#39;ai&#39;)">
             <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">Pick my cities and plan everything</span></div>
             <div class="mc-sub">AI selects the best cities based on your interests</div>
           </div>
@@ -612,22 +655,22 @@
 
       <div class="fg hidden" id="cityKnowBlock">
         <label class="fl">Cities to visit <span class="req">*</span></label>
-        <div class="tag-wrap" id="tagWrap" onclick="document.getElementById('tagInp').focus()">
-          <input class="tag-inp" id="tagInp" placeholder="Type a city — pick from the list or press Enter…"/>
-        </div>
+        <div class="tag-wrap" id="tagWrap" onclick="document.getElementById(&#39;tagInp&#39;).focus()" style="position: relative;">
+          <input class="tag-inp" id="tagInp" placeholder="Type a city — pick from the list or press Enter…">
+        <div class="ac-list"></div></div>
         <div class="hint">Type 2+ letters to search, pick from the list, or press Enter after each city.</div>
       </div>
 
-      <div class="fg hidden" id="cityAIBlock">
+      <div class="fg" id="cityAIBlock">
         <div class="ai-box">
           <div class="ai-box-title">✨ AI will recommend your cities</div>
           <div class="ai-box-sub">Based on your interests, travel dates, and travel style — AI picks and orders the best cities for your trip.</div>
         </div>
         <div class="fg" style="margin-top:12px;margin-bottom:0;">
           <label class="fl">Any must-include cities? <span class="opt">optional · max 3</span></label>
-          <div class="tag-wrap" id="anchorWrap" onclick="document.getElementById('anchorInp').focus()">
-            <input class="tag-inp" id="anchorInp" placeholder="Type a city and press Enter…"/>
-          </div>
+          <div class="tag-wrap" id="anchorWrap" onclick="document.getElementById(&#39;anchorInp&#39;).focus()" style="position: relative;">
+            <input class="tag-inp" id="anchorInp" placeholder="Type a city and press Enter…">
+          <div class="ac-list"></div></div>
           <div class="hint">AI builds around these, or leave blank and it decides everything.</div>
         </div>
       </div>
@@ -662,9 +705,9 @@
       <div class="fg">
         <label class="fl">Travel style <span class="req">*</span></label>
         <div class="cc-grid g3" id="bg">
-          <div class="cc" onclick="pick('bg',this)"><span class="ci">🎒</span><div class="ct">Budget</div></div>
-          <div class="cc" onclick="pick('bg',this)"><span class="ci">🧳</span><div class="ct">Mid-range</div></div>
-          <div class="cc" onclick="pick('bg',this)"><span class="ci">💼</span><div class="ct">Luxury</div></div>
+          <div class="cc" onclick="pick(&#39;bg&#39;,this)"><span class="ci">🎒</span><div class="ct">Budget</div></div>
+          <div class="cc" onclick="pick(&#39;bg&#39;,this)"><span class="ci">🧳</span><div class="ct">Mid-range</div></div>
+          <div class="cc" onclick="pick(&#39;bg&#39;,this)"><span class="ci">💼</span><div class="ct">Luxury</div></div>
         </div>
         <div class="hint">Shapes your accommodation, food, and activity recommendations.</div>
         <div class="error-msg" id="err-budget">Please select your travel style</div>
@@ -673,19 +716,19 @@
       <div class="fg">
         <label class="fl">Any transport preferences? <span class="opt">optional</span></label>
         <div class="cc-grid g2" id="tripStructureGrid">
-          <div class="mc on" onclick="pickTripStructure(this,'ai')" data-value="ai" id="ts-ai">
+          <div class="mc on" onclick="pickTripStructure(this,&#39;ai&#39;)" data-value="ai" id="ts-ai">
             <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">AI optimises for me</span></div>
             <div class="mc-sub">Best mix of train, flight, and car per leg</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this,'road_trip')" data-value="road_trip" id="ts-road">
+          <div class="mc" onclick="pickTripStructure(this,&#39;road_trip&#39;)" data-value="road_trip" id="ts-road">
             <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Road trip</span></div>
             <div class="mc-sub">Drive between cities, stop along the way</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this,'train')" data-value="train" id="ts-train">
+          <div class="mc" onclick="pickTripStructure(this,&#39;train&#39;)" data-value="train" id="ts-train">
             <div class="mc-top"><span class="mc-icon">🚆</span><span class="mc-title">Train</span></div>
             <div class="mc-sub">Rail corridors between cities</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this,'flying')" data-value="flying" id="ts-fly">
+          <div class="mc" onclick="pickTripStructure(this,&#39;flying&#39;)" data-value="flying" id="ts-fly">
             <div class="mc-top"><span class="mc-icon">✈️</span><span class="mc-title">Fly</span></div>
             <div class="mc-sub">Fly between cities independently</div>
           </div>
@@ -695,10 +738,10 @@
       <div class="fg">
         <label class="fl">Accommodation preferences <span class="opt">optional · opt-out</span></label>
         <div class="cc-grid g4" id="accom">
-          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
-          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏡</span><div class="ct">Airbnb</div></div>
-          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
-          <div class="cc" onclick="this.classList.toggle('on')"><span class="ci">🏕️</span><div class="ct">Unique</div></div>
+          <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
+          <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏡</span><div class="ct">Airbnb</div></div>
+          <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
+          <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏕️</span><div class="ct">Unique</div></div>
         </div>
         <div class="hint">Select your preferred style(s) only if you'd like accommodation recommendations. Leave blank if you've already booked or don't need them — your itinerary will then include no accommodation suggestions.</div>
       </div>
@@ -721,37 +764,37 @@
           <div class="legend-labels"><span>Not a priority</span><span>High priority</span></div>
         </div>
         <div id="sliders">
-          <div class="irow"><span class="ilbl">🏛️ History &amp; heritage</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🍜 Food &amp; drink</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🌿 Nature &amp; outdoors</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎉 Nightlife &amp; bars</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎭 Culture &amp; museums</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🧘 Wellness &amp; spa</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
-          <div class="irow"><span class="ilbl">🎢 Adventure &amp; fun</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)"/></div>
+          <div class="irow"><span class="ilbl">🏛️ History &amp; heritage</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 100%,var(--border) 100%);"></div>
+          <div class="irow"><span class="ilbl">🍜 Food &amp; drink</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 100%,var(--border) 100%);"></div>
+          <div class="irow"><span class="ilbl">🌿 Nature &amp; outdoors</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 100%,var(--border) 100%);"></div>
+          <div class="irow"><span class="ilbl">🎉 Nightlife &amp; bars</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 50%,var(--border) 50%);"></div>
+          <div class="irow"><span class="ilbl">🎭 Culture &amp; museums</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 50%,var(--border) 50%);"></div>
+          <div class="irow"><span class="ilbl">🧘 Wellness &amp; spa</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 25%,var(--border) 25%);"></div>
+          <div class="irow"><span class="ilbl">🛍️ Shopping</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 0%,var(--border) 0%);"></div>
+          <div class="irow"><span class="ilbl">🎢 Adventure &amp; fun</span><input type="range" class="islider" min="0" max="4" step="1" value="0" oninput="updSlider(this)" style="background: linear-gradient(to right,var(--accent) 75%,var(--border) 75%);"></div>
         </div>
         <div class="error-msg" id="err-interests">Please set at least one interest above zero</div>
       </div>
 
-      <hr class="hdiv"/>
+      <hr class="hdiv">
 
       <div class="fg">
         <label class="fl">Cuisine preferences <span class="opt">optional</span></label>
         <div class="chips">
-          <div class="chip" onclick="this.classList.toggle('on')">Local &amp; traditional</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Street food</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Fine dining</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Seafood</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Vegetarian-friendly</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Plant-based</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Fusion &amp; modern</div>
-          <div class="chip" onclick="this.classList.toggle('on')">Markets &amp; food halls</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Local &amp; traditional</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Street food</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Fine dining</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Seafood</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Vegetarian-friendly</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Plant-based</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Fusion &amp; modern</div>
+          <div class="chip" onclick="this.classList.toggle(&#39;on&#39;)">Markets &amp; food halls</div>
         </div>
       </div>
 
       <div class="fg">
         <label class="fl">Must-see spots <span class="opt">optional</span></label>
-        <textarea class="inp" rows="2" id="mustSee" placeholder="Pre-booked tours, specific experiences, places you've always wanted to go…"></textarea>
+        <textarea class="inp" rows="2" id="mustSee" placeholder="Pre-booked tours, specific experiences, places you&#39;ve always wanted to go…"></textarea>
       </div>
 
       <div class="fg">
@@ -772,32 +815,32 @@
       <div class="step-sub">Review your cities before we build your full itinerary.</div>
 
       <!-- Loading -->
-      <div id="previewLoading" class="loading-wrap">
+      <div id="previewLoading" class="loading-wrap hidden">
         <div class="spinner"></div>
-        <div class="loading-msg" id="loadingMsg">AI is planning your cities…</div>
+        <div class="loading-msg" id="loadingMsg" style="opacity: 1;">Almost ready…</div>
         <div class="loading-hint">This usually takes 15–40 seconds depending on your trip ✨</div>
       </div>
 
       <!-- Content -->
-      <div id="previewContent" class="hidden">
+      <div id="previewContent" class="">
+
+        <!-- Overview -->
         <div class="prev-section-label">Trip overview</div>
         <div class="prev-overview" id="previewOverview"></div>
 
+        <!-- Cities with images -->
         <div class="prev-section-label">🗺️ Your cities</div>
-        <div id="previewCities" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem;"></div>
+        <div id="previewCities" class="cities-grid"></div>
 
-        <div class="prev-section-label">🌤️ Weather</div>
-        <div class="info-box" id="previewWeather" style="margin-bottom:1.25rem;"></div>
+        <!-- Local finds -->
+        <div class="prev-section-label">💎 Hidden finds</div>
+        <div id="localFinds" class="local-finds"></div>
 
-        <div class="prev-section-label">🛂 Visa</div>
-        <div class="info-box" id="previewVisa" style="margin-bottom:1.25rem;"></div>
-
-        <hr class="hdiv"/>
-
+        <!-- Teaser day -->
         <div class="prev-section-label">📅 A taste of your itinerary</div>
-        <div class="teaser-card">
+        <div class="teaser-card" style="margin-bottom:1.25rem;">
           <div class="teaser-head">
-            <span class="teaser-title" id="teaserDayLabel">A highlight day</span>
+            <span class="teaser-title" id="teaserDayLabel">Sample Day</span>
             <span class="teaser-city" id="teaserCityLabel"></span>
           </div>
           <div class="teaser-body">
@@ -809,14 +852,22 @@
           <div class="teaser-foot" id="teaserCTA">🔒 Your other days are waiting</div>
         </div>
 
+        <!-- Visa badge -->
+        <div id="visaBadge" class="visa-badge ok"></div>
+
+        <!-- What's included -->
         <div class="prev-section-label">📋 What's included</div>
         <div class="info-box" style="margin-bottom:1.25rem;" id="inclusionsList"></div>
 
-        <div class="time-saved">
-          <div class="time-saved-num" id="timeSaved"></div>
+        <!-- Time saved -->
+        <div class="time-saved" style="margin-bottom:1.25rem;">
+          <div class="time-saved-num" id="timeSaved">~10 hours</div>
           <div class="time-saved-sub">saved vs planning this yourself</div>
         </div>
 
+        <hr class="hdiv">
+
+        <!-- Share -->
         <div class="info-box" style="margin-bottom:1.25rem;">
           <div class="prev-section-label" style="margin-bottom:8px;">🔗 Share with your travel crew</div>
           <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">Send this preview to your friends before you buy.</div>
@@ -827,18 +878,36 @@
           </div>
         </div>
 
-        <div class="fg">
-          <label class="fl">Want to change something? <span class="opt">optional</span></label>
-          <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. Swap Milan for Rome · More days in Tokyo · Remove the beach city…"></textarea>
+        <!-- Email capture for non-converters -->
+        <div class="email-capture" id="emailCapture">
+          <div class="email-capture-title">Not ready to commit? Save this preview.</div>
+          <div class="email-capture-sub">We'll email it to you — no spam, one email only.</div>
+          <div class="email-capture-row">
+            <input class="inp email-capture-inp" type="email" id="captureEmail" placeholder="Your email address">
+            <button class="email-capture-btn" onclick="savePreview()">Save →</button>
+          </div>
+          <div id="captureSuccess" class="capture-success hidden">✅ Saved! Check your inbox shortly.</div>
         </div>
 
-        <div class="brow">
-          <button class="bbk" onclick="go(4)">← Back</button>
-          <div class="prev-actions">
-            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);">↺ Regenerate</button>
-            <button class="bnx" onclick="confirmAndGenerate()">Get Itinerary — $29</button>
+        <!-- Collapsible feedback -->
+        <div style="margin-bottom:1rem;">
+          <button class="regen-toggle" onclick="toggleFeedback()" id="regenToggle">↺ Not quite right? Make a change</button>
+          <div id="feedbackExpanded" class="hidden">
+            <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. Swap Milan for Rome · More days in Tokyo · Remove the beach city…" style="margin-bottom:8px;"></textarea>
+            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);width:100%;">↺ Regenerate preview</button>
           </div>
         </div>
+
+        <!-- CTA row -->
+        <div class="brow">
+          <button class="bbk" onclick="go(4)">← Back</button>
+          <button class="bnx" onclick="confirmAndGenerate()">Get Full Itinerary — $29</button>
+        </div>
+      </div>
+
+      <!-- Sticky mobile CTA -->
+      <div class="sticky-cta" id="stickyCta">
+        <button class="bnx" onclick="confirmAndGenerate()">Get Full Itinerary — $29</button>
       </div>
 
       <!-- Error -->
@@ -854,13 +923,13 @@
     <div class="step" id="step6">
       <div class="success-wrap">
         <div class="success-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
         </div>
         <div class="success-title">You're all set!</div>
-        <p class="success-sub">Your personalised itinerary is being generated.<br/>Check your email — your Google Sheet will arrive shortly.</p>
+        <p class="success-sub">Your personalised itinerary is being generated.<br>Check your email — your itinerary PDF will arrive shortly.</p>
         <div class="success-box">
-          Your itinerary includes:<br/>
-          <span style="font-weight:400;color:var(--muted);">📅 Day-by-day plan · 🏨 Accommodation · 🚆 Transport<br/>🍜 Restaurants · 🗺️ City guide · 📋 Booking tracker</span>
+          Your itinerary includes:<br>
+          <span style="font-weight:400;color:var(--muted);">📅 Day-by-day plan · 🍽️ Curated restaurants · 💎 Hidden finds<br>🏨 Accommodation · 🚆 Route-optimised transport · 📌 Book Before You Go</span>
         </div>
         <div class="beta-box">🎉 <strong>Beta friends get it free!</strong> Use code <strong>BWSBETA</strong> at checkout for 100% off.</div>
       </div>
@@ -869,7 +938,7 @@
   </div><!-- /card -->
 </div><!-- /formWrap -->
 
-<script src="airports.js"></script>
+<script src="./airports.js"></script>
 <script>
   // ── LANDING / FORM TOGGLE ──────────────────────────
   function startPlanning() {
@@ -1191,9 +1260,10 @@ STEP 1 — NIGHT ALLOCATION
 Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.
 - Full days (Pack it in) = minimum nights per city, more cities possible.
 - Relaxed days = maximum nights per city, fewer cities, slower pace.
+- HARD CAP: Do not include a city that cannot receive its minimum nights. Remove lowest-priority cities until every remaining city gets its minimum. Never list a city with 0 or 1 night if its size classification requires more — cut the city instead, unless the traveler explicitly requests it in mustSee or extraNotes.
 - If cities × minimum nights > total trip days → remove lowest-priority cities.
 - Travel days over 4 hours = full day lost → add 1 night to that city.
-- Departure city classified Large or Mega → minimum 2 nights.
+- Departure city classified Large or Mega → MINIMUM 2 nights, non-negotiable. If total nights cannot support this, remove a middle city before reducing the departure city below 2 nights, unless the traveler explicitly requests otherwise in mustSee or extraNotes.
 - Arrival and departure cities always get at least 1 night each — apply rules in Step 2.
 
 STEP 2 — CITY SELECTION
@@ -1243,13 +1313,21 @@ STEP 8 — TEASER TIME BUDGET
 - Full-day activity → that's the day. One light evening max.
 - Never 3 time-intensive activities (3+ hrs each) in one day.
 
-WEATHER: City-by-city for exact travel dates. Fahrenheit. Flag seasonal highlights.
-VISA: General requirements for US/Canada, UK, EU, Australia passports. Never assume nationality. Address as "you"/"your" throughout.
+STEP 9 — LOCAL PICKS
+Select 2–3 genuinely non-tourist finds relevant to this trip. Must be specific, real places or experiences that well-researched travellers would discover — not mainstream sights.
+- emoji: a single relevant emoji
+- title: max 5 words (the name or hook)
+- description: max 20 words explaining why it's special and not obvious
+- Do NOT include anything on the mainstream tourist trail (no Eiffel Tower, no Colosseum, no Great Wall as a pick)
+- Span different cities if the trip has multiple stops
+- Must match the traveler's interests and travel party
+
+VISA: Output as a single short line for visa_badge. Examples: "✅ Visa-free entry for US, UK, EU & Australian passport holders" or "⚠️ Visa required — full details included in your itinerary". Max 15 words. Note if policy should be verified closer to travel date.
 TONE: Always second person. Never traveler's name or "the couple/group/traveler".
 HARD INSTRUCTIONS: mustSee and extraNotes override all defaults. Never ignore them.
 
 Return exactly this JSON:
-{"overview":"max 3 sentences","cities":[{"city":"string","nights":0,"why_recommended":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"weather":"string","visa":"string"}
+{"overview":"max 3 sentences","cities":[{"city":"string","nights":0,"why_recommended":"string"}],"local_picks":[{"emoji":"string","title":"string","description":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"visa_badge":"string"}
 
 TRAVELER:
 First name: ${d.firstName}
@@ -1357,6 +1435,16 @@ Extra notes: ${d.extraNotes}`;
   }
 
   // ── RENDER PREVIEW ─────────────────────────────────
+  const CITY_GRADIENTS = [
+    'linear-gradient(135deg,#667eea,#764ba2)',
+    'linear-gradient(135deg,#f093fb,#f5576c)',
+    'linear-gradient(135deg,#4facfe,#00f2fe)',
+    'linear-gradient(135deg,#43e97b,#38f9d7)',
+    'linear-gradient(135deg,#fa709a,#fee140)',
+    'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+  ];
+  function cityGradient(name) { return CITY_GRADIENTS[name.charCodeAt(0)%CITY_GRADIENTS.length]; }
+
   function renderPreview(preview) {
     approvedPreview = preview;
     try {
@@ -1379,34 +1467,88 @@ Extra notes: ${d.extraNotes}`;
     document.getElementById('previewLoading').classList.add('hidden');
     document.getElementById('previewOverview').textContent = preview.overview;
 
+    // Cities — render gradient immediately, then async-load Pexels photos
     const citiesEl = document.getElementById('previewCities');
-    citiesEl.innerHTML = (preview.cities||[]).map(c => `<div class="city-card"><div class="city-card-top"><span class="city-name">${c.city}</span><span class="city-nights">${c.nights} nights</span></div><div class="city-why">${c.why_recommended}</div></div>`).join('');
+    const cities = preview.cities || [];
+    citiesEl.innerHTML = cities.map((c, i) => {
+      const grad = cityGradient(c.city);
+      return `<div class="city-card">
+        <div class="city-img-wrap">
+          <img class="city-card-img" id="cityImg${i}" alt="${c.city}" style="display:none;">
+          <div class="city-img-fallback" id="cityFallback${i}" style="background:${grad};display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+            <span style="font-size:2rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:-0.02em;">${c.city.charAt(0)}</span>
+          </div>
+        </div>
+        <div class="city-card-body">
+          <div class="city-card-top"><span class="city-name">${c.city}</span><span class="city-nights">${c.nights} nights</span></div>
+          <div class="city-why">${c.why_recommended}</div>
+        </div>
+      </div>`;
+    }).join('');
 
-    document.getElementById('previewWeather').textContent = preview.weather;
-    document.getElementById('previewVisa').textContent = preview.visa;
+    // Fire all photo fetches in parallel; keep gradient on failure/null
+    cities.forEach((c, i) => {
+      fetch('https://bws-travel-proxy.springlam-co.workers.dev/pexels-photo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city: c.city })
+      })
+      .then(r => r.json())
+      .then(({ url }) => {
+        if (!url) return;
+        const img = document.getElementById('cityImg' + i);
+        const fb = document.getElementById('cityFallback' + i);
+        if (!img) return;
+        img.onload = () => { img.style.display = 'block'; if (fb) fb.style.display = 'none'; };
+        img.src = url; // onerror left unset → gradient simply stays
+      })
+      .catch(() => {});
+    });
 
+    // Local picks
+    const findsEl = document.getElementById('localFinds');
+    findsEl.innerHTML = (preview.local_picks||[]).map(p =>
+      `<div class="local-find-item">
+        <span class="local-find-emoji">${p.emoji||'💎'}</span>
+        <div><div class="local-find-title">${p.title}</div><div class="local-find-desc">${p.description}</div></div>
+      </div>`
+    ).join('');
+
+    // Teaser day
     if (preview.teaser_day) {
       const td = preview.teaser_day;
       document.getElementById('teaserCityLabel').textContent = td.city||'';
       document.getElementById('teaserDayLabel').textContent = 'Sample Day in '+(td.city||'');
-      document.getElementById('teaserMorning').textContent = td.morning||'';
-      document.getElementById('teaserAfternoon').textContent = td.afternoon||'';
-      document.getElementById('teaserEvening').textContent = td.evening||'';
+      // Populate each teaser slot and hide its entire row (emoji included) when empty
+      const setTeaserRow = (id, val) => {
+        const el = document.getElementById(id);
+        el.textContent = val || '';
+        el.parentElement.style.display = (val && String(val).trim()) ? 'flex' : 'none';
+      };
+      setTeaserRow('teaserMorning', td.morning);
+      setTeaserRow('teaserAfternoon', td.afternoon);
+      setTeaserRow('teaserEvening', td.evening);
       document.getElementById('teaserRestaurant').textContent = td.restaurant_suggestion||'';
     }
 
+    // Visa badge
+    const visaEl = document.getElementById('visaBadge');
+    const visaText = preview.visa_badge || preview.visa || '';
+    visaEl.textContent = visaText;
+    visaEl.className = 'visa-badge ' + (visaText.startsWith('✅') ? 'ok' : 'warn');
+
     const totalDays = formData&&formData.arrivalDate&&formData.departureDate ? Math.round((new Date(formData.departureDate)-new Date(formData.arrivalDate))/(1000*60*60*24)) : 7;
     const totalCities = (preview.cities||[]).length||3;
+
     document.getElementById('inclusionsList').innerHTML = [
-      '✅ '+totalDays+'-day day-by-day itinerary',
-      '✅ Booking tracker — sorted by urgency',
-      '✅ Restaurant picks across '+totalCities+' cities',
-      '✅ Full transport with booking tips',
-      '✅ City activity guide for every stop',
-      '✅ Visa, weather and packing info'
+      '✅ '+totalDays+'-day day-by-day itinerary with booking links',
+      '✅ Curated restaurants across '+totalCities+' cities',
+      '✅ Hidden finds — hidden activities & finds',
+      '✅ Accommodation picks per city',
+      '✅ Route-optimised transport — least time, least hassle',
+      '✅ "Book Before You Go" — what sells out and when',
+      '✅ Practical info: visa, packing, currency'
     ].map(i=>'<div class="incl-row">'+i+'</div>').join('');
 
-    const totalHours = Math.round(2+(totalCities*1)+(totalDays*20/60));
+    const totalHours = Math.round(2+(totalCities*1.5)+(totalDays*20/60));
     document.getElementById('timeSaved').textContent = '~'+totalHours+' hours';
     const ctaEl = document.getElementById('teaserCTA');
     if (ctaEl) ctaEl.textContent = '🔒 Your other '+(totalDays-1)+' days are waiting';
@@ -1419,6 +1561,35 @@ Extra notes: ${d.extraNotes}`;
       const btn=document.getElementById('copyLinkBtn'); btn.textContent='✅ Copied!';
       setTimeout(()=>btn.textContent='📋 Copy link',2000);
     });
+  }
+
+  function toggleFeedback() {
+    const el = document.getElementById('feedbackExpanded');
+    const btn = document.getElementById('regenToggle');
+    const hidden = el.classList.toggle('hidden');
+    btn.textContent = hidden ? '↺ Not quite right? Make a change' : '↑ Hide';
+    if (!hidden) document.getElementById('previewFeedback').focus();
+  }
+
+  async function savePreview() {
+    const email = document.getElementById('captureEmail').value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('captureEmail').classList.add('field-error');
+      return;
+    }
+    document.getElementById('captureEmail').classList.remove('field-error');
+    const btn = document.querySelector('.email-capture-btn');
+    btn.textContent = '…'; btn.disabled = true;
+    try {
+      await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview/save-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, preview: approvedPreview, shareUrl: window._previewShareUrl||'' })
+      });
+    } catch(e) { /* fail silently — show success regardless */ }
+    document.getElementById('captureSuccess').classList.remove('hidden');
+    document.getElementById('emailCapture').querySelector('.email-capture-row').style.display = 'none';
+    document.getElementById('emailCapture').querySelector('.email-capture-sub').style.display = 'none';
   }
 
   window.addEventListener('load', () => {
@@ -1696,5 +1867,6 @@ Extra notes: ${d.extraNotes}`;
 
   window.addEventListener('pageshow', e => { if (e.persisted) { formData=null; backToLanding(); } });
 </script>
-</body>
-</html>
+
+
+</body></html>
