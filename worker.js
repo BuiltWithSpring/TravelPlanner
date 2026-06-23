@@ -7,6 +7,50 @@ export default {
       return corsResponse(null, 204);
     }
 
+    // ── Route: /static-map — Google Static Maps proxy ──────────
+    if (url.pathname === '/static-map' && request.method === 'GET') {
+      const cities = (url.searchParams.get('cities') || '')
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+
+      if (cities.length === 0) {
+        return corsResponse({ error: 'Missing required "cities" query param.' }, 400);
+      }
+
+      // Purple path connecting the cities in order + a purple marker per city.
+      const encodedCities = cities.map((c) => encodeURIComponent(c));
+      const path = `color:0x7c3aedff|weight:3|${encodedCities.join('|')}`;
+      const markers = encodedCities
+        .map((c) => `markers=color:purple%7C${c}`)
+        .join('&');
+
+      const mapUrl =
+        'https://maps.googleapis.com/maps/api/staticmap' +
+        '?size=600x300' +
+        '&maptype=roadmap' +
+        `&path=${encodeURIComponent(path)}` +
+        `&${markers}` +
+        `&key=${env.STATIC_MAPS_KEY}`;
+
+      try {
+        const googleResp = await fetch(mapUrl);
+        if (!googleResp.ok) {
+          return corsResponse({ error: 'Static Maps request failed.' }, 502);
+        }
+        return new Response(googleResp.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=86400',
+          },
+        });
+      } catch (err) {
+        return corsResponse({ error: err.message }, 502);
+      }
+    }
+
     // ── Route: /preview — Anthropic API proxy ──────────────────
     if (url.pathname === '/preview' && request.method === 'POST') {
       try {
@@ -60,6 +104,44 @@ export default {
         return Response.redirect(redirectUrl, 302);
       } catch (err) {
         return corsResponse({ error: err.message }, 500);
+      }
+    }
+
+    // ── Route: /pexels-photo — City photo proxy (KV-cached 7d) ──
+    if (url.pathname === '/pexels-photo' && request.method === 'POST') {
+      try {
+        const { city } = await request.json();
+        if (!city || typeof city !== 'string') {
+          return corsResponse({ url: null }, 200);
+        }
+        const cacheKey = 'pexels:' + city.toLowerCase().trim();
+
+        // Serve from KV if we've looked this city up before (incl. cached misses)
+        const cached = await env.PREVIEW_STORE.get(cacheKey);
+        if (cached !== null) {
+          return corsResponse({ url: cached || null }, 200);
+        }
+
+        const query = encodeURIComponent(city + ' city landmark');
+        const pexelsRes = await fetch(
+          `https://api.pexels.com/v1/search?query=${query}&per_page=1&orientation=landscape`,
+          { headers: { Authorization: env.PEXELS_API_KEY } }
+        );
+
+        let photoUrl = null;
+        if (pexelsRes.ok) {
+          const data = await pexelsRes.json();
+          if (data.photos && data.photos[0] && data.photos[0].src) {
+            photoUrl = data.photos[0].src.medium || null;
+          }
+        }
+
+        // Cache result for 7 days. Store '' for a miss so we don't re-hit Pexels.
+        await env.PREVIEW_STORE.put(cacheKey, photoUrl || '', { expirationTtl: 60 * 60 * 24 * 7 });
+
+        return corsResponse({ url: photoUrl }, 200);
+      } catch (err) {
+        return corsResponse({ url: null }, 200);
       }
     }
 
@@ -278,7 +360,7 @@ async function verifyStripeWebhook(payload, sig, secret) {
 
 // ── Itinerary generation ────────────────────────────────────────
 // Top-level keys every valid itinerary must contain.
-const REQUIRED_KEYS = ['overview', 'days', 'accommodations', 'transport', 'restaurants', 'city_guide', 'booking_tracker', 'practical_info'];
+const REQUIRED_KEYS = ['overview', 'days', 'accommodations', 'transport', 'restaurants', 'city_guide', 'book_before_you_go', 'practical_info'];
 
 // Appended to the prompt on retry to force clean JSON output.
 const JSON_RETRY_INSTRUCTION = '\n\nIMPORTANT: Return only valid JSON. No markdown formatting, no code fences, no explanation before or after. Your response must start with { and end with }.';
@@ -364,7 +446,7 @@ Single city trips → skip all corridor and routing logic below. If train select
 
 road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking.
 
-train → cities along logical rail corridor. Major train stations only. No car/bus connections. Recommend specific rail pass (JR Pass, Eurail, Trenitalia, SNCF etc). Include day trips by local train within 60–90 min. Flag pre-departure rail passes as Book now in booking_tracker.
+train → cities along logical rail corridor. Major train stations only. No car/bus connections. Recommend specific rail pass (JR Pass, Eurail, Trenitalia, SNCF etc). Include day trips by local train within 60–90 min. Flag pre-departure rail passes as Book now in book_before_you_go.
 
 flying → each city fully independent. Select by interest profile not geography. Day trips within 90 min per city. Never choose a city just because it sits between others.
 
@@ -519,8 +601,10 @@ Validation rules:
 - Never schedule 3 time-intensive activities (each 3+ hours) on the same day regardless of pace.
 - Travel days → max 2 quick activities near departure point only.
 
-STEP 12 — BOOKING TRACKER
-Every item requiring booking sorted: Book now → 4–6 weeks ahead → On arrival. Include all flights, accommodation, restaurants needing advance booking, activities needing advance booking. Every entry needs: category, item_name, city, date, est_cost, booking_priority, booking_tip (one sentence with where and how to book), booking_link (official URL where bookable — use the most direct official booking source; leave empty string if no reliable URL exists).
+STEP 12 — BOOK BEFORE YOU GO
+A curated advance-booking guide — not a tracker. Include only items that genuinely benefit from booking ahead: flights, accommodation, high-demand restaurants, activities that sell out, rail passes, entry tickets with timed slots. Sort by urgency: Book now → 4–6 weeks ahead → On arrival.
+Every entry needs: item_name, city, date, est_cost, booking_priority, booking_tip (one sentence — where and how to book, and why booking ahead matters for this item), booking_link (most direct official booking URL; leave empty string if no reliable URL exists).
+Do NOT include generic items that need no advance booking (e.g. free parks, markets, casual walk-in cafes). Quality over quantity — only items where the link genuinely helps the traveler act.
 
 STEP 13 — CITY GUIDE
 A reference pool of EXTRA options not already in your daily plan, weighted by interest scores. These are ADDITIONAL ideas beyond the day-by-day — never the same entries.
@@ -567,6 +651,28 @@ Each entry must include:
 - est_cost: range with currency or "Free"
 - neighborhood: district or area
 
+STEP 13.5 — SPOT TIERING
+Every activity in the day-by-day AND every entry in the city_guide must be assigned a spot_tier. Apply to all morning, afternoon, and evening slots, and to all city_guide entries.
+
+Tier definitions:
+- "Iconic" — widely known, appears in most guidebooks, worth doing despite crowds. Think Sagrada Família, Senso-ji, the Louvre.
+- "Local Pick" — well-regarded by those who know the destination, less touristed than iconic sites, won't appear on a first-Google search. The kind of place a well-travelled friend would recommend.
+- "Hidden Gem" — genuinely off the beaten path. Requires research or local knowledge to find. Not on mainstream tourist itineraries. Specific, surprising, memorable.
+
+Rules:
+- Every trip must include at least 2 Hidden Gem entries across the day-by-day.
+- Every trip must include at least 3 Local Pick entries across the day-by-day.
+- Do not label everything as Hidden Gem — use sparingly and only when truly justified.
+- Tier must reflect objective popularity, not subjective preference.
+- For day-by-day entries, include spot_tier as a prefix inside the activity string in square brackets: "[Iconic] " · "[Local Pick] " · "[Hidden Gem] "
+  Example morning: "[Local Pick] Yanaka Cemetery Walk — a quiet neighborhood necropolis turned local strolling ground, lined with cats and old craft shops."
+- For city_guide entries, add spot_tier as a separate field (see JSON schema below).
+
+STEP 13.6 — HIDDEN FINDS
+Select 3–5 of the most surprising, non-obvious experiences or places across the entire trip. These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
+Each entry: emoji, title (max 6 words), description (max 25 words — why it's special and not obvious), city.
+These appear as a standalone section in the PDF — make them count.
+
 STEP 14 — ACTIVITY FRAMING
 Pace density rules — apply to every day-by-day entry:
 - Full days → populate morning, afternoon AND evening with distinct activities. All 3 slots required.
@@ -581,7 +687,7 @@ Every activity, attraction, and restaurant must be unique across all days. Never
 - If a city has more days than distinct marquee attractions, fill remaining slots with neighborhoods, local experiences, day trips, markets, parks, or lesser-known spots rather than repeating a famous site.
 - The single exception is unavoidable logistics (e.g. the same airport for arrival and departure) — transport hubs may recur, but no activity, sight, or restaurant ever may.
 
-STEP 15 — SPREADSHEET FORMATTING
+STEP 15 — OUTPUT FORMATTING
 - Activities: clean sentence, max 20 words, no pipes
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
@@ -593,7 +699,7 @@ STEP 16 — ACCURACY
 Only use what was submitted. Never reference or invent details not provided. Never invent property names, venue names, or transport services you cannot reasonably verify exist.
 Never assume or infer the traveler's nationality from their name or any other detail. For visa_requirements and entry_requirements in practical_info, provide general requirements covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time.
 Always address the traveler directly as "you" throughout the entire output — never refer to them by name or in third person.
-Treat mustSee and extraNotes as hard instructions, not suggestions. Apply them before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in booking_tracker as already confirmed and reflect them in the day-by-day.
+Treat mustSee and extraNotes as hard instructions, not suggestions. Apply them before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
 Cross-country airports: if arrival and departure airports are in different countries, note this in the overview and clarify which country the itinerary covers. Never plan activities or cities outside the submitted country.
 
 OUTPUT — return exactly this JSON:
@@ -662,6 +768,7 @@ OUTPUT — return exactly this JSON:
           "name": "string",
           "description": "string — always populated, max 25 words. Never empty.",
           "category": "string — interest category",
+          "spot_tier": "Iconic · Local Pick · Hidden Gem",
           "best_time": "Morning · Afternoon · Evening · Full Day · Any",
           "est_cost": "string — range with currency or Free",
           "neighborhood": "string"
@@ -669,15 +776,22 @@ OUTPUT — return exactly this JSON:
       ]
     }
   ],
-  "booking_tracker": [
+  "hidden_finds": [
+    {
+      "emoji": "string — single relevant emoji",
+      "title": "string — max 6 words",
+      "description": "string — max 25 words, why it's special and non-obvious",
+      "city": "string"
+    }
+  ],
+  "book_before_you_go": [
     {
       "booking_priority": "Book now · 4–6 weeks ahead · On arrival",
-      "category": "Flight · Train · Bus · Shuttle · Ferry · Rental Car · Hotel · Restaurant · Activity · Wellness",
       "item_name": "string",
       "city": "string",
       "date": "string",
       "est_cost": "string",
-      "booking_tip": "string — one sentence",
+      "booking_tip": "string — one sentence, why booking ahead matters for this item",
       "booking_link": "string — official booking URL or empty string"
     }
   ],
@@ -890,6 +1004,103 @@ async function generateItinerary(env, d) {
   }
 }
 
+// ── Google Places (v1) enrichment ───────────────────────────────
+// Day-by-day activities are strings; enriched lookups are attached under
+// day.places[slot] as { google_url, hours, rating } or null. Uses the new
+// Places API v1 endpoints with X-Goog-Api-Key / X-Goog-FieldMask headers.
+
+// Phrases that aren't real, findable venues — never looked up.
+const VAGUE_VENUE_RE = /^(explore|wander|stroll|walk around|free time|relax|enjoy|discover|roam|browse|self-guided|at your own pace)/i;
+
+// "[Iconic] Forbidden City — walk the axis..." -> "Forbidden City"
+function extractActivityVenue(activity) {
+  if (typeof activity !== 'string' || !activity.trim()) return null;
+  let s = activity.replace(/^\s*\[(Iconic|Local Pick|Hidden Gem)\]\s*/i, '').trim();
+  s = s.split(/\s[-–—]\s/)[0].trim();              // text before the dash separator
+  if (!s || s.length < 3 || VAGUE_VENUE_RE.test(s)) return null;
+  return s;
+}
+
+// "Dinner: Siji Minfu | Dongcheng — why" -> "Siji Minfu"
+function extractRestaurantVenue(suggestion) {
+  if (typeof suggestion !== 'string' || !suggestion.trim()) return null;
+  let s = suggestion;
+  const colon = s.indexOf(':');
+  if (colon !== -1) s = s.slice(colon + 1);
+  s = s.split('|')[0].split(/\s[-–—]\s/)[0].trim();
+  if (!s || s.length < 3 || VAGUE_VENUE_RE.test(s)) return null;
+  return s;
+}
+
+// One venue lookup: Text Search -> Place Details. Resolves to
+// { google_url, hours, rating } or null on any failure (never throws).
+async function enrichPlace(env, venueName, city) {
+  try {
+    const textQuery = `${venueName} ${city || ''}`.trim();
+
+    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': env.GOOGLE_MAPS_API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.displayName'
+      },
+      body: JSON.stringify({ textQuery })
+    });
+    if (!searchRes.ok) return null;
+
+    const searchData = await searchRes.json();
+    const placeId = searchData.places && searchData.places[0] && searchData.places[0].id;
+    if (!placeId) return null;
+
+    const detailsRes = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': env.GOOGLE_MAPS_API_KEY,
+        'X-Goog-FieldMask': 'id,googleMapsUri,currentOpeningHours,rating,formattedAddress'
+      }
+    });
+    if (!detailsRes.ok) return null;
+
+    const details = await detailsRes.json();
+    return {
+      google_url: details.googleMapsUri || null,
+      hours: (details.currentOpeningHours && details.currentOpeningHours.weekdayDescriptions) || null,
+      rating: typeof details.rating === 'number' ? details.rating : null
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+// Enrich all named day-by-day venues in parallel. Mutates and returns the
+// itinerary. Promise.allSettled isolates every failure — one bad lookup never
+// breaks the rest, and a missing key/days array is a no-op.
+async function enrichItineraryWithPlaces(env, itinerary) {
+  if (!env.GOOGLE_MAPS_API_KEY || !itinerary || !Array.isArray(itinerary.days)) return itinerary;
+
+  const tasks = [];
+  for (const day of itinerary.days) {
+    if (!day || typeof day !== 'object') continue;
+    day.places = day.places || {};
+    const city = day.city || '';
+    for (const slot of ['morning', 'afternoon', 'evening']) {
+      const name = extractActivityVenue(day[slot]);
+      if (name) tasks.push({ day, key: slot, name, city });
+    }
+    const restName = extractRestaurantVenue(day.restaurant_suggestion);
+    if (restName) tasks.push({ day, key: 'restaurant_suggestion', name: restName, city });
+  }
+  if (!tasks.length) return itinerary;
+
+  const results = await Promise.allSettled(tasks.map(t => enrichPlace(env, t.name, t.city)));
+  results.forEach((res, i) => {
+    const { day, key } = tasks[i];
+    day.places[key] = res.status === 'fulfilled' ? res.value : null;
+  });
+  return itinerary;
+}
+
 // Runs in the queue consumer after a confirmed payment: pull form data from KV,
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
@@ -922,6 +1133,14 @@ async function fulfillOrder(env, session) {
     const itinerary = await generateItinerary(env, { ...formData, approvedCities, teaserDay });
     if (itinerary && itinerary.error) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
+    } else {
+      // Enrich day-by-day venues with Google Places (v1) before sending. Isolated
+      // so any enrichment failure leaves the itinerary intact and still ships.
+      try {
+        await enrichItineraryWithPlaces(env, itinerary);
+      } catch (enrichErr) {
+        console.error('Places enrichment failed (continuing unenriched):', enrichErr && enrichErr.message);
+      }
     }
 
     // Make now only receives the final parsed JSON plus the identifiers it needs
