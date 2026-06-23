@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your China Itinerary — BuiltWithSpring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #7c3aed;
+    --accent-soft: #f4efff;
+    --text: #0f0c1e;
+    --muted: #7c72a0;
+    --border: #e8e3f5;
+    --gold: #b8860b;
+    --gold-soft: #fbf3df;
+    --teal: #0d8a7a;
+    --teal-soft: #e2f5f1;
+    --purple: #7c3aed;
+    --purple-soft: #f4efff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 56px 48px 72px;
+  }
+
+  /* Each major section begins a new printed page */
+  .section { page-break-before: always; }
+
+  /* ── Section headers ───────────────────────────── */
+  .section-header {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-left: 5px solid var(--accent);
+    padding: 4px 0 4px 16px;
+    margin: 0 0 28px;
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin: -20px 0 28px 21px;
+  }
+
+  /* ── Cover page ────────────────────────────────── */
+  .cover {
+    page-break-after: always;
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 48px;
+  }
+  .logo .spring { color: var(--text); }
+  .cover-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .cover-country {
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .cover-name {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 0;
+    margin-bottom: 36px;
+  }
+  .cover-meta div { line-height: 1.4; }
+  .cover-meta .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .cover-meta .value { font-size: 17px; font-weight: 600; }
+  .cover-cities-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .cover-cities { list-style: none; padding: 0; margin: 0; }
+  .cover-cities li {
+    font-size: 19px;
+    font-weight: 600;
+    padding: 10px 0 10px 18px;
+    border-left: 3px solid var(--accent);
+    margin-bottom: 10px;
+  }
+  .cover-cities li span { color: var(--muted); font-weight: 500; font-size: 15px; }
+
+  /* ── Generic cards ─────────────────────────────── */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .card-accent { border-left: 4px solid var(--accent); }
+
+  .lead {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ── Tier badges ───────────────────────────────── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 9px;
+    border-radius: 5px;
+    vertical-align: middle;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  .badge-iconic { background: var(--gold-soft); color: var(--gold); }
+  .badge-local  { background: var(--teal-soft); color: var(--teal); }
+  .badge-hidden { background: var(--purple-soft); color: var(--purple); }
+
+  /* ── City rows (Your Cities) ───────────────────── */
+  .city-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .city-row .nights-pill {
+    flex: 0 0 auto;
+    text-align: center;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-width: 76px;
+  }
+  .city-row .nights-pill .n { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .city-row .nights-pill .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .city-row h3 { margin: 0 0 4px; font-size: 19px; }
+  .city-row p { margin: 0; color: var(--muted); }
+
+  /* ── Day-by-day ────────────────────────────────── */
+  .city-band {
+    margin: 36px 0 20px;
+    padding: 10px 0 10px 16px;
+    border-left: 5px solid var(--accent);
+  }
+  .city-band:first-child { margin-top: 0; }
+  .city-band .cb-city { font-size: 20px; font-weight: 700; }
+  .city-band .cb-meta { font-size: 13px; color: var(--muted); }
+
+  .day {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .day-head .d-date { font-size: 16px; font-weight: 700; }
+  .day-head .d-focus { font-size: 13px; color: var(--muted); }
+  .day-head .d-cost { font-size: 13px; color: var(--accent); font-weight: 600; }
+
+  .slot { margin-bottom: 14px; }
+  .slot:last-child { margin-bottom: 0; }
+  .slot .slot-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .slot .slot-body { font-size: 15px; }
+
+  .restaurant-line {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .restaurant-line .r-label {
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    margin-right: 6px;
+  }
+
+  /* ── Affiliate links ───────────────────────────── */
+  .aff {
+    display: inline-block;
+    margin-top: 6px;
+    margin-right: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #7c3aed;
+    text-decoration: none;
+  }
+  .aff:hover { color: #5b21b6; }
+
+  /* ── Hidden finds ──────────────────────────────── */
+  .finds-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .find-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--purple);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .find-card .emoji { font-size: 26px; line-height: 1; }
+  .find-card h4 { margin: 10px 0 6px; font-size: 16px; }
+  .find-card p { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+  .find-card .find-city {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple);
+  }
+
+  /* ── Restaurants ───────────────────────────────── */
+  .rest-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .rest-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .rest-head h4 { margin: 0; font-size: 16px; }
+  .rest-type {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .rest-card .rest-desc { margin: 6px 0 8px; }
+  .rest-meta { font-size: 13px; color: var(--muted); }
+  .rest-meta strong { color: var(--text); font-weight: 600; }
+
+  /* ── Tables ────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    padding: 0 12px 10px;
+  }
+  tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .prio {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .prio-now { background: #fdeaea; color: #c0392b; }
+  .prio-soon { background: var(--gold-soft); color: var(--gold); }
+  .prio-arrival { background: var(--teal-soft); color: var(--teal); }
+
+  /* ── Transport ─────────────────────────────────── */
+  .leg {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+  }
+  .leg-route { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .leg-route .arrow { color: var(--accent); margin: 0 8px; }
+  .leg-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .leg-meta span { margin-right: 18px; }
+  .leg-meta strong { color: var(--text); font-weight: 600; }
+  .leg-tip { font-size: 14px; }
+
+  /* ── Practical info ────────────────────────────── */
+  .info-block { margin-bottom: 18px; }
+  .info-block h4 {
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .info-block p { margin: 0; }
+  .info-card { margin-bottom: 12px; }
+  .info-card h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .info-card h4 .ico {
+    font-size: 16px;
+    margin-right: 7px;
+    letter-spacing: normal;
+  }
+  .info-card p { margin: 0; }
+
+  .emergency-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid #c0392b;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .emergency-card h4 { margin: 0 0 8px; font-size: 16px; }
+  .emergency-card .erow { font-size: 14px; margin-bottom: 4px; }
+  .emergency-card .erow .ek {
+    display: inline-block;
+    min-width: 150px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .emergency-number { font-weight: 700; color: #c0392b; }
+
+  .footer-note {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ── Route map (static maps image) ─────────────── */
+  .route-map {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 4px 0 18px;
+  }
+
+  /* ── Enriched place data (rating / hours) ──────── */
+  .rest-enrich { font-size: 13px; color: var(--muted); margin: 6px 0 2px; }
+  .rest-rating { color: var(--gold); font-weight: 700; }
+
+  /* ── Section disclaimer ────────────────────────── */
+  .disclaimer {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Download bar (screen only) ────────────────── */
+  .dl-bar { max-width: 820px; margin: 0 auto; padding: 24px 48px 0; }
+  .print-btn {
+    display: block;
+    width: 100%;
+    background: #7c3aed;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .print-btn:hover { background: #6d28d9; }
+  .print-hint { font-size: 12px; color: var(--muted); text-align: center; margin: 8px 0 0; }
+
+  /* ── Combined intro page (cover + cities + overview) ── */
+  .intro-page { padding-top: 36px; padding-bottom: 36px; }
+  .intro-page .logo { margin-bottom: 18px; }
+  .intro-country {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .intro-page .cover-name { margin-bottom: 20px; }
+  .intro-meta { padding: 16px 0; margin-bottom: 26px; }
+  .intro-subhead {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-left: 5px solid var(--accent);
+    padding: 3px 0 3px 14px;
+    margin: 0 0 14px;
+  }
+  .intro-subhead.spaced { margin-top: 26px; }
+  .intro-city { padding: 13px 18px; margin-bottom: 12px; }
+  .intro-city h3 { font-size: 17px; }
+  .intro-city p { font-size: 14px; }
+  .intro-city .nights-pill { padding: 8px 14px; min-width: 64px; }
+  .intro-city .nights-pill .n { font-size: 22px; }
+  .intro-overview .lead { font-size: 15px; line-height: 1.6; }
+
+  /* ── Print rules ───────────────────────────────── */
+  @media print {
+    .dl-bar, .print-btn, .print-hint { display: none !important; }
+    @page { margin: 14mm; }
+    body { font-size: 12pt; }
+    .page { max-width: none; margin: 0; padding: 0; }
+    .screen-only { display: none !important; }
+    .lead, .slot-body, .rest-desc, .leg-tip, .info-block p,
+    .city-row p, .find-card p, td, .erow { color: #000 !important; }
+    .card, .day, .city-row, .leg, .find-card, .rest-card,
+    .emergency-card { break-inside: avoid; }
+    .intro-overview { break-inside: auto; }
+    .aff { color: var(--accent) !important; }
+    .finds-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════ DOWNLOAD BAR (screen only) ════════════ -->
+<div class="dl-bar screen-only">
+  <button class="print-btn" type="button" onclick="window.print()">⬇ Download as PDF</button>
+  <p class="print-hint">In the print dialog, choose 'Save as PDF'</p>
+</div>
+
+<!-- ════════════ 1. COVER + CITIES + OVERVIEW (combined) ════════════ -->
+<div class="page intro-page">
+  <div class="logo">Built<span class="spring">WithSpring</span></div>
+  <div class="cover-eyebrow">Your Personalized Itinerary</div>
+  <h1 class="intro-country">China</h1>
+  <div class="cover-name">Prepared for Maya</div>
+
+  <div class="cover-meta intro-meta">
+    <div>
+      <div class="label">Arrival</div>
+      <div class="value">Sep 12, 2026</div>
+    </div>
+    <div>
+      <div class="label">Departure</div>
+      <div class="value">Sep 17, 2026</div>
+    </div>
+    <div>
+      <div class="label">Duration</div>
+      <div class="value">5 nights</div>
+    </div>
+  </div>
+
+  <h2 class="intro-subhead">Your Cities</h2>
+
+  <div class="city-row intro-city">
+    <div class="nights-pill"><div class="n">3</div><div class="l">Nights</div></div>
+    <div>
+      <h3>Beijing</h3>
+      <p>Beijing is China's imperial capital of palaces, temples, and hutongs — chosen for your strong interest in history and heritage.</p>
+    </div>
+  </div>
+
+  <div class="city-row intro-city">
+    <div class="nights-pill"><div class="n">2</div><div class="l">Nights</div></div>
+    <div>
+      <h3>Shanghai</h3>
+      <p>Shanghai is China's dazzling financial hub of art-deco bunds and lane-house cafés — chosen for your love of food and modern city culture.</p>
+    </div>
+  </div>
+
+  <img class="route-map" alt="Beijing to Shanghai route map"
+    src="https://maps.googleapis.com/maps/api/staticmap?size=600x300&maptype=roadmap&path=color:0x7c3aedff%7Cweight:3%7CBeijing%7CShanghai&markers=color:purple%7CBeijing&markers=color:purple%7CShanghai&key=AIzaSyDxoADbz8J779PprlAVEeIS3oPEj1oPFzY">
+
+  <h2 class="intro-subhead spaced">Trip Overview</h2>
+  <div class="card card-accent intro-overview">
+    <p class="lead">You'll move from the imperial grandeur of Beijing to the neon-lit waterfront of Shanghai over five autumn nights, when crisp clear skies make the hutongs and the Bund especially photogenic. Your days balance the must-see icons with quieter local corners chosen for your love of history, food, and street-level culture. Mid-September sits just after the summer crowds and before the National Day holiday rush, so you'll have room to breathe at the headline sights.</p>
+  </div>
+</div>
+
+<!-- ════════════ 2. DAY-BY-DAY PLAN ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Day-by-Day Plan</h2>
+
+  <!-- ── BEIJING ── -->
+  <div class="city-band">
+    <div class="cb-city">Beijing</div>
+    <div class="cb-meta">Sep 12 – Sep 15 · 3 nights</div>
+  </div>
+
+  <!-- Day 1 -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Fri · Sep 12</div>
+      <div class="d-focus">Wangfujing &amp; Dongcheng</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Arrive at Beijing Capital Airport, transfer to your hutong courtyard hotel and settle in near Nanluoguxiang.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body"><span class="badge badge-local">Local Pick</span>Nanluoguxiang &amp; Wudaoying Hutong stroll — wander grey-brick lanes of indie shops and tea rooms to shake off jet lag.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Evening</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Jingshan Park sunset — climb the hill behind the Forbidden City for a golden-hour rooftop panorama.
+        <br><a class="aff" href="https://maps.google.com/?cid=10881339453913555205">View on Google Maps →</a></div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Dinner</span><strong>Siji Minfu (Roast Duck)</strong> · Dongcheng — a beloved Peking-duck institution a short walk from your hutong, ideal for a first night.
+    </div>
+  </div>
+
+  <!-- Day 2 -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Sat · Sep 13</div>
+      <div class="d-focus">Forbidden City &amp; Tiananmen</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Forbidden City — walk the full north-south axis of the Ming-Qing imperial palace, the heart of your history focus.
+        <br><a class="aff" href="https://maps.google.com/?cid=16693892711025677000">View on Google Maps →</a></div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Tiananmen Square &amp; the National Museum of China — survey two millennia of artefacts in the world's largest square.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Evening</div>
+      <div class="slot-body"><span class="badge badge-hidden">Hidden Gem</span>Zhihua Temple evening visit — a 1444 Ming wooden temple hosting rare Beijing court-music performances few tourists find.</div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Lunch</span><strong>Crescent Moon Muslim Restaurant</strong> · Dongsi — hand-pulled lamb noodles and Xinjiang skewers tucked in a quiet hutong.
+    </div>
+  </div>
+
+  <!-- Day 3 -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Sun · Sep 14</div>
+      <div class="d-focus">Mutianyu Great Wall</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Mutianyu Great Wall day trip — ride the cable car up to the best-restored, least-crowded wall section for your history bucket list.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body"><span class="badge badge-local">Local Pick</span>Toboggan descent &amp; Mutianyu village — bobsled down from the wall, then a slow lunch among chestnut orchards.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Evening</div>
+      <div class="slot-body">Free time — explore Gulou (Drum &amp; Bell Tower) lanes at your own pace after the long day out.</div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Dinner</span><strong>Zhang Mama Sichuan</strong> · Gulou — fiery, no-frills Sichuan favourite near the Bell Tower, perfect after a day on the wall.
+    </div>
+  </div>
+
+  <!-- ── SHANGHAI ── -->
+  <div class="city-band">
+    <div class="cb-city">Shanghai</div>
+    <div class="cb-meta">Sep 15 – Sep 17 · 2 nights</div>
+  </div>
+
+  <!-- Day 4 -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Mon · Sep 15</div>
+      <div class="d-focus">The Bund &amp; Former French Concession</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Morning bullet train to Shanghai, drop bags, then walk The Bund's art-deco waterfront as the skyline reveals itself.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body"><span class="badge badge-local">Local Pick</span>Former French Concession walk — plane-tree lanes, Wukang Road mansions and lane-house boutiques at an easy pace.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Evening</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Bund night view from the Pudong side — cross to Lujiazui for the glowing skyline reflected on the Huangpu River.</div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Dinner</span><strong>Fu 1088</strong> · Jing'an — refined Shanghainese in a restored 1930s villa, a memorable first night in the city.
+    </div>
+  </div>
+
+  <!-- Day 5 -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Tue · Sep 16</div>
+      <div class="d-focus">Yu Garden &amp; Old City</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-iconic">Iconic</span>Yu Garden &amp; Old City bazaar — a Ming-era classical garden of rockeries and koi ponds, then the lantern-lined market lanes.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body"><span class="badge badge-hidden">Hidden Gem</span>Tianzifang back-alley ateliers — a warren of converted shikumen workshops where local artists sell direct, easy to miss.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Evening</div>
+      <div class="slot-body"><span class="badge badge-local">Local Pick</span>Shanghai Acrobatics at Shanghai Centre Theatre — a dazzling, family-friendly show of contortion and balance.</div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Lunch</span><strong>Jia Jia Tang Bao</strong> · Old City — legendary soup dumplings near Yu Garden, go before noon to beat the queue.
+    </div>
+  </div>
+
+  <!-- Day 6 - departure -->
+  <div class="day">
+    <div class="day-head">
+      <div class="d-date">Wed · Sep 17</div>
+      <div class="d-focus">Departure</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Morning</div>
+      <div class="slot-body"><span class="badge badge-local">Local Pick</span>Jing'an Temple &amp; a final lane-house coffee — a gilded city-centre temple before a relaxed last morning.</div>
+    </div>
+    <div class="slot">
+      <div class="slot-label">Afternoon</div>
+      <div class="slot-body">Transfer to Shanghai Pudong Airport via Maglev — ride the 268 mph train, then check in for your departing flight.</div>
+    </div>
+    <div class="restaurant-line">
+      <span class="r-label">Breakfast</span><strong>Wagas / Manner Coffee</strong> · Jing'an — a quick, reliable bite and flat white near the hotel before your transfer.
+    </div>
+  </div>
+
+  <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>
+
+<!-- ════════════ 5. HIDDEN FINDS ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Hidden Finds</h2>
+  <p class="section-sub">Five places you almost certainly wouldn't have found on your own.</p>
+  <div class="finds-grid">
+    <div class="find-card">
+      <div class="emoji">🎶</div>
+      <h4>Zhihua Temple Court Music</h4>
+      <p>A 1444 Ming temple where monks still perform Beijing's oldest surviving court music — performances most visitors never hear about.</p>
+      <div class="find-city">Beijing</div>
+      <div><a class="aff" href="https://www.viator.com/search/Beijing?q=Zhihua%20Temple">Search Viator →</a><a class="aff" href="https://www.getyourguide.com/s/?q=Zhihua%20Temple%20Beijing">Search GetYourGuide →</a></div>
+    </div>
+    <div class="find-card">
+      <div class="emoji">🛷</div>
+      <h4>Toboggan Off the Great Wall</h4>
+      <p>At Mutianyu you can descend from the wall on a stainless-steel bobsled track — exhilarating, and skipped by most tour groups.</p>
+      <div class="find-city">Beijing</div>
+      <div><a class="aff" href="https://www.viator.com/search/Beijing?q=Mutianyu%20Toboggan">Search Viator →</a><a class="aff" href="https://www.getyourguide.com/s/?q=Mutianyu%20Toboggan%20Beijing">Search GetYourGuide →</a></div>
+    </div>
+    <div class="find-card">
+      <div class="emoji">🎨</div>
+      <h4>Tianzifang Artist Ateliers</h4>
+      <p>Beyond the souvenir stalls, upper-floor shikumen studios hide working printmakers and ceramicists who sell straight from the bench.</p>
+      <div class="find-city">Shanghai</div>
+      <div><a class="aff" href="https://www.viator.com/search/Shanghai?q=Tianzifang">Search Viator →</a><a class="aff" href="https://www.getyourguide.com/s/?q=Tianzifang%20Shanghai">Search GetYourGuide →</a></div>
+    </div>
+    <div class="find-card">
+      <div class="emoji">🍵</div>
+      <h4>Wudaoying Hutong Tea Rooms</h4>
+      <p>A quieter, hipper lane than nearby Nanluoguxiang, lined with specialty tea houses and tiny independent design shops.</p>
+      <div class="find-city">Beijing</div>
+      <div><a class="aff" href="https://www.viator.com/search/Beijing?q=Wudaoying%20Hutong">Search Viator →</a><a class="aff" href="https://www.getyourguide.com/s/?q=Wudaoying%20Hutong%20Beijing">Search GetYourGuide →</a></div>
+    </div>
+    <div class="find-card">
+      <div class="emoji">🥟</div>
+      <h4>Jia Jia Tang Bao Before Noon</h4>
+      <p>A hole-in-the-wall where Shanghainese queue daily for the city's best soup dumplings — arrive early or they sell out.</p>
+      <div class="find-city">Shanghai</div>
+      <div><a class="aff" href="https://www.google.com/maps/search/Jia%20Jia%20Tang%20Bao%20Shanghai">Find on Maps →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ 6. RESTAURANTS ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Restaurants</h2>
+  <p class="section-sub">Extra dining options beyond your day-by-day picks, grouped by city.</p>
+
+  <div class="city-band">
+    <div class="cb-city">Beijing</div>
+  </div>
+
+  <div class="rest-card">
+    <div class="rest-head"><h4>Baoyuan Dumpling House</h4><span class="rest-type">Lunch</span></div>
+    <p class="rest-desc">Famous for rainbow-coloured dumplings in dozens of fillings.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Northern Chinese · <strong>Price:</strong> $ · <strong>Area:</strong> Chaoyang (Sanlitun)</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.5</span> · Open 11:00 AM – 10:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=12894370935783481000">View on Google Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>Metal Hands Coffee</h4><span class="rest-type">Cafe</span></div>
+    <p class="rest-desc">Refined courtyard café with serious single-origin pours.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Specialty Coffee · <strong>Price:</strong> $$ · <strong>Area:</strong> Dongcheng (Fangjia Hutong)</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.6</span> · Open 9:00 AM – 8:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=4827193058472910000">View on Google Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>Wenyu Cheese Shop</h4><span class="rest-type">Dessert</span></div>
+    <p class="rest-desc">Beijing-style fermented milk-cheese, a century-old hutong sweet.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Traditional Dessert · <strong>Price:</strong> $ · <strong>Area:</strong> Nanluoguxiang</div>
+    <a class="aff" href="https://www.google.com/maps/search/Wenyu%20Cheese%20Shop%20Beijing">Find on Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>Da Dong Roast Duck (Jinbao)</h4><span class="rest-type">Dinner</span></div>
+    <p class="rest-desc">Lean, crisp-skinned duck plated like fine art.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Peking Duck · <strong>Price:</strong> $$$ · <strong>Area:</strong> Dongcheng (Jinbao Place)</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.4</span> · Open 11:00 AM – 10:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=7382910564738291000">View on Google Maps →</a>
+  </div>
+
+  <div class="city-band">
+    <div class="cb-city">Shanghai</div>
+  </div>
+
+  <div class="rest-card">
+    <div class="rest-head"><h4>Baker &amp; Spice</h4><span class="rest-type">Breakfast</span></div>
+    <p class="rest-desc">All-day bakery-brunch beloved for sourdough and pastries.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> European Bakery · <strong>Price:</strong> $$ · <strong>Area:</strong> Former French Concession</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.3</span> · Open 7:00 AM – 9:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=5938201746382910000">View on Google Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>% Arabica Wukang Road</h4><span class="rest-type">Cafe</span></div>
+    <p class="rest-desc">Minimalist corner café with the city's prettiest latte view.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Specialty Coffee · <strong>Price:</strong> $$ · <strong>Area:</strong> Wukang Road</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.7</span> · Open 8:00 AM – 7:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=6173820594738201000">View on Google Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>Lost Heaven (Bund)</h4><span class="rest-type">Dinner</span></div>
+    <p class="rest-desc">Yunnan mountain cuisine in a sultry, lantern-lit room.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Yunnan · <strong>Price:</strong> $$$ · <strong>Area:</strong> The Bund</div>
+    <div class="rest-enrich"><span class="rest-rating">★ 4.5</span> · Open 11:30 AM – 10:00 PM</div>
+    <a class="aff" href="https://maps.google.com/?cid=8291047362819047000">View on Google Maps →</a>
+  </div>
+  <div class="rest-card">
+    <div class="rest-head"><h4>Yang's Fry Dumpling</h4><span class="rest-type">Street Food</span></div>
+    <p class="rest-desc">Crisp-bottomed sheng jian bao, a Shanghai street staple.</p>
+    <div class="rest-meta"><strong>Cuisine:</strong> Shanghainese Snacks · <strong>Price:</strong> $ · <strong>Area:</strong> Huangpu (Wujiang Road)</div>
+    <a class="aff" href="https://www.google.com/maps/search/Yang%27s%20Fry%20Dumpling%20Shanghai">Find on Maps →</a>
+  </div>
+
+  <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>
+
+<!-- ════════════ 7. ACCOMMODATION ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Accommodation Picks</h2>
+
+  <div class="city-band">
+    <div class="cb-city">Beijing</div>
+  </div>
+  <div class="card card-accent">
+    <div class="rest-head">
+      <h4 style="margin:0;font-size:18px;">The Orchid Hotel</h4>
+      <span class="rest-type">Boutique Courtyard</span>
+    </div>
+    <div class="rest-meta" style="margin:8px 0;">
+      <strong>Neighborhood:</strong> Gulou / Nanluoguxiang — walkable hutong heart, steps from lanes and the Drum Tower.<br>
+      <strong>Check-in:</strong> Sep 12 &nbsp;·&nbsp; <strong>Check-out:</strong> Sep 15 &nbsp;·&nbsp; <strong>Per night:</strong> $130–180
+    </div>
+    <p style="margin:8px 0 10px;">Intimate rooftop courtyard hotel placing you right in Beijing's old-city lanes.</p>
+    <a class="aff" href="https://www.booking.com/search.html?ss=Beijing">Search Booking.com →</a>
+  </div>
+
+  <div class="city-band">
+    <div class="cb-city">Shanghai</div>
+  </div>
+  <div class="card card-accent">
+    <div class="rest-head">
+      <h4 style="margin:0;font-size:18px;">The Shanghai EDITION</h4>
+      <span class="rest-type">Design Hotel</span>
+    </div>
+    <div class="rest-meta" style="margin:8px 0;">
+      <strong>Neighborhood:</strong> Nanjing Road / Bund — central base, short walk to the waterfront and metro.<br>
+      <strong>Check-in:</strong> Sep 15 &nbsp;·&nbsp; <strong>Check-out:</strong> Sep 17 &nbsp;·&nbsp; <strong>Per night:</strong> $200–280
+    </div>
+    <p style="margin:8px 0 10px;">Stylish, central design hotel with a celebrated rooftop bar near the Bund.</p>
+    <a class="aff" href="https://www.booking.com/search.html?ss=Shanghai">Search Booking.com →</a>
+  </div>
+</div>
+
+<!-- ════════════ 8. TRANSPORT ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Transport Between Cities</h2>
+
+  <div class="leg">
+    <div class="leg-route">Beijing Capital Airport (PEK)<span class="arrow">→</span>Gulou Hutong Hotel</div>
+    <div class="leg-meta">
+      <span><strong>Mode:</strong> Private transfer / Didi</span>
+      <span><strong>Duration:</strong> ~50 min</span>
+      <span><strong>Cost:</strong> $20–35</span>
+    </div>
+    <div class="leg-tip">Pre-book an airport transfer or use Didi at the official rank; the Airport Express + metro is cheaper if you travel light.</div>
+  </div>
+
+  <div class="leg">
+    <div class="leg-route">Beijing<span class="arrow">→</span>Shanghai</div>
+    <div class="leg-meta">
+      <span><strong>Mode:</strong> High-speed rail (G-train)</span>
+      <span><strong>Duration:</strong> 4h 30m</span>
+      <span><strong>Cost:</strong> $80–135 (2nd / 1st class)</span>
+    </div>
+    <div class="leg-tip">Book the G-series HSR from Beijing South to Shanghai Hongqiao 1–2 weeks ahead via Trip.com or the Railway 12306 app; second class is comfortable.
+      <br><a class="aff" href="https://www.thetrainline.com/search/Beijing/Shanghai">Search Trainline →</a></div>
+  </div>
+
+  <div class="leg">
+    <div class="leg-route">Shanghai<span class="arrow">→</span>Pudong Airport (PVG)</div>
+    <div class="leg-meta">
+      <span><strong>Mode:</strong> Maglev + Metro</span>
+      <span><strong>Duration:</strong> ~30 min</span>
+      <span><strong>Cost:</strong> $7–10</span>
+    </div>
+    <div class="leg-tip">Take Metro Line 2 to Longyang Road then the 268 mph Maglev to PVG; arrive at the airport at least 3 hours before an international flight.</div>
+  </div>
+</div>
+
+<!-- ════════════ 9. BOOK BEFORE YOU GO ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Book Before You Go</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>What to book</th>
+        <th>When</th>
+        <th>Why it matters</th>
+        <th>Est. cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>China visa / 240h visa-free check</strong><br><span style="color:var(--muted)">Pre-departure</span></td>
+        <td><span class="prio prio-now">Book now</span></td>
+        <td>Confirm whether your passport qualifies for the 240-hour transit visa-free entry, or apply for a tourist visa well ahead — processing can take weeks.</td>
+        <td>$0–185</td>
+      </tr>
+      <tr>
+        <td><strong>Beijing–Shanghai HSR (G-train)</strong><br><span style="color:var(--muted)">Sep 15</span></td>
+        <td><span class="prio prio-soon">4–6 weeks ahead</span></td>
+        <td>Popular morning departures sell out; tickets open ~2 weeks out but reserve early via Trip.com for the best times and seats.<br><a class="aff" href="https://www.thetrainline.com/search/Beijing/Shanghai">Search Trainline →</a></td>
+        <td>$80–135</td>
+      </tr>
+      <tr>
+        <td><strong>Forbidden City timed entry</strong><br><span style="color:var(--muted)">Sep 13</span></td>
+        <td><span class="prio prio-now">Book now</span></td>
+        <td>Daily visitor caps mean slots vanish fast; tickets release ~7 days ahead on the official WeChat mini-program and sell out within hours.<br><a class="aff" href="https://www.viator.com/search/Beijing?q=Forbidden%20City">Search Viator →</a></td>
+        <td>$8–12</td>
+      </tr>
+      <tr>
+        <td><strong>Mutianyu Great Wall day tour</strong><br><span style="color:var(--muted)">Sep 14</span></td>
+        <td><span class="prio prio-soon">4–6 weeks ahead</span></td>
+        <td>Small-group tours with cable car and hotel pickup fill up on weekends; booking ahead locks in a Sunday slot.<br><a class="aff" href="https://www.viator.com/search/Beijing?q=Mutianyu%20Great%20Wall">Search Viator →</a></td>
+        <td>$55–90</td>
+      </tr>
+      <tr>
+        <td><strong>Peking duck dinner (Siji Minfu)</strong><br><span style="color:var(--muted)">Sep 12</span></td>
+        <td><span class="prio prio-arrival">On arrival</span></td>
+        <td>No online reservations — arrive before 6pm or expect a wait; the hotel desk can call ahead for you.<br><a class="aff" href="https://www.google.com/maps/search/Siji%20Minfu%20Beijing">Find on Maps →</a></td>
+        <td>$20–35 pp</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════ 10. PRACTICAL + EMERGENCY ════════════ -->
+<div class="page section">
+  <h2 class="section-header">Practical &amp; Emergency Info</h2>
+
+  <div class="card info-card">
+    <h4><span class="ico">☀️</span>Weather</h4>
+    <p>Mid-September in Beijing and Shanghai is mild and mostly dry, with highs around 77–82°F and cooler evenings near 60°F. Pack a light layer for the Great Wall and the Bund waterfront.</p>
+  </div>
+  <div class="card info-card">
+    <h4><span class="ico">🛂</span>Visa &amp; Entry</h4>
+    <p>Most US, Canadian, UK, EU, and Australian passport holders need a tourist (L) visa applied for in advance, though China's 240-hour visa-free transit may apply if you're flying onward through a third country. Confirm your eligibility before booking. Carry your passport at all times — it's required for hotel check-in, train stations, and some attractions.</p>
+  </div>
+  <div class="card info-card">
+    <h4><span class="ico">💴</span>Currency &amp; Payments</h4>
+    <p>The currency is the Chinese yuan (CNY, ¥). China is largely cashless — set up Alipay or WeChat Pay linked to a foreign card before arrival, as many vendors don't take physical cash or international credit cards. Keep a little cash as backup.</p>
+  </div>
+  <div class="card info-card">
+    <h4><span class="ico">📱</span>Connectivity</h4>
+    <p>Major Western apps (Google, WhatsApp, Instagram) are blocked behind the Great Firewall, so install a reputable VPN before you arrive. An eSIM with roaming routed outside mainland China is the easiest way to stay connected.</p>
+  </div>
+  <div class="card info-card" style="margin-bottom:24px;">
+    <h4><span class="ico">🎒</span>Packing Tips</h4>
+    <p>Bring comfortable walking shoes for hutongs and wall steps, a power adapter for Type A/I sockets, and a small daypack. Translation and map apps downloaded for offline use will save you repeatedly.</p>
+  </div>
+
+  <h3 style="font-size:15px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:0 0 14px;">Emergency Info by City</h3>
+
+  <div class="emergency-card">
+    <h4>Beijing</h4>
+    <div class="erow"><span class="ek">Police</span><span class="emergency-number">110</span></div>
+    <div class="erow"><span class="ek">Ambulance</span><span class="emergency-number">120</span></div>
+    <div class="erow"><span class="ek">Nearest hospital area</span>Beijing United Family Hospital (Lido / Chaoyang) — English-speaking international clinic</div>
+    <div class="erow"><span class="ek">Embassy note</span>Most foreign embassies sit in the Chaoyang embassy district; register your trip and save your embassy's 24h line.</div>
+  </div>
+
+  <div class="emergency-card">
+    <h4>Shanghai</h4>
+    <div class="erow"><span class="ek">Police</span><span class="emergency-number">110</span></div>
+    <div class="erow"><span class="ek">Ambulance</span><span class="emergency-number">120</span></div>
+    <div class="erow"><span class="ek">Nearest hospital area</span>Huashan Hospital International (Jing'an) — foreigner-friendly with English-speaking staff</div>
+    <div class="erow"><span class="ek">Embassy note</span>Many consulates are near the Former French Concession and the Bund; keep a digital and paper copy of your passport.</div>
+  </div>
+
+  <div class="footer-note screen-only">
+    Built<span style="color:var(--accent);font-weight:700;">WithSpring</span> · Crafted for your trip · Affiliate links help support this service at no extra cost to you.
+  </div>
+</div>
+
+</body>
+</html>
