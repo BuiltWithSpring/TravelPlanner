@@ -79,6 +79,29 @@ export default {
       }
     }
 
+    // ── Route: /preview/save-email — Attach an email to a preview session ──
+    if (url.pathname === '/preview/save-email' && request.method === 'POST') {
+      try {
+        const { email, sessionId } = await request.json();
+        if (!email || !sessionId) {
+          return corsResponse({ error: 'Missing required fields: email and sessionId.' }, 400);
+        }
+
+        // Confirm the session actually has preview data before attaching an email.
+        const preview = await env.PREVIEW_STORE.get(sessionId);
+        if (!preview) {
+          return corsResponse({ error: 'Preview not found or expired.' }, 404);
+        }
+
+        // Store the email against the session for 7 days.
+        await env.PREVIEW_STORE.put(`email:${sessionId}`, email, { expirationTtl: 60 * 60 * 24 * 7 });
+
+        return corsResponse({ ok: true }, 200);
+      } catch (err) {
+        return corsResponse({ error: err.message }, 500);
+      }
+    }
+
     // ── Route: /p/save — Save preview to KV ───────────────────
     if (url.pathname === '/p/save' && request.method === 'POST') {
       try {
@@ -573,13 +596,14 @@ Every booking_tip is one sentence including booking window. Never label a road s
 
 STEP 10 — GEOGRAPHIC CLUSTERING
 Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On travel days all activities near hotel or departure point only. Assign neighborhood_focus and restaurant_suggestion per day using this logic:
-- Regular days → pick the most appropriate meal based on the day's flow. Label clearly as Breakfast, Lunch, or Dinner. Name a specific, real, well-regarded restaurant suited to that city and meal.
+- Regular days → pick the most appropriate meal based on the day's flow. Label clearly as Lunch or Dinner (breakfast is handled separately — see below). Name a specific, real, well-regarded restaurant suited to that city and meal.
 - Departure day → pick a restaurant near the departure hotel or point — last meal in that city before leaving.
 - Arrival day → pick a restaurant near the arrival accommodation — first meal in the new city.
 - Full travel day → pick a restaurant near the arrival accommodation for dinner on arrival.
 - Never repeat the same venue on consecutive days across both restaurant_suggestion and restaurants array.
 - Restaurant suggestion should always be geographically logical for that day's context.
 - Restaurant suggestion must be a specific real venue and must NOT duplicate any venue in the restaurants array (Food & Drink tab) — the day-by-day picks and the Food & Drink list are disjoint sets, so together they broaden the traveler's dining options.
+- BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array.
 
 STEP 11 — ACTIVITY TIME BUDGET VALIDATION
 Before finalizing each day, validate the day's activities against a realistic time budget.
@@ -671,14 +695,16 @@ Rules:
 STEP 13.6 — HIDDEN FINDS
 Select 3–5 of the most surprising, non-obvious experiences or places across the entire trip. These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
 Each entry: emoji, title (max 6 words), description (max 25 words — why it's special and not obvious), city.
+Each Hidden Find must be a place NOT already listed as a morning, afternoon, or evening activity in the day-by-day — no repeats from the daily plan. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
 These appear as a standalone section in the PDF — make them count.
 
 STEP 14 — ACTIVITY FRAMING
 Pace density rules — apply to every day-by-day entry:
 - Full days → populate morning, afternoon AND evening with distinct activities. All 3 slots required.
-- Relaxed days → populate morning and either afternoon OR evening. One slot can be left as "Free time — explore [neighborhood] at your own pace" if the day's activities are time-intensive.
+- Relaxed days → populate morning and either afternoon OR evening. If the day's activities are time-intensive, one slot can be a lighter, low-key suggestion — but it must still name a specific place (see the Free time rule below), never a generic placeholder.
 
 All day-by-day activity fields: "[Activity name] — [one line what it is and why it suits this traveler]." No duration, category label, neighborhood tag, or pipes. Max 20 words.
+NEVER output "Free time" (or "Free time — explore [neighborhood] at your own pace", or any generic placeholder) as a morning, afternoon, or evening slot entry. Every slot must name a specific place in that city — a named neighbourhood to wander, a named market, a named viewpoint, a named park — each with a one-line description, formatted exactly like every other activity slot.
 
 STEP 14.5 — NO REPETITION RULE (applies across the ENTIRE trip)
 Every activity, attraction, and restaurant must be unique across all days. Never schedule the same place, sight, or restaurant more than once, even across different days in the same city. This applies to morning, afternoon, and evening slots equally.
@@ -719,7 +745,8 @@ OUTPUT — return exactly this JSON:
       "morning": "string — Activity name — one line description. Max 20 words.",
       "afternoon": "string — Activity name — one line description. Max 20 words.",
       "evening": "string — Activity name — one line description. Max 20 words.",
-      "restaurant_suggestion": "string — Meal type (Breakfast/Lunch/Dinner): Restaurant name | neighborhood | one line why it fits today",
+      "breakfast_suggestion": "string — Breakfast: Restaurant or cafe name | neighborhood | one line why it fits today",
+      "restaurant_suggestion": "string — Meal type (Lunch/Dinner): Restaurant name | neighborhood | one line why it fits today",
       "estimated_daily_cost": "string — range with currency"
     }
   ],
@@ -1088,6 +1115,8 @@ async function enrichItineraryWithPlaces(env, itinerary) {
       const name = extractActivityVenue(day[slot]);
       if (name) tasks.push({ day, key: slot, name, city });
     }
+    const breakfastName = extractRestaurantVenue(day.breakfast_suggestion);
+    if (breakfastName) tasks.push({ day, key: 'breakfast_suggestion', name: breakfastName, city });
     const restName = extractRestaurantVenue(day.restaurant_suggestion);
     if (restName) tasks.push({ day, key: 'restaurant_suggestion', name: restName, city });
   }
