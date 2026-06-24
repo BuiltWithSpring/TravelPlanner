@@ -507,15 +507,15 @@
       const review = {
         email: pEmail,
         rating,
-        firstName: document.getElementById('firstName').value.trim() || 'Anonymous',
+        name: document.getElementById('firstName').value.trim() || 'Anonymous',
         country: document.getElementById('country').value.trim() || '',
-        reviewText: document.getElementById('reviewText').value.trim(),
+        comment: document.getElementById('reviewText').value.trim(),
         recommend: recommend || '',
         date: new Date().toISOString(),
       };
 
       try {
-        const res = await fetch('https://hook.us2.make.com/endpd72y5mzaq9eqx2i2robtv46cvza8', {
+        const res = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/review/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(review)
