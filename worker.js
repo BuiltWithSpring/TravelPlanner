@@ -128,9 +128,9 @@ export default {
     // ── Route: /p/save — Save preview to KV ───────────────────
     if (url.pathname === '/p/save' && request.method === 'POST') {
       try {
-        const { preview } = await request.json();
+        const { preview, formData: savedFormData } = await request.json();
         const id = Math.random().toString(36).substring(2, 8);
-        await env.PREVIEW_STORE.put(id, JSON.stringify(preview), { expirationTtl: 60 * 60 * 24 * 30 });
+        await env.PREVIEW_STORE.put(id, JSON.stringify({ preview, formData: savedFormData || {} }), { expirationTtl: 60 * 60 * 24 * 30 });
         return corsResponse({ id }, 200);
       } catch (err) {
         return corsResponse({ error: err.message }, 500);
@@ -148,15 +148,20 @@ export default {
         // If the visitor saved this preview, merge their email into the JSON so
         // the app can pre-populate it and attribute the Stripe checkout without
         // asking them to re-enter their details.
-        let payload = data;
+        let previewObj = {}, restoredFormData = {};
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed && parsed.preview) {
+            previewObj = parsed.preview;
+            restoredFormData = parsed.formData || {};
+          } else {
+            previewObj = parsed;
+          }
+        } catch(e) { previewObj = {}; }
         const savedEmail = await env.PREVIEW_STORE.get(`email:${id}`);
-        if (savedEmail) {
-          try {
-            const obj = JSON.parse(data);
-            obj.email = savedEmail;
-            payload = JSON.stringify(obj);
-          } catch (e) { /* malformed JSON — fall back to the raw preview */ }
-        }
+        if (savedEmail) previewObj.email = savedEmail;
+        if (Object.keys(restoredFormData).length) previewObj._formData = restoredFormData;
+        let payload = JSON.stringify(previewObj);
         const encoded = btoa(encodeURIComponent(payload));
         const redirectUrl = `https://travel.builtwithspring.com/?preview=${encoded}`;
         return Response.redirect(redirectUrl, 302);
