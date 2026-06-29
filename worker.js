@@ -99,7 +99,7 @@ export default {
         // Send the preview link email — best-effort, don't fail the request if Resend blips.
         try {
           const previewUrl = `https://bws-travel-proxy.springlam-co.workers.dev/p/${sessionId}`;
-          await fetch('https://api.resend.com/emails', {
+          const mailRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -142,6 +142,12 @@ export default {
               </body></html>`
             })
           });
+          if (!mailRes.ok) {
+            const errBody = await mailRes.text();
+            console.error('[preview/save-email] Resend failed:', mailRes.status, errBody);
+          } else {
+            console.log('[preview/save-email] Resend email sent OK');
+          }
         } catch (mailErr) {
           console.error('[preview/save-email] Resend failed:', mailErr && mailErr.message);
         }
