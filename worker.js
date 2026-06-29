@@ -145,7 +145,19 @@ export default {
         if (!data) {
           return new Response('Preview not found or expired.', { status: 404 });
         }
-        const encoded = btoa(encodeURIComponent(data));
+        // If the visitor saved this preview, merge their email into the JSON so
+        // the app can pre-populate it and attribute the Stripe checkout without
+        // asking them to re-enter their details.
+        let payload = data;
+        const savedEmail = await env.PREVIEW_STORE.get(`email:${id}`);
+        if (savedEmail) {
+          try {
+            const obj = JSON.parse(data);
+            obj.email = savedEmail;
+            payload = JSON.stringify(obj);
+          } catch (e) { /* malformed JSON — fall back to the raw preview */ }
+        }
+        const encoded = btoa(encodeURIComponent(payload));
         const redirectUrl = `https://travel.builtwithspring.com/?preview=${encoded}`;
         return Response.redirect(redirectUrl, 302);
       } catch (err) {
