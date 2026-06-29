@@ -140,7 +140,9 @@ export default {
     // ── Route: /p/:id — Retrieve preview and redirect ─────────
     if (url.pathname.startsWith('/p/') && request.method === 'GET') {
       try {
-        const id = url.pathname.replace('/p/', '');
+        const rawPath = url.pathname.replace('/p/', '');
+        const isDataRequest = rawPath.endsWith('/data');
+        const id = isDataRequest ? rawPath.replace('/data', '') : rawPath;
         const data = await env.PREVIEW_STORE.get(id);
         if (!data) {
           return new Response('Preview not found or expired.', { status: 404 });
@@ -161,10 +163,10 @@ export default {
         const savedEmail = await env.PREVIEW_STORE.get(`email:${id}`);
         if (savedEmail) previewObj.email = savedEmail;
         if (Object.keys(restoredFormData).length) previewObj._formData = restoredFormData;
-        let payload = JSON.stringify(previewObj);
-        const encoded = btoa(encodeURIComponent(payload));
-        const redirectUrl = `https://travel.builtwithspring.com/?preview=${encoded}`;
-        return Response.redirect(redirectUrl, 302);
+        if (isDataRequest) {
+          return corsResponse({ preview: previewObj }, 200);
+        }
+        return Response.redirect(`https://travel.builtwithspring.com/?previewId=${id}`, 302);
       } catch (err) {
         return corsResponse({ error: err.message }, 500);
       }
