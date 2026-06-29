@@ -1427,7 +1427,7 @@ async function fulfillOrder(env, session) {
     };
 
     try {
-      const makeResponse = await fetch(env.MAKE_WEBHOOK_URL, {
+      const makeResponse = await fetch(env.N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(makePayload)
