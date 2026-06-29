@@ -1447,6 +1447,16 @@ Extra notes: ${d.extraNotes}`;
 
   function renderPreview(preview) {
     approvedPreview = preview;
+
+    // Reset the save-email UI to its default unsaved state for this new preview.
+    const captureEmail = document.getElementById('captureEmail');
+    if (captureEmail) { captureEmail.value = ''; captureEmail.classList.remove('field-error'); }
+    document.getElementById('captureSuccess').classList.add('hidden');
+    const capture = document.getElementById('emailCapture');
+    capture.querySelector('.email-capture-row').style.display = '';
+    capture.querySelector('.email-capture-sub').style.display = '';
+    const captureBtn = capture.querySelector('.email-capture-btn');
+    if (captureBtn) { captureBtn.textContent = 'Save →'; captureBtn.disabled = false; }
     try {
       const encoded = btoa(encodeURIComponent(JSON.stringify(preview)));
       const longUrl = window.location.origin + window.location.pathname + '?preview=' + encoded;
