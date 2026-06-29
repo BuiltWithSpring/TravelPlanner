@@ -96,6 +96,56 @@ export default {
         // Store the email against the session for 7 days.
         await env.PREVIEW_STORE.put(`email:${sessionId}`, email, { expirationTtl: 60 * 60 * 24 * 7 });
 
+        // Send the preview link email — best-effort, don't fail the request if Resend blips.
+        try {
+          const previewUrl = `https://bws-travel-proxy.springlam-co.workers.dev/p/${sessionId}`;
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'BuiltWithSpring Travel <hello@builtwithspring.com>',
+              to: [email],
+              subject: 'Your travel preview is ready ✈️',
+              html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f7f5ff;font-family:Helvetica,Arial,sans-serif;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5ff;padding:32px 16px;">
+                  <tr><td align="center">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+                      <tr><td style="background:#7c3aed;height:5px;border-radius:12px 12px 0 0;font-size:0;">&nbsp;</td></tr>
+                      <tr><td style="background:#fff;border:1px solid #e4e0f5;border-top:none;border-radius:0 0 12px 12px;padding:32px 40px;">
+                        <p style="text-align:center;margin:0 0 8px;">
+                          <img src="https://travel.builtwithspring.com/BWSLogo.png" width="44" height="44" style="border-radius:10px;"/>
+                        </p>
+                        <p style="text-align:center;font-size:12px;font-weight:bold;color:#6b5fa0;margin:0 0 24px;">BuiltWithSpring &middot; AI-Powered Travel Planner</p>
+                        <h2 style="text-align:center;font-size:20px;color:#1a1640;margin:0 0 10px;">Your preview is saved ✈️</h2>
+                        <p style="text-align:center;font-size:14px;color:#6b5fa0;line-height:1.7;margin:0 0 24px;">
+                          Click below anytime to pick up where you left off — your preview will be waiting.
+                        </p>
+                        <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                          <tr><td style="background:#7c3aed;border-radius:10px;">
+                            <a href="${previewUrl}" style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:bold;color:#fff;text-decoration:none;">
+                              View my preview &rarr;
+                            </a>
+                          </td></tr>
+                        </table>
+                        <p style="text-align:center;font-size:12px;color:#9b87d4;margin:0 0 24px;">
+                          Ready to get the full itinerary? Hit <strong>Buy</strong> on the preview page.
+                        </p>
+                        <hr style="border:none;border-top:1px solid #e4e0f5;margin:0 0 20px;"/>
+                        <p style="text-align:center;font-size:11px;color:#9b87d4;margin:0;">
+                          &copy; 2026 BuiltWithSpring &middot; <a href="https://builtwithspring.com" style="color:#9b87d4;">builtwithspring.com</a>
+                        </p>
+                      </td></tr>
+                      <tr><td style="background:#7c3aed;height:4px;border-radius:0 0 12px 12px;font-size:0;">&nbsp;</td></tr>
+                    </table>
+                  </td></tr>
+                </table>
+              </body></html>`
+            })
+          });
+        } catch (mailErr) {
+          console.error('[preview/save-email] Resend failed:', mailErr && mailErr.message);
+        }
+
         return corsResponse({ ok: true }, 200);
       } catch (err) {
         return corsResponse({ error: err.message }, 500);
@@ -165,6 +215,34 @@ export default {
         return corsResponse({ url: photoUrl }, 200);
       } catch (err) {
         return corsResponse({ url: null }, 200);
+      }
+    }
+
+    // ── Route: /review/submit — Save feedback to Sheets + notify ──
+    if (url.pathname === '/review/submit' && request.method === 'POST') {
+      try {
+        const { name, email, country, rating, comment, recommend } = await request.json();
+
+        if (!name || !email || !rating) {
+          return corsResponse({ error: 'Missing required fields: name, email, and rating.' }, 400);
+        }
+
+        // Append the feedback row to Google Sheets (authoritative — fail the
+        // request if this write doesn't land).
+        await updateFeedbackRow(env, { name, email, country, rating, comment, recommend });
+
+        // Notify the team via Resend. Best-effort: a delivery hiccup must not
+        // lose feedback we've already persisted, so log and continue.
+        try {
+          await sendFeedbackEmail(env, { name, email, country, rating, comment, recommend });
+        } catch (mailErr) {
+          console.error('[review] Resend notification failed:', mailErr && mailErr.message);
+        }
+
+        return corsResponse({ ok: true }, 200);
+      } catch (err) {
+        console.error('[review] submit failed:', err && err.message);
+        return corsResponse({ error: err.message }, 500);
       }
     }
 
@@ -379,6 +457,179 @@ async function verifyStripeWebhook(payload, sig, secret) {
   }
 
   return JSON.parse(payload);
+}
+
+// ── Feedback: Google Sheets append + Resend notification ────────
+const FEEDBACK_SPREADSHEET_ID = '1YIyN4y26-WBJTA0FluHeDrFI6rkMmgzA18kU5ijnx6Q';
+const FEEDBACK_SHEET_GID = 779249867;
+
+// base64url-encode raw bytes (used for the JWT signature and segments).
+function base64urlFromBytes(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// base64url-encode a UTF-8 string (JWT header/claim segments).
+function base64urlEncode(str) {
+  return base64urlFromBytes(new TextEncoder().encode(str));
+}
+
+// Convert a PEM private key into an ArrayBuffer of its DER bytes.
+function pemToArrayBuffer(pem) {
+  const b64 = pem
+    .replace(/-----BEGIN [^-]+-----/, '')
+    .replace(/-----END [^-]+-----/, '')
+    .replace(/\s+/g, '');
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+// Mint a short-lived Google OAuth2 access token from the service-account
+// credentials using the JWT-bearer flow (RS256, signed via WebCrypto).
+async function getGoogleAccessToken(env, scope) {
+  const creds = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  const now = Math.floor(Date.now() / 1000);
+  const tokenUri = creds.token_uri || 'https://oauth2.googleapis.com/token';
+
+  const header = base64urlEncode(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claim = base64urlEncode(JSON.stringify({
+    iss: creds.client_email,
+    scope,
+    aud: tokenUri,
+    iat: now,
+    exp: now + 3600
+  }));
+  const signingInput = `${header}.${claim}`;
+
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    pemToArrayBuffer(creds.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    new TextEncoder().encode(signingInput)
+  );
+  const jwt = `${signingInput}.${base64urlFromBytes(signature)}`;
+
+  const res = await fetch(tokenUri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    }).toString()
+  });
+  const data = await res.json();
+  if (!res.ok || !data.access_token) {
+    throw new Error(`Google token exchange failed: ${data.error_description || data.error || res.status}`);
+  }
+  return data.access_token;
+}
+
+// Resolve a sheet tab's name from its numeric gid (needed for the A1 append range).
+async function getSheetNameByGid(token, spreadsheetId, gid) {
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties(sheetId,title)`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(`Sheets metadata lookup failed: ${(data.error && data.error.message) || res.status}`);
+  const sheet = (data.sheets || []).find(s => s.properties && s.properties.sheetId === gid);
+  if (!sheet) throw new Error(`No sheet found with gid ${gid}`);
+  return sheet.properties.title;
+}
+
+// Find existing customer row by email, update columns N/O/P; fallback to append.
+async function updateFeedbackRow(env, { name, email, country, rating, comment, recommend }) {
+  const token = await getGoogleAccessToken(env, 'https://www.googleapis.com/auth/spreadsheets');
+  const sheetName = await getSheetNameByGid(token, FEEDBACK_SPREADSHEET_ID, FEEDBACK_SHEET_GID);
+
+  // Read all data (A:P) to find the row matching this email
+  const readRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${FEEDBACK_SPREADSHEET_ID}/values/${encodeURIComponent(sheetName + '!A:P')}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!readRes.ok) throw new Error(`Sheets read failed: ${readRes.status}`);
+  const { values = [] } = await readRes.json();
+
+  // Find the 1-based row index where any cell matches the submitted email
+  let rowIndex = -1;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i].some(cell => cell === email)) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  if (rowIndex === -1) {
+    // Email not found — append a new row as fallback
+    console.warn('[review] Email not found in sheet, appending:', email);
+    const appendRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${FEEDBACK_SPREADSHEET_ID}/values/${encodeURIComponent(sheetName + '!A:A')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          values: [[new Date().toISOString().split('T')[0], name, email, country || '', '', '', '', '', '', '', '', '', '', String(rating), comment || '', recommend || '']]
+        })
+      }
+    );
+    if (!appendRes.ok) throw new Error(`Sheets append failed: ${appendRes.status} ${await appendRes.text()}`);
+    return;
+  }
+
+  // Update columns N (rating), O (comment), P (recommend) on the matched row
+  const updateRange = `${sheetName}!N${rowIndex}:P${rowIndex}`;
+  const updateRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${FEEDBACK_SPREADSHEET_ID}/values/${encodeURIComponent(updateRange)}?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        range: updateRange,
+        majorDimension: 'ROWS',
+        values: [[String(rating), comment || '', recommend || '']]
+      })
+    }
+  );
+  if (!updateRes.ok) throw new Error(`Sheets update failed: ${updateRes.status} ${await updateRes.text()}`);
+}
+
+// Send the feedback notification email via Resend.
+async function sendFeedbackEmail(env, { name, email, country, rating, comment, recommend }) {
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const html =
+    `<h2>New feedback received</h2>` +
+    `<p><strong>Name:</strong> ${esc(name)}</p>` +
+    `<p><strong>Email:</strong> ${esc(email)}</p>` +
+    `<p><strong>Country:</strong> ${esc(country) || '—'}</p>` +
+    `<p><strong>Rating:</strong> ${esc(rating)}/5</p>` +
+    `<p><strong>Comment:</strong><br>${esc(comment) || '—'}</p>` +
+    `<p><strong>Recommend:</strong> ${esc(recommend) || '—'}</p>`;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'Feedback <feedback@builtwithspring.com>',
+      to: ['hello@builtwithspring.com'],
+      subject: `New feedback — ${rating}/5 from ${name}`,
+      html
+    })
+  });
+  if (!res.ok) {
+    throw new Error(`Resend send failed: ${res.status} ${await res.text()}`);
+  }
 }
 
 // ── Itinerary generation ────────────────────────────────────────
@@ -693,7 +944,10 @@ Rules:
 - For city_guide entries, add spot_tier as a separate field (see JSON schema below).
 
 STEP 13.6 — HIDDEN FINDS
-Select 3–5 of the most surprising, non-obvious experiences or places across the entire trip. These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
+Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
+- 1–2 cities → 3 Hidden Finds PER CITY
+- 3+ cities → 2 Hidden Finds PER CITY
+These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
 Each entry: emoji, title (max 6 words), description (max 25 words — why it's special and not obvious), city.
 Each Hidden Find must be a place NOT already listed as a morning, afternoon, or evening activity in the day-by-day — no repeats from the daily plan. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
 These appear as a standalone section in the PDF — make them count.
@@ -804,6 +1058,7 @@ OUTPUT — return exactly this JSON:
     }
   ],
   "hidden_finds": [
+    // Variable length — NOT a fixed 5. Count = (cities ≤ 2 ? 3 : 2) × number of cities.
     {
       "emoji": "string — single relevant emoji",
       "title": "string — max 6 words",
