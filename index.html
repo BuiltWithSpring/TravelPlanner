@@ -1616,12 +1616,19 @@ Extra notes: ${d.extraNotes}`;
   }
 
   window.addEventListener('load', () => {
-    const encoded = new URLSearchParams(window.location.search).get('preview');
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('preview');
+    const previewId = params.get('previewId');
     if (encoded) {
       try {
         const preview = JSON.parse(decodeURIComponent(atob(encoded)));
-        setTimeout(()=>loadSharedPreview(preview),100);
+        setTimeout(() => loadSharedPreview(preview), 100);
       } catch(e) {}
+    } else if (previewId) {
+      fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/' + previewId + '/data')
+        .then(r => r.json())
+        .then(({ preview }) => { if (preview) setTimeout(() => loadSharedPreview(preview), 100); })
+        .catch(() => {});
     }
   });
 
