@@ -569,7 +569,7 @@
       <div class="fg">
         <label class="fl">Where are you headed? <span class="req">*</span></label>
         <div class="tag-wrap" id="countryWrap" onclick="document.getElementById(&#39;countryInp&#39;).focus()" style="position: relative;">
-          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
+          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" autocomplete="off" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
         <div class="ac-list"></div></div>
         <div class="hint">One country per itinerary — press Enter to confirm.</div>
         <div class="error-msg" id="err-country">Please enter a country</div>
