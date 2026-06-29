@@ -1,1 +1,4 @@
 index_test.html
+.dev.vars
+.dev.vars.*
+.wrangler/
