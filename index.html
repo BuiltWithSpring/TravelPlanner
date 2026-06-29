@@ -1461,9 +1461,11 @@ Extra notes: ${d.extraNotes}`;
       const encoded = btoa(encodeURIComponent(JSON.stringify(preview)));
       const longUrl = window.location.origin + window.location.pathname + '?preview=' + encoded;
       window._previewShareUrl = longUrl;
+      window._previewId = null;
       fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({preview}) })
         .then(r=>r.json()).then(({id})=>{
           if (id) {
+            window._previewId = id;
             const shortUrl = 'https://bws-travel-proxy.springlam-co.workers.dev/p/'+id;
             window._previewShareUrl = shortUrl;
             document.getElementById('whatsappShareBtn').href = 'https://wa.me/?text='+encodeURIComponent('Check out the trip preview I generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ '+shortUrl);
@@ -1591,10 +1593,21 @@ Extra notes: ${d.extraNotes}`;
     const btn = document.querySelector('.email-capture-btn');
     btn.textContent = '…'; btn.disabled = true;
     try {
+      // sessionId is the id from /p/save; if it hasn't resolved yet, save the
+      // preview now so we have a key to attach the email to.
+      let sessionId = window._previewId;
+      if (!sessionId) {
+        const r = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preview: approvedPreview })
+        });
+        sessionId = (await r.json()).id;
+        if (sessionId) window._previewId = sessionId;
+      }
       await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview/save-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, preview: approvedPreview, shareUrl: window._previewShareUrl||'' })
+        body: JSON.stringify({ email, sessionId })
       });
     } catch(e) { /* fail silently — show success regardless */ }
     document.getElementById('captureSuccess').classList.remove('hidden');

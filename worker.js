@@ -106,40 +106,7 @@ export default {
               from: 'BuiltWithSpring Travel <hello@builtwithspring.com>',
               to: [email],
               subject: 'Your travel preview is ready ✈️',
-              html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f7f5ff;font-family:Helvetica,Arial,sans-serif;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5ff;padding:32px 16px;">
-                  <tr><td align="center">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
-                      <tr><td style="background:#7c3aed;height:5px;border-radius:12px 12px 0 0;font-size:0;">&nbsp;</td></tr>
-                      <tr><td style="background:#fff;border:1px solid #e4e0f5;border-top:none;border-radius:0 0 12px 12px;padding:32px 40px;">
-                        <p style="text-align:center;margin:0 0 8px;">
-                          <img src="https://travel.builtwithspring.com/BWSLogo.png" width="44" height="44" style="border-radius:10px;"/>
-                        </p>
-                        <p style="text-align:center;font-size:12px;font-weight:bold;color:#6b5fa0;margin:0 0 24px;">BuiltWithSpring &middot; AI-Powered Travel Planner</p>
-                        <h2 style="text-align:center;font-size:20px;color:#1a1640;margin:0 0 10px;">Your preview is saved ✈️</h2>
-                        <p style="text-align:center;font-size:14px;color:#6b5fa0;line-height:1.7;margin:0 0 24px;">
-                          Click below anytime to pick up where you left off — your preview will be waiting.
-                        </p>
-                        <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
-                          <tr><td style="background:#7c3aed;border-radius:10px;">
-                            <a href="${previewUrl}" style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:bold;color:#fff;text-decoration:none;">
-                              View my preview &rarr;
-                            </a>
-                          </td></tr>
-                        </table>
-                        <p style="text-align:center;font-size:12px;color:#9b87d4;margin:0 0 24px;">
-                          Ready to get the full itinerary? Hit <strong>Buy</strong> on the preview page.
-                        </p>
-                        <hr style="border:none;border-top:1px solid #e4e0f5;margin:0 0 20px;"/>
-                        <p style="text-align:center;font-size:11px;color:#9b87d4;margin:0;">
-                          &copy; 2026 BuiltWithSpring &middot; <a href="https://builtwithspring.com" style="color:#9b87d4;">builtwithspring.com</a>
-                        </p>
-                      </td></tr>
-                      <tr><td style="background:#7c3aed;height:4px;border-radius:0 0 12px 12px;font-size:0;">&nbsp;</td></tr>
-                    </table>
-                  </td></tr>
-                </table>
-              </body></html>`
+              text: `Hi! Your travel preview is saved. View it here: ${previewUrl}\n\nReady to buy? Hit the Get Full Itinerary button on the preview page.\n\n— BuiltWithSpring`
             })
           });
           if (!mailRes.ok) {
