@@ -1571,7 +1571,7 @@ const JSON_RETRY_INSTRUCTION = '\n\nIMPORTANT: Return only valid JSON. No markdo
 
 // The full itinerary prompt. `d` carries the traveler's form data plus the
 // approved city plan and approved teaser day retrieved from KV at fulfillment.
-const ITINERARY_PROMPT = (d) => {
+const ITINERARY_PROMPT = (d, perplexityResearch = null) => {
   const t = d.teaserDay || {};
   const approvedCities = JSON.stringify(d.approvedCities || []);
   const citiesRequested = JSON.stringify(d.citiesToVisit || []);
@@ -1610,7 +1610,16 @@ Afternoon: ${t.afternoon || ''}
 Evening: ${t.evening || ''}
 Restaurant suggestion: ${t.restaurant_suggestion || ''}
 ──────────────────────────────────────────────
+${perplexityResearch ? `
+CURRENT DESTINATION RESEARCH
+Real-time research from travel blogs, review sites, and local guides.
+Use named restaurants, activities, and hidden gems from this research throughout the itinerary — prioritise these specific places over generic suggestions.
+For any city where research is missing, use your best training knowledge — do not flag the gap.
+Match each "### [City]" section below to that city's day-by-day and restaurants output.
 
+${perplexityResearch}
+──────────────────────────────────────────────
+` : ''}
 STEP 1 — CITY DURATION FRAMEWORK
 NOTE: If approved cities are provided above, skip night allocation — use approved nights exactly.
 Only apply this step if no approved city plan exists.
@@ -1777,7 +1786,8 @@ Every booking_tip is one sentence including booking window. Never label a road s
 
 STEP 10 — GEOGRAPHIC CLUSTERING
 Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On travel days all activities near hotel or departure point only. Assign neighborhood_focus and restaurant_suggestion per day using this logic:
-- Regular days → pick the most appropriate meal based on the day's flow. Label clearly as Lunch or Dinner (breakfast is handled separately — see below). Name a specific, real, well-regarded restaurant suited to that city and meal.
+- Regular days → restaurant_suggestion must always be DINNER. Name a specific, real, well-regarded dinner restaurant suited to that city's evening. Lunch is never the restaurant_suggestion unless the traveler has an explicit half-day or no evening activity in that city. Label clearly as Dinner. Breakfast is handled separately — see below.
+- Day trip days → restaurant_suggestion must always be a DINNER at the BASE city accommodation area (for the evening when the group returns). Never use a lunch spot at the day-trip destination as the restaurant_suggestion. If there is a standout lunch spot at the day-trip destination, work it into the afternoon activity description only (e.g. "Trattoria X — honest cucina povera in the trulli zone, ideal for lunch between sights"). Never leave a day without a dinner suggestion.
 - Departure day → pick a restaurant near the departure hotel or point — last meal in that city before leaving.
 - Arrival day → pick a restaurant near the arrival accommodation — first meal in the new city.
 - Full travel day → pick a restaurant near the arrival accommodation for dinner on arrival.
@@ -1872,6 +1882,7 @@ Rules:
 - For day-by-day entries, include spot_tier as a prefix inside the activity string in square brackets: "[Iconic] " · "[Local Pick] " · "[Hidden Gem] "
   Example morning: "[Local Pick] Yanaka Cemetery Walk — a quiet neighborhood necropolis turned local strolling ground, lined with cats and old craft shops."
 - For city_guide entries, add spot_tier as a separate field (see JSON schema below).
+- CRITICAL FINAL CHECK: Before outputting, scan every morning, afternoon, and evening field across ALL days. Every single slot must begin with [Iconic], [Local Pick], or [Hidden Gem]. A slot missing this prefix is a formatting error — add the tier before outputting. No exceptions, no days skipped.
 
 STEP 13.6 — HIDDEN FINDS
 Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
@@ -2191,11 +2202,164 @@ async function callClaude(env, prompt) {
   return text || null;
 }
 
+// ── Perplexity research for itinerary generation ────────────────────────────
+// Only called when env.USE_PERPLEXITY === 'true'. Runs two parallel queries
+// (experiences + logistics) and returns combined research text for injection
+// into ITINERARY_PROMPT. Fails silently — if Perplexity errors, generation
+// continues with Claude-only (no research injected).
+
+const TRAVEL_DOMAINS = [
+  'timeout.com', 'tripadvisor.com', 'yelp.com', 'lonelyplanet.com',
+  'cntraveler.com', 'theguardian.com', 'atlasobscura.com', 'eater.com',
+  'theinfatuation.com', 'elizabethminchilli.com', 'fodors.com', 'frommers.com',
+  'afar.com', 'thefork.com', 'viator.com', 'getyourguide.com',
+  'italymagazine.com', 'walksofitaly.com', 'italybyus.com'
+];
+
+async function callPerplexity(env, systemPrompt, userQuery, maxTokens = 800, useReasoning = false) {
+  const TIMEOUT_MS = 30000;
+  const model = useReasoning ? 'sonar-reasoning-pro' : 'sonar-pro';
+
+  const doCall = (m) => fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.PERPLEXITY_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: m,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userQuery }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.2,
+      search_domain_filter: TRAVEL_DOMAINS,
+      search_recency_filter: 'year'
+    })
+  });
+
+  const timeout = (ms) => new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), ms)
+  );
+
+  let res;
+  try {
+    res = await Promise.race([doCall(model), timeout(TIMEOUT_MS)]);
+  } catch (err) {
+    if (useReasoning && err.message === 'timeout') {
+      console.log('Perplexity sonar-reasoning-pro timed out — falling back to sonar-pro');
+      res = await doCall('sonar-pro');
+    } else {
+      throw err;
+    }
+  }
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Perplexity ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function buildPerplexityResearch(env, d) {
+  const cities = [...new Set([
+    ...(Array.isArray(d.citiesToVisit)   ? d.citiesToVisit   : []),
+    ...(Array.isArray(d.approvedCities)  ? d.approvedCities.map(c => c.city || c) : [])
+  ])].filter(Boolean);
+
+  const cityList = cities.length ? cities : [d.country];
+  const month    = (() => {
+    try { return new Date(d.arrivalDate).toLocaleString('en-US', { month: 'long', year: 'numeric' }); }
+    catch (_) { return d.arrivalDate || ''; }
+  })();
+
+  const interests = d.interests || {};
+  const sortedInterests = Object.entries(interests).sort(([,a],[,b]) => b - a).filter(([,v]) => v > 0);
+  const primary   = sortedInterests.filter(([,v]) => v >= 20).map(([k]) => k);
+  const secondary = sortedInterests.filter(([,v]) => v >= 11 && v < 20).map(([k]) => k);
+  const excluded  = sortedInterests.filter(([,v]) => v === 0).map(([k]) => k);
+
+  const budget    = d.travelStyle || d.budgetTier || 'mid-range';
+  const budgetDesc = budget === 'budget' ? '$50–100/day per person' :
+                     budget === 'luxury' ? '$250+/day per person' :
+                                          '$100–250/day per person';
+  const pace      = d.paceOfTravel === 'packed'  ? 'packed — morning, afternoon AND evening all filled' :
+                    d.paceOfTravel === 'relaxed' ? 'relaxed — morning + one of afternoon or evening' :
+                                                  'balanced';
+  const groupSize = d.groupSize ? `Group of ${d.groupSize}` : (d.travelParty || '');
+  const cityPairs = cityList.slice(0, -1).map((c, i) => `${c} → ${cityList[i + 1]}`);
+
+  console.log(`Perplexity research — cities: ${cityList.join(', ')}`);
+
+  // QUERY 1: Experiences → day-by-day activities, restaurants, local picks
+  const experiencesQuery = `
+Trip: ${cityList.join(' → ')}, ${d.country}. Dates: ${d.arrivalDate} to ${d.departureDate} (${month}).
+Party: ${groupSize}. Budget: ${budgetDesc}. Pace: ${pace}.
+Primary interests (feature prominently): ${primary.join(', ') || 'food, culture'}.
+${secondary.length ? `Secondary (include if natural): ${secondary.join(', ')}.` : ''}
+${excluded.length  ? `Exclude entirely: ${excluded.join(', ')}.`               : ''}
+
+For EACH city (${cityList.join(', ')}), provide:
+
+RESTAURANTS — 3 specific named restaurants, group-friendly, seats ${d.groupSize || '6+'}, ${budgetDesc}:
+- [Name] | [neighbourhood] | [signature dish] | [why locals rate it]
+
+ACTIVITIES — 3 specific named experiences matching primary interests:
+- [Name] | [neighbourhood] | [what it is + why it suits these interests]
+
+LOCAL PICKS — 1 non-tourist hidden gem per city (specific real place most visitors miss):
+- [Emoji] [Name] — [why it's special, max 15 words]
+
+FORMAT: Use exact headings "### [City Name]", then "RESTAURANTS", "ACTIVITIES", "LOCAL PICKS".
+Real named places only. No hedging or disclaimers. Note any August closures inline.
+`.trim();
+
+  // QUERY 2: Logistics → transport legs + seasonal notes
+  const logisticsQuery = `
+${d.country} trip: ${cityList.join(' → ')}. Dates: ${d.arrivalDate} to ${d.departureDate}.
+Party: ${groupSize}.
+
+TRANSPORT — for each leg, best option with time and cost:
+${cityPairs.length ? cityPairs.map(l => `- ${l}: drive time OR train, cost estimate, booking tip`).join('\n') : `- Internal travel within ${d.country}`}
+
+SEASONAL NOTES — any closures, festivals, or crowd warnings for these exact dates.
+
+Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedging.
+`.trim();
+
+  try {
+    const [exp, log] = await Promise.all([
+      callPerplexity(
+        env,
+        `You are a local travel expert. Always give real named places. Never hedge or say you cannot find information. Answer in exact format requested only.`,
+        experiencesQuery, 1400, true
+      ).catch(err => { console.error('Perplexity experiences failed:', err.message); return '[Experiences research unavailable]'; }),
+
+      callPerplexity(
+        env,
+        'You are a travel logistics expert. Specific transport times, costs, and seasonal facts only. No hedging.',
+        logisticsQuery, 600, false
+      ).catch(err => { console.error('Perplexity logistics failed:', err.message); return '[Logistics research unavailable]'; })
+    ]);
+
+    return `## EXPERIENCES\n${exp}\n\n## LOGISTICS\n${log}`;
+  } catch (err) {
+    console.error('buildPerplexityResearch failed:', err.message);
+    return null;
+  }
+}
+
 // Generate, parse, validate, and (once) retry the full itinerary.
 // Always resolves — returns the itinerary object or a clean error object.
+// NOTE: Perplexity is no longer used pre-generation. It runs post-generation
+// in verifyAndEnrichWithPerplexity (called from fulfillOrder) to web-check
+// Claude's venue picks and inject fresh hidden gems.
 async function generateItinerary(env, d) {
   try {
-    const basePrompt = ITINERARY_PROMPT(d);
+    const basePrompt = ITINERARY_PROMPT(d, null);
 
     // Attempt 1 — base prompt
     let rawText = await callClaude(env, basePrompt);
@@ -2315,6 +2479,143 @@ async function enrichItineraryWithPlaces(env, itinerary) {
   return itinerary;
 }
 
+// ── Perplexity post-generation verification ──────────────────────────────────
+// Runs AFTER Claude generates the itinerary JSON. Extracts the specific venue
+// names Claude chose, asks Perplexity sonar-pro to web-check each one, and:
+//   • Swaps out any permanently-closed restaurant with a suggested replacement
+//   • Flags hidden finds that can't be verified (leaves them, logs a warning)
+//   • Appends 1–2 fresh hidden gems per city that aren't already in the list
+// Mutates itinerary in place. Fails silently — itinerary always ships.
+async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
+  if (!Array.isArray(itinerary.days) || !itinerary.days.length) return;
+
+  // 1. Collect restaurants and hidden finds to verify
+  const restaurants = [];
+  for (const day of itinerary.days) {
+    if (!day || typeof day !== 'object') continue;
+    const city = day.city || '';
+    const dinnerName = extractRestaurantVenue(day.restaurant_suggestion);
+    if (dinnerName) restaurants.push({ day, field: 'restaurant_suggestion', name: dinnerName, city });
+    const breakfastName = extractRestaurantVenue(day.breakfast_suggestion);
+    if (breakfastName) restaurants.push({ day, field: 'breakfast_suggestion', name: breakfastName, city });
+  }
+  const hiddenFinds = (itinerary.hidden_finds || []).map(f => ({ name: f.title, city: f.city }));
+  const cities = [...new Set(itinerary.days.map(d => d.city).filter(Boolean))];
+
+  if (!restaurants.length && !cities.length) return;
+
+  // 2. Build verification prompt — structured so we can parse the response reliably
+  const month = (() => {
+    try { return new Date(formData.arrivalDate).toLocaleString('en-US', { month: 'long', year: 'numeric' }); }
+    catch (_) { return formData.arrivalDate || ''; }
+  })();
+
+  const restaurantLines = restaurants.map((r, i) =>
+    `R${i + 1} | ${r.city} | ${r.name}`
+  ).join('\n');
+
+  const gemLines = hiddenFinds.map((g, i) =>
+    `G${i + 1} | ${g.city} | ${g.name}`
+  ).join('\n');
+
+  const verificationPrompt = `
+You are verifying travel recommendations for a ${formData.country} trip in ${month}.
+
+RESTAURANTS TO VERIFY (web-search each one):
+${restaurantLines || '(none)'}
+
+HIDDEN GEMS TO VERIFY (web-search each one):
+${gemLines || '(none)'}
+
+For each item, respond on ONE LINE in EXACTLY this format:
+
+For restaurants:
+R[N] | OPEN | (no replacement needed)
+R[N] | CLOSED | Replacement Name | neighbourhood | one line why it's a great substitute
+R[N] | UNCERTAIN | (cannot confirm — leave as is)
+
+For hidden gems:
+G[N] | VERIFIED | (exists and accessible)
+G[N] | NOT FOUND | Replacement Name — why it's special, max 15 words
+G[N] | UNCERTAIN | (cannot confirm — leave as is)
+
+After verifying, add NEW hidden gems for each city (places NOT already in the list above):
+NEW | ${cities.join(' | ')}
+Format each new gem on its own line:
+NEW_GEM | [City] | [Emoji] | [Title, max 6 words] | [Description, max 25 words, why it's special]
+
+Real places only. Web-search before answering. No hedging.
+`.trim();
+
+  const rawResult = await callPerplexity(
+    env,
+    'You are a travel fact-checker. Web-search every venue before responding. Return only the structured format requested — no prose, no preamble.',
+    verificationPrompt,
+    1400,
+    false
+  );
+
+  if (!rawResult || typeof rawResult !== 'string') return;
+
+  // 3. Parse the structured response and apply changes
+  const lines = rawResult.split('\n').map(l => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    const parts = line.split('|').map(p => p.trim());
+
+    // Restaurant verification
+    if (/^R\d+$/i.test(parts[0])) {
+      const idx = parseInt(parts[0].slice(1), 10) - 1;
+      const status = (parts[1] || '').toUpperCase();
+      const entry = restaurants[idx];
+      if (!entry) continue;
+
+      if (status === 'CLOSED' && parts[2] && parts[2] !== '(no replacement needed)') {
+        // Rebuild the field string preserving original format prefix (Dinner:/Breakfast:)
+        const original = entry.day[entry.field] || '';
+        const prefixMatch = original.match(/^(Dinner|Lunch|Breakfast)\s*:/i);
+        const prefix = prefixMatch ? prefixMatch[0] + ' ' : '';
+        const neighbourhood = parts[3] || '';
+        const why = parts[4] || '';
+        entry.day[entry.field] = `${prefix}${parts[2]}${neighbourhood ? ' | ' + neighbourhood : ''}${why ? ' — ' + why : ''}`;
+        console.log(`Perplexity: replaced closed ${entry.name} → ${parts[2]} (${entry.city})`);
+      }
+      continue;
+    }
+
+    // Hidden gem verification — flag only; we don't remove gems, just log
+    if (/^G\d+$/i.test(parts[0])) {
+      const idx = parseInt(parts[0].slice(1), 10) - 1;
+      const status = (parts[1] || '').toUpperCase();
+      const gem = hiddenFinds[idx];
+      if (!gem) continue;
+      if (status === 'NOT FOUND' && parts[2]) {
+        // Swap unverifiable gem with replacement
+        const itinGem = (itinerary.hidden_finds || [])[idx];
+        if (itinGem) {
+          itinGem.title = parts[2].split('—')[0].trim();
+          itinGem.description = parts[2].split('—').slice(1).join('—').trim() || itinGem.description;
+          console.log(`Perplexity: replaced unverified gem "${gem.name}" → "${itinGem.title}" (${gem.city})`);
+        }
+      }
+      continue;
+    }
+
+    // New hidden gems injected by Perplexity
+    if (parts[0] === 'NEW_GEM' && parts.length >= 5) {
+      const city   = parts[1];
+      const emoji  = parts[2] || '✨';
+      const title  = parts[3];
+      const desc   = parts[4];
+      if (city && title && desc) {
+        if (!Array.isArray(itinerary.hidden_finds)) itinerary.hidden_finds = [];
+        itinerary.hidden_finds.push({ emoji, title, description: desc, city });
+        console.log(`Perplexity: added new gem "${title}" (${city})`);
+      }
+    }
+  }
+}
+
 // Runs in the queue consumer after a confirmed payment: pull form data from KV,
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
@@ -2348,6 +2649,18 @@ async function fulfillOrder(env, session) {
     if (itinerary && itinerary.error) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
     } else {
+      // ── Post-gen Perplexity verification ────────────────────────────────────
+      // Web-checks Claude's restaurant and hidden gem picks, swaps out any
+      // permanently-closed venues, and appends fresh hidden gems per city.
+      // Isolated — any failure leaves the itinerary intact and still ships.
+      if (env.USE_PERPLEXITY === 'true') {
+        try {
+          await verifyAndEnrichWithPerplexity(env, itinerary, formData);
+        } catch (pErr) {
+          console.error('Perplexity verification failed (continuing):', pErr && pErr.message);
+        }
+      }
+
       // Enrich day-by-day venues with Google Places (v1) before sending. Isolated
       // so any enrichment failure leaves the itinerary intact and still ships.
       try {
