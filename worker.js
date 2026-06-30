@@ -872,9 +872,17 @@ function renderItinerary(formData, itinerary) {
 
   const dayByDayHtml = cityGroups.map(group => {
     const firstDay = group.days[0];
-    const lastDay = group.days[group.days.length - 1];
-    const nightsInCity = group.days.length;
-    const dateRange = `${formatDateLong(firstDay.date)} – ${formatDateLong(lastDay.date)}`;
+    // Use accommodation checkout for accurate night count + date range end
+    const cityAccom = accommodations.find(a => a.city === group.city);
+    const checkoutDate = cityAccom ? cityAccom.checkout : (() => {
+      const d = new Date(group.days[group.days.length - 1].date);
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().split('T')[0];
+    })();
+    const nightsInCity = cityAccom
+      ? (calcNights(cityAccom.checkin, cityAccom.checkout) || group.days.length)
+      : group.days.length;
+    const dateRange = `${formatDateLong(firstDay.date)} – ${formatDateLong(checkoutDate)}`;
 
     const daysHtml = group.days.map(day => {
       const morning = parseBadge(day.morning);
@@ -905,7 +913,7 @@ function renderItinerary(formData, itinerary) {
       </div>`;
     }).join('');
 
-    return `<div class="city-band"><div class="cb-city">${esc(group.city)}</div><div class="cb-meta">${esc(dateRange)} · ${nightsInCity} nights</div></div>${daysHtml}`;
+    return `<div class="city-band"><div class="cb-city">${esc(group.city)}</div><div class="cb-meta">${esc(dateRange)} · ${nightsInCity} ${nightsInCity === 1 ? 'night' : 'nights'}</div></div>${daysHtml}`;
   }).join('');
 
   // ── Hidden Finds ──
