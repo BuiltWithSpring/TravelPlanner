@@ -2189,16 +2189,15 @@ async function streamAnthropic(env, body, timeoutMs) {
 
 // Single Claude API call for itinerary generation. Returns the response text,
 // or null on any failure (errors are logged inside streamAnthropic).
-async function callClaude(env, prompt) {
+// maxTokens / timeoutMs default to the STANDARD-trip budget; generateItinerary
+// passes larger tier-scaled values for MEDIUM/LONG trips. 64000 is the
+// claude-sonnet-4-6 output ceiling.
+async function callClaude(env, prompt, maxTokens = 32000, timeoutMs = 300000) {
   const { text } = await streamAnthropic(env, {
     model: 'claude-sonnet-4-6',
-    // 32000 sizes for the 2-week worst case (14 nights, 5 cities, all interests high):
-    // post-trim output estimates ~18k tokens central, ~24-27k with verbosity overrun.
-    // 32000 clears that with headroom and is half the claude-sonnet-4-6 64000 ceiling,
-    // so nothing within the 2-week cap should truncate. Raise toward 64000 if needed.
-    max_tokens: 32000,
+    max_tokens: maxTokens,
     messages: [{ role: 'user', content: prompt }]
-  }, 300000);
+  }, timeoutMs);
   return text || null;
 }
 
@@ -2361,14 +2360,32 @@ async function generateItinerary(env, d) {
   try {
     const basePrompt = ITINERARY_PROMPT(d, null);
 
+    // Scale output budget + timeout to trip length (same tiers as tripTier in
+    // ITINERARY_PROMPT): STANDARD ≤7n, MEDIUM 8–10n, LONG 11–14n.
+    const tripNights = (() => {
+      const a = Date.parse(d.arrivalDate), b = Date.parse(d.departureDate);
+      if (!isNaN(a) && !isNaN(b) && b > a) return Math.round((b - a) / 86400000);
+      const sum = (d.approvedCities || []).reduce((n, c) => n + (Number(c.nights) || 0), 0);
+      return sum || 0;
+    })();
+    const maxTokens = tripNights >= 11 ? 64000 : tripNights >= 8 ? 48000 : 32000;
+    const timeoutMs = tripNights >= 11 ? 540000 : tripNights >= 8 ? 420000 : 300000;
+
     // Attempt 1 — base prompt
-    let rawText = await callClaude(env, basePrompt);
+    let rawText = await callClaude(env, basePrompt, maxTokens, timeoutMs);
     let parsed = parseClaudeResponse(rawText);
     if (hasRequiredKeys(parsed)) return parsed;
     console.error('Itinerary attempt 1 failed (parse or missing keys). Raw response:', rawText);
 
+    // LONG trips: skip the retry — a second 9-min call risks exceeding the queue
+    // consumer wall-clock. Fail fast instead.
+    if (tripNights >= 11) {
+      console.error('LONG trip — skipping retry to stay within queue consumer time budget.');
+      return { error: true, message: 'Itinerary generation failed — please try again.' };
+    }
+
     // Attempt 2 — retry once with strict JSON instruction appended
-    rawText = await callClaude(env, basePrompt + JSON_RETRY_INSTRUCTION);
+    rawText = await callClaude(env, basePrompt + JSON_RETRY_INSTRUCTION, maxTokens, timeoutMs);
     parsed = parseClaudeResponse(rawText);
     if (hasRequiredKeys(parsed)) return parsed;
     console.error('Itinerary retry failed (parse or missing keys). Raw response:', rawText);
