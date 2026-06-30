@@ -772,6 +772,19 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Strip non-Latin script (CJK, Kana, Hangul, Cyrillic, …) from a name, then
+// HTML-escape. Safety net for venue/property names — PDF export renders
+// non-Latin glyphs as blank boxes. Accented Latin (é, ñ, ü) is preserved.
+function escName(s) {
+  const cleaned = String(s == null ? '' : s)
+    .replace(/[　-〿＀-￯]/g, '') // CJK punctuation & full/half-width forms
+    .replace(/[^\P{L}\p{Script=Latin}]/gu, '')    // non-Latin letters only (keeps Latin + non-letters)
+    .replace(/\(\s*\)/g, '')                        // drop parentheses left empty after stripping
+    .replace(/\s{2,}/g, ' ')                        // collapse doubled spaces
+    .trim();
+  return esc(cleaned);
+}
+
 function parseBadge(text) {
   const m = String(text || '').match(/^\[(Iconic|Local Pick|Hidden Gem)\]\s*/);
   if (!m) return { cls: '', label: '', body: esc(text) };
@@ -852,11 +865,25 @@ function renderItinerary(formData, itinerary) {
     : '';
 
   // ── Cities section (from accommodations) ──
-  const cityRowsHtml = accommodations.map(a => {
-    const n = calcNights(a.checkin, a.checkout);
+  // Group accommodations by city (preserve first-seen order) so each city renders as ONE
+  // card. Claude returns up to two hotels per city; list them as Option 1 / Option 2.
+  const cityAccomGroups = [];
+  for (const a of accommodations) {
+    if (!a || !a.city) continue;
+    let g = cityAccomGroups.find(x => x.city === a.city);
+    if (!g) { g = { city: a.city, hotels: [] }; cityAccomGroups.push(g); }
+    g.hotels.push(a);
+  }
+  const cityRowsHtml = cityAccomGroups.map(g => {
+    const n = calcNights(g.hotels[0].checkin, g.hotels[0].checkout);
+    const optionsHtml = g.hotels.length === 1
+      ? `<p>${escName(g.hotels[0].name)}${g.hotels[0].why ? ` — ${esc(g.hotels[0].why)}` : ''}</p>`
+      : g.hotels.map((h, i) =>
+          `<p><strong>Option ${i + 1}:</strong> ${escName(h.name)}${h.why ? ` — ${esc(h.why)}` : ''}</p>`
+        ).join('');
     return `<div class="city-row intro-city">
       <div class="nights-pill"><div class="n">${n || '?'}</div><div class="l">Nights</div></div>
-      <div><h3>${esc(a.city)}</h3><p>${esc(a.why || '')}</p></div>
+      <div><h3>${esc(g.city)}</h3>${optionsHtml}</div>
     </div>`;
   }).join('') || recommended_cities.map(c =>
     `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.why_recommended || '')}</p></div></div>`
@@ -896,7 +923,7 @@ function renderItinerary(formData, itinerary) {
         : slot.body;
 
       const restLineHtml = (r) => r
-        ? `<div class="restaurant-line"><span class="r-label">${esc(r.label)}</span><strong>${esc(r.name)}</strong>${r.neighborhood ? ` · ${esc(r.neighborhood)}` : ''}${r.desc ? ` — ${esc(r.desc)}` : ''}</div>`
+        ? `<div class="restaurant-line"><span class="r-label">${esc(r.label)}</span><strong>${escName(r.name)}</strong>${r.neighborhood ? ` · ${esc(r.neighborhood)}` : ''}${r.desc ? ` — ${esc(r.desc)}` : ''}</div>`
         : '';
 
       return `<div class="day">
@@ -920,7 +947,7 @@ function renderItinerary(formData, itinerary) {
   const hiddenFindsHtml = hidden_finds.map(f =>
     `<div class="find-card">
       <div class="emoji">${esc(f.emoji)}</div>
-      <h4>${esc(f.title)}</h4>
+      <h4>${escName(f.title)}</h4>
       <p>${esc(f.description)}</p>
       <div class="find-city">${esc(f.city)}</div>
       <div>
@@ -936,7 +963,7 @@ function renderItinerary(formData, itinerary) {
     const cityRests = restaurants.filter(r => r.city === city);
     const cardsHtml = cityRests.map(r =>
       `<div class="rest-card">
-        <div class="rest-head"><h4>${esc(r.name)}</h4><span class="rest-type">${esc(r.venue_type)}</span></div>
+        <div class="rest-head"><h4>${escName(r.name)}</h4><span class="rest-type">${esc(r.venue_type)}</span></div>
         <p class="rest-desc">${esc(r.known_for || r.why || '')}</p>
         <div class="rest-meta"><strong>Cuisine:</strong> ${esc(r.cuisine_category)} · <strong>Price:</strong> ${esc(r.price_range)} · <strong>Area:</strong> ${esc(r.neighborhood)}</div>
         <a class="aff" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${encodeURIComponent(r.name + ' ' + city)}">Find on Google Maps →</a>
@@ -946,12 +973,14 @@ function renderItinerary(formData, itinerary) {
   }).join('');
 
   // ── Accommodations (grouped by city) ──
-  const accommodationsHtml = accommodations.map(a => {
-    const n = calcNights(a.checkin, a.checkout);
-    return `<div class="city-band"><div class="cb-city">${esc(a.city)}</div></div>
-    <div class="card card-accent">
+  // One city-band header per city; each hotel below it, labelled Option N when several.
+  const accommodationsHtml = cityAccomGroups.map(g => {
+    const cardsHtml = g.hotels.map((a, i) => {
+      const n = calcNights(a.checkin, a.checkout);
+      const optionPrefix = g.hotels.length > 1 ? `Option ${i + 1}: ` : '';
+      return `<div class="card card-accent">
       <div class="rest-head">
-        <h4 style="margin:0;font-size:18px;">${esc(a.name)}</h4>
+        <h4 style="margin:0;font-size:18px;">${optionPrefix}${escName(a.name)}</h4>
         <span class="rest-type">${esc(a.recommended_type)}</span>
       </div>
       <div class="rest-meta" style="margin:8px 0;">
@@ -961,6 +990,8 @@ function renderItinerary(formData, itinerary) {
       <p style="margin:8px 0 10px;">${esc(a.why)}</p>
       <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affBooking(a.city))}">Search Booking.com →</a>
     </div>`;
+    }).join('');
+    return `<div class="city-band"><div class="cb-city">${esc(g.city)}</div></div>${cardsHtml}`;
   }).join('');
 
   // ── Transport legs ──
@@ -1910,6 +1941,7 @@ Every activity, attraction, and restaurant must be unique across all days. Never
 
 STEP 15 — OUTPUT FORMATTING
 - Activities: clean sentence, max 20 words, no pipes
+- Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
 - Overview: max 3 sentences — cities, trip tone, seasonal highlight. Always written in second person addressing the traveler as "you" and "your" — never "the couple", "the traveler", "the group", or any third person narrative.
