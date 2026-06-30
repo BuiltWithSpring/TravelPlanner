@@ -157,14 +157,7 @@ export default {
     <table cellpadding="0" cellspacing="0" border="0">
       <tr>
         <td style="vertical-align:middle;padding-right:10px;">
-          <table cellpadding="0" cellspacing="0" border="0"><tr>
-            <td width="34" height="34" bgcolor="#7c3aed" style="border-radius:9px;text-align:center;vertical-align:middle;">
-              <svg viewBox="0 0 18 18" fill="none" width="18" height="18" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:8px auto;">
-                <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" fill-opacity="0.95"/>
-                <circle cx="9" cy="9" r="2.5" fill="white" fill-opacity="0.4"/>
-              </svg>
-            </td>
-          </tr></table>
+          <img src="https://travel.builtwithspring.com/BWSLogo.png" width="34" height="34" alt="BuiltWithSpring" style="display:block;border-radius:9px;"/>
         </td>
         <td style="vertical-align:middle;">
           <span style="font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;color:#0f0c1e;letter-spacing:-0.02em;">BuiltWithSpring</span>
