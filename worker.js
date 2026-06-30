@@ -2672,9 +2672,9 @@ Real places only. Web-search before answering. No hedging.
   // Count stays flat; emoji and city are left unchanged. Fails silently — gems left as-is on error.
   if (gemReplacements.length) {
     try {
-      // The customer uses each accommodation city as a rental-car homebase, so a gem may sit
-      // in a nearby town. Detect a differing town from the venue name (comma, or a known trip
-      // city) so Claude can add a "X-minute drive from your <base>" note.
+      // The customer uses each accommodation city as a homebase, so a gem may sit in a nearby
+      // town. Detect a differing town from the venue name (comma, or a known trip city) so
+      // Claude can add a "X minutes from your <base>" travel-time note.
       const gemCards = gemReplacements.map(g => {
         let venueName = g.venue;
         let gemCity = g.city;
@@ -2701,10 +2701,10 @@ Real places only. Web-search before answering. No hedging.
 - Title: 4–6 evocative words (not the venue name verbatim)
 - Description: 2 sentences, max 35 words total. Capture WHY this is a genuine hidden find — the detail a local would know.
 
-The customer stays in each accommodation city and drives a rental car. Venue lines are one of two formats:
+The customer stays in each accommodation city as a homebase. Venue lines are one of two formats:
 - "Accommodation city: Venue" — the gem is in the accommodation city.
-- "Accommodation city area | Venue town | Venue" — the gem is in a nearby town, reachable by car from the accommodation city.
-If the venue city differs from the accommodation city, end the description with a natural phrase indicating it's reachable by car, e.g. 'a 25-minute drive from your Ostuni base' or 'easy 20-minute drive from Monopoli.' Keep the total description under 40 words including this phrase.
+- "Accommodation city area | Venue town | Venue" — the gem is in a nearby town, reachable from the accommodation city.
+If the venue city differs from the accommodation city, end the description with a natural phrase indicating its travel time from the base, e.g. '25 minutes from your Ostuni base' or 'just 20 minutes from Monopoli.' Keep the total description under 40 words including this phrase.
 
 Traveler profile: ${groupDesc}, ${travelStyle || 'no specific style'}, interests: ${interestList || 'general'}
 
