@@ -2672,10 +2672,39 @@ Real places only. Web-search before answering. No hedging.
   // Count stays flat; emoji and city are left unchanged. Fails silently — gems left as-is on error.
   if (gemReplacements.length) {
     try {
-      const venueListText = gemReplacements.map(g => `${g.city}: ${g.venue}`).join('\n');
+      // The customer uses each accommodation city as a rental-car homebase, so a gem may sit
+      // in a nearby town. Detect a differing town from the venue name (comma, or a known trip
+      // city) so Claude can add a "X-minute drive from your <base>" note.
+      const gemCards = gemReplacements.map(g => {
+        let venueName = g.venue;
+        let gemCity = g.city;
+        const ci = g.venue.indexOf(',');
+        if (ci !== -1) {
+          const namePart = g.venue.slice(0, ci).trim();
+          const townPart = g.venue.slice(ci + 1).trim();
+          if (namePart) venueName = namePart;
+          if (townPart && townPart.toLowerCase() !== g.city.toLowerCase()) gemCity = townPart;
+        } else {
+          const alt = cities.find(c => c && c.toLowerCase() !== g.city.toLowerCase()
+            && g.venue.toLowerCase().includes(c.toLowerCase()));
+          if (alt) gemCity = alt;
+        }
+        return { ...g, venueName, gemCity, differs: gemCity.toLowerCase() !== g.city.toLowerCase() };
+      });
+
+      const venueListText = gemCards.map(g => g.differs
+        ? `${g.city} area | ${g.gemCity} | ${g.venueName}`
+        : `${g.city}: ${g.venueName}`
+      ).join('\n');
+
       const gemWriterPrompt = `You are a hidden gems travel writer. Write discovery cards for the following venues. Each card needs:
 - Title: 4–6 evocative words (not the venue name verbatim)
 - Description: 2 sentences, max 35 words total. Capture WHY this is a genuine hidden find — the detail a local would know.
+
+The customer stays in each accommodation city and drives a rental car. Venue lines are one of two formats:
+- "Accommodation city: Venue" — the gem is in the accommodation city.
+- "Accommodation city area | Venue town | Venue" — the gem is in a nearby town, reachable by car from the accommodation city.
+If the venue city differs from the accommodation city, end the description with a natural phrase indicating it's reachable by car, e.g. 'a 25-minute drive from your Ostuni base' or 'easy 20-minute drive from Monopoli.' Keep the total description under 40 words including this phrase.
 
 Traveler profile: ${groupDesc}, ${travelStyle || 'no specific style'}, interests: ${interestList || 'general'}
 
@@ -2692,13 +2721,14 @@ ${venueListText}`;
           if (gp.length < 3) continue;
           const venueName = gp[0], title = gp[1], description = gp[2];
           // Match Claude's card back to a flagged replacement by venue name.
-          const match = gemReplacements.find(g => g.venue.toLowerCase() === venueName.toLowerCase());
+          const match = gemCards.find(g => g.venueName.toLowerCase() === venueName.toLowerCase()
+            || g.venue.toLowerCase() === venueName.toLowerCase());
           if (!match) continue;
           const itinGem = itinerary.hidden_finds[match.idx];
           if (itinGem && title && description) {
             itinGem.title = title;
             itinGem.description = description;
-            console.log(`Gem rewrite: "${match.venue}" → "${title}" (${match.city})`);
+            console.log(`Gem rewrite: "${match.venueName}" → "${title}" (${match.differs ? match.gemCity + ', drive from ' + match.city : match.city})`);
           }
         }
       }
