@@ -2531,6 +2531,20 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
     `G${i + 1} | ${g.city} | ${g.name}`
   ).join('\n');
 
+  // Activity names already in the day-by-day — Perplexity must not propose these as gem
+  // replacements. Activities are strings like "[Local Pick] Name — description", so strip
+  // the tier prefix and take the text before the description separator.
+  const stripTier = (s) => (s || '').replace(/^\s*\[[^\]]*\]\s*/, '');
+  const activityName = (s) => stripTier(s).split('—')[0].split(' - ')[0].trim();
+  const existingActivities = [];
+  for (const day of itinerary.days) {
+    for (const slot of [day.morning, day.afternoon, day.evening]) {
+      const name = activityName(slot);
+      if (name) existingActivities.push(name);
+    }
+  }
+  const existingActivityList = [...new Set(existingActivities)].join(', ');
+
   // Traveler profile, used to bias gem verification + replacements toward their interests.
   const travelStyle = formData.travelStyle || formData.budgetTier || '';
   const interestList = (formData.interests && typeof formData.interests === 'object')
@@ -2548,6 +2562,8 @@ ${restaurantLines || '(none)'}
 
 ACCOMMODATIONS TO VERIFY (web-search each one):
 ${accommodationLines || '(none)'}
+
+The itinerary already includes these activities by name. Do NOT suggest any of these as gem replacements: ${existingActivityList || '(none)'}
 
 HIDDEN GEMS TO VERIFY (web-search each one):
 ${gemLines || '(none)'}
@@ -2567,11 +2583,9 @@ A[N] | CLOSED | Replacement Name | property type | price range | one sentence wh
 A[N] | UNCERTAIN | (cannot confirm — leave as is)
 Replacement constraints: same city, same price tier (within 20%), same property type (masseria stays masseria, cave hotel stays cave hotel, boutique stays boutique), minimum 4-star reviews.
 
-For hidden gems (prioritize matches to the traveler profile above):
-G[N] | VERIFIED | (real, still genuinely hidden, matches traveler interests)
-G[N] | NOT FOUND | Replacement Name — why it's a better pick, max 20 words
-G[N] | MAINSTREAM | Replacement Name — why this is more hidden/current, max 20 words
-G[N] | STALE | Replacement Name — why this is more current, max 20 words
+For hidden gems (prioritize matches to the traveler profile above; any replacement MUST be in the same city as the gem it replaces):
+G[N] | VERIFIED | (no change needed)
+G[N] | REPLACE | Replacement Venue Name | 8-word reason
 
 Real places only. Web-search before answering. No hedging.
 `.trim();
@@ -2588,6 +2602,9 @@ Real places only. Web-search before answering. No hedging.
 
   // 3. Parse the structured response and apply changes
   const lines = rawResult.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Gems flagged for replacement in Phase 1; descriptions written by Claude in Phase 2.
+  const gemReplacements = [];
 
   for (const line of lines) {
     const parts = line.split('|').map(p => p.trim());
@@ -2630,22 +2647,63 @@ Real places only. Web-search before answering. No hedging.
       continue;
     }
 
-    // Hidden gem verification — replace gems that aren't real, are too mainstream, or stale
+    // Hidden gem verification — Phase 1: Perplexity flags which gems to replace (no descriptions)
     if (/^G\d+$/i.test(parts[0])) {
       const idx = parseInt(parts[0].slice(1), 10) - 1;
       const status = (parts[1] || '').toUpperCase();
       const gem = hiddenFinds[idx];
-      if (!gem) continue;
-      if ((status === 'NOT FOUND' || status === 'MAINSTREAM' || status === 'STALE') && parts[2]) {
-        // Swap the gem with Perplexity's replacement (keeps hidden_finds count flat)
-        const itinGem = (itinerary.hidden_finds || [])[idx];
-        if (itinGem) {
-          itinGem.title = parts[2].split('—')[0].trim();
-          itinGem.description = parts[2].split('—').slice(1).join('—').trim() || itinGem.description;
-          console.log(`Perplexity: replaced gem "${gem.name}" → "${itinGem.title}" (${gem.city})`);
+      const itinGem = (itinerary.hidden_finds || [])[idx];
+      if (!gem || !itinGem) continue;
+      if (status === 'REPLACE' && parts[2]) {
+        const originalCity = gem.city || itinGem.city || '';
+        console.log(`Perplexity: gem flagged REPLACE "${gem.name}" → "${parts[2]}" (original city: ${originalCity || 'unknown'})`);
+        // City boundary check — never swap in a cross-city replacement.
+        if (!originalCity) {
+          console.warn(`Perplexity: skipping gem replacement for "${gem.name}" — city could not be confirmed`);
+          continue;
         }
+        gemReplacements.push({ idx, venue: parts[2], city: originalCity });
       }
       continue;
+    }
+  }
+
+  // Phase 2 — Claude writes the discovery cards (title + description) for the flagged venues.
+  // Count stays flat; emoji and city are left unchanged. Fails silently — gems left as-is on error.
+  if (gemReplacements.length) {
+    try {
+      const venueListText = gemReplacements.map(g => `${g.city}: ${g.venue}`).join('\n');
+      const gemWriterPrompt = `You are a hidden gems travel writer. Write discovery cards for the following venues. Each card needs:
+- Title: 4–6 evocative words (not the venue name verbatim)
+- Description: 2 sentences, max 35 words total. Capture WHY this is a genuine hidden find — the detail a local would know.
+
+Traveler profile: ${groupDesc}, ${travelStyle || 'no specific style'}, interests: ${interestList || 'general'}
+
+Format each response EXACTLY as:
+VENUE_NAME | TITLE | DESCRIPTION
+
+Venues:
+${venueListText}`;
+
+      const gemWriterRaw = await callClaude(env, gemWriterPrompt);
+      if (gemWriterRaw && typeof gemWriterRaw === 'string') {
+        for (const line of gemWriterRaw.split('\n').map(l => l.trim()).filter(Boolean)) {
+          const gp = line.split('|').map(p => p.trim());
+          if (gp.length < 3) continue;
+          const venueName = gp[0], title = gp[1], description = gp[2];
+          // Match Claude's card back to a flagged replacement by venue name.
+          const match = gemReplacements.find(g => g.venue.toLowerCase() === venueName.toLowerCase());
+          if (!match) continue;
+          const itinGem = itinerary.hidden_finds[match.idx];
+          if (itinGem && title && description) {
+            itinGem.title = title;
+            itinGem.description = description;
+            console.log(`Gem rewrite: "${match.venue}" → "${title}" (${match.city})`);
+          }
+        }
+      }
+    } catch (gemErr) {
+      console.error('Gem rewrite (Phase 2) failed (continuing):', gemErr && gemErr.message);
     }
   }
 }
