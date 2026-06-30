@@ -88,25 +88,164 @@ export default {
         }
 
         // Confirm the session actually has preview data before attaching an email.
-        const preview = await env.PREVIEW_STORE.get(sessionId);
-        if (!preview) {
+        const previewRaw = await env.PREVIEW_STORE.get(sessionId);
+        if (!previewRaw) {
           return corsResponse({ error: 'Preview not found or expired.' }, 404);
         }
+
+        // Parse preview — handle both old (raw preview JSON) and new ({ preview, formData }) formats
+        let previewData = {}, fData = {};
+        try {
+          const parsed = JSON.parse(previewRaw);
+          if (parsed && parsed.preview) {
+            previewData = parsed.preview;
+            fData = parsed.formData || {};
+          } else {
+            previewData = parsed;
+          }
+        } catch(e) { previewData = {}; }
+
+        // Extract fields for the email
+        const firstName = fData.firstName || previewData.firstName || '';
+        const country = fData.country || previewData.country || 'your destination';
+        const overview = previewData.overview || '';
+        const cities = Array.isArray(previewData.recommended_cities) ? previewData.recommended_cities :
+                       Array.isArray(previewData.cities) ? previewData.cities : [];
+        const teaser = previewData.teaser_day || null;
+        const teaserLabel = teaser ? (teaser.title || teaser.day || 'Day 1') : '';
+        const teaserMorning = teaser ? (teaser.morning || '') : '';
+        const teaserAfternoon = teaser ? (teaser.afternoon || '') : '';
+        const teaserEvening = teaser ? (teaser.evening || '') : '';
+
+        // Helper: truncate overview to ~180 chars at a word boundary
+        const overviewSnippet = overview.length > 180
+          ? overview.substring(0, overview.lastIndexOf(' ', 180)) + '…'
+          : overview;
+
+        // City pills HTML
+        const cityNames = cities.slice(0, 5)
+          .map(c => typeof c === 'string' ? c : (c.city || c.name || ''))
+          .filter(Boolean);
+        const cityPills = cityNames.map(name =>
+          `<span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;padding:4px 12px;border-radius:99px;margin:3px 4px 3px 0;">${name}</span>`
+        ).join('');
+
+        // Teaser day rows
+        const teaserRows = [
+          teaserMorning ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">🌅</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Morning</strong> — ${teaserMorning}</td></tr>` : '',
+          teaserAfternoon ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">☀️</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Afternoon</strong> — ${teaserAfternoon}</td></tr>` : '',
+          teaserEvening ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">🌙</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Evening</strong> — ${teaserEvening}</td></tr>` : '',
+        ].filter(Boolean).join('');
+
+        const greeting = firstName ? `Hey ${firstName},` : 'Hey there,';
+
+        const previewEmailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<title>Your ${country} preview is saved</title>
+</head>
+<body style="margin:0;padding:0;background:#f7f5ff;font-family:'DM Sans',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f7f5ff;padding:32px 16px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+  <!-- LOGO -->
+  <tr><td style="padding-bottom:28px;" align="center">
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="vertical-align:middle;padding-right:10px;">
+          <table cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="34" height="34" bgcolor="#7c3aed" style="border-radius:9px;text-align:center;vertical-align:middle;">
+              <svg viewBox="0 0 18 18" fill="none" width="18" height="18" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:8px auto;">
+                <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" fill-opacity="0.95"/>
+                <circle cx="9" cy="9" r="2.5" fill="white" fill-opacity="0.4"/>
+              </svg>
+            </td>
+          </tr></table>
+        </td>
+        <td style="vertical-align:middle;">
+          <span style="font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;color:#0f0c1e;letter-spacing:-0.02em;">BuiltWithSpring</span>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- CARD -->
+  <tr><td style="background:#ffffff;border-radius:20px;padding:40px 40px 36px;box-shadow:0 2px 12px rgba(124,58,237,0.08);">
+
+    <!-- Greeting + headline -->
+    <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#7c72a0;">${greeting}</p>
+    <h1 style="margin:0 0 20px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:#0f0c1e;letter-spacing:-0.03em;line-height:1.2;">Your ${country} preview<br/>is saved. ✈️</h1>
+
+    <!-- City pills -->
+    ${cityPills ? `<div style="margin-bottom:24px;">${cityPills}</div>` : ''}
+
+    <!-- Overview excerpt -->
+    ${overviewSnippet ? `<p style="margin:0 0 28px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;color:#3d3660;line-height:1.7;">${overviewSnippet}</p>` : ''}
+
+    <!-- Divider -->
+    <hr style="border:none;border-top:1px solid #e4e0f5;margin:0 0 24px;"/>
+
+    <!-- Teaser day -->
+    ${teaserRows ? `
+    <p style="margin:0 0 12px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.06em;">A taste of what's inside</p>
+    ${teaserLabel ? `<p style="margin:0 0 12px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#0f0c1e;">📍 ${teaserLabel}${cityNames[0] ? ` · ${cityNames[0]}` : ''}</p>` : ''}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+      ${teaserRows}
+    </table>
+    ` : ''}
+
+    <!-- CTA button -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+      <tr><td align="center">
+        <a href="${`https://bws-travel-proxy.springlam-co.workers.dev/p/${sessionId}`}" style="display:inline-block;background:#7c3aed;color:#ffffff;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.01em;text-decoration:none;padding:15px 36px;border-radius:12px;box-shadow:0 4px 20px rgba(124,58,237,0.35);">View my preview & book →</a>
+      </td></tr>
+    </table>
+
+    <!-- Urgency nudge -->
+    <p style="text-align:center;margin:0 0 20px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#7c72a0;">Your preview is saved for 30 days · Full itinerary unlocks after checkout</p>
+
+    <!-- What's included -->
+    <div style="background:#f7f5ff;border-radius:12px;padding:20px 24px;margin-bottom:4px;">
+      <p style="margin:0 0 10px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;color:#0f0c1e;text-transform:uppercase;letter-spacing:0.05em;">Your full itinerary includes</p>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Day-by-day plans for every city</td></tr>
+        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Local restaurant picks & hidden finds</td></tr>
+        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Accommodation & transport guide</td></tr>
+        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;What to book before you go</td></tr>
+      </table>
+    </div>
+
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="padding:24px 8px 0;" align="center">
+    <p style="margin:0 0 6px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#7c72a0;">Questions? Reply to this email — I read every one.</p>
+    <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#c4b5fd;">© 2026 BuiltWithSpring · Austin, TX · <a href="mailto:hello@builtwithspring.com" style="color:#7c3aed;text-decoration:none;">hello@builtwithspring.com</a></p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
         // Store the email against the session for 7 days.
         await env.PREVIEW_STORE.put(`email:${sessionId}`, email, { expirationTtl: 60 * 60 * 24 * 7 });
 
         // Send the preview link email — best-effort, don't fail the request if Resend blips.
         try {
-          const previewUrl = `https://bws-travel-proxy.springlam-co.workers.dev/p/${sessionId}`;
           const mailRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               from: 'BuiltWithSpring Travel <hello@builtwithspring.com>',
               to: [email],
-              subject: 'Your travel preview is ready ✈️',
-              text: `Hi! Your travel preview is saved. View it here: ${previewUrl}\n\nReady to buy? Hit the Get Full Itinerary button on the preview page.\n\n— BuiltWithSpring`
+              subject: firstName ? `${firstName}, your ${country} preview is saved ✈️` : `Your ${country} preview is saved ✈️`,
+              html: previewEmailHtml
             })
           });
           if (!mailRes.ok) {
@@ -336,6 +475,17 @@ export default {
     if (url.pathname === '/success') {
       return Response.redirect('https://travel.builtwithspring.com/success', 302);
     }
+
+    // ── TASK 4: Serve stored itinerary HTML ──
+    if (url.pathname.startsWith('/itinerary/') && request.method === 'GET') {
+      const itinId = url.pathname.replace('/itinerary/', '');
+      if (itinId) {
+        const html = await env.PREVIEW_STORE.get(`itinerary_${itinId}`);
+        if (html) return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+        return new Response('Itinerary not found or expired.', { status: 404 });
+      }
+    }
+    // ── END TASK 4 ──
 
     return corsResponse({ error: 'Not found' }, 404);
   },
@@ -623,6 +773,793 @@ async function sendFeedbackEmail(env, { name, email, country, rating, comment, r
     throw new Error(`Resend send failed: ${res.status} ${await res.text()}`);
   }
 }
+
+// ── TASK 4: Itinerary rendering helpers ──────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseBadge(text) {
+  const m = String(text || '').match(/^\[(Iconic|Local Pick|Hidden Gem)\]\s*/);
+  if (!m) return { cls: '', label: '', body: esc(text) };
+  const map = { 'Iconic': ['badge-iconic','Iconic'], 'Local Pick': ['badge-local','Local Pick'], 'Hidden Gem': ['badge-hidden','Hidden Gem'] };
+  return { cls: map[m[1]][0], label: map[m[1]][1], body: esc(text.slice(m[0].length)) };
+}
+
+function formatDateLong(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T12:00:00Z');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+function formatDayHead(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T12:00:00Z');
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getUTCDay()];
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+  return `${dow} · ${mon} ${d.getUTCDate()}`;
+}
+
+function calcNights(checkin, checkout) {
+  const a = Date.parse(checkin), b = Date.parse(checkout);
+  return (!isNaN(a) && !isNaN(b) && b > a) ? Math.round((b - a) / 86400000) : null;
+}
+
+function priorityBadge(p) {
+  if (!p) return '';
+  if (/now/i.test(p)) return '<span class="prio prio-now">Book now</span>';
+  if (/week/i.test(p)) return '<span class="prio prio-soon">4–6 weeks ahead</span>';
+  return '<span class="prio prio-arrival">On arrival</span>';
+}
+
+function parseRestLine(text) {
+  if (!text) return null;
+  const ci = text.indexOf(':');
+  if (ci === -1) return { label: 'Meal', name: text, neighborhood: '', desc: '' };
+  const label = text.slice(0, ci).trim();
+  const parts = text.slice(ci + 1).split('|').map(p => p.trim());
+  return { label, name: parts[0] || '', neighborhood: parts[1] || '', desc: parts[2] || '' };
+}
+
+function affViator(city, q) {
+  return `https://www.viator.com/search/${encodeURIComponent(city)}?q=${encodeURIComponent(q)}&pid=P00307099&mcid=42383&medium=api`;
+}
+function affGYG(city, q) {
+  return `https://www.getyourguide.com/s/?q=${encodeURIComponent(q + ' ' + city)}&partner_id=NLNHMQA`;
+}
+function affBooking(city) {
+  return `https://www.booking.com/search.html?ss=${encodeURIComponent(city)}&aid=7997579`;
+}
+// ── END helpers ──────────────────────────────────────────────────
+
+// ── TASK 4: renderItinerary ─────────────────────────────────────
+function renderItinerary(formData, itinerary) {
+  const { firstName = '', country = '', arrivalDate = '', departureDate = '' } = formData || {};
+  const {
+    overview = '',
+    recommended_cities = [],
+    days = [],
+    accommodations = [],
+    transport = [],
+    restaurants = [],
+    hidden_finds = [],
+    book_before_you_go = [],
+    practical_info = {}
+  } = itinerary || {};
+
+  const totalNights = calcNights(arrivalDate, departureDate) || days.length;
+
+  // ── Cities for static map ──
+  const cityOrder = [];
+  for (const day of days) {
+    if (day.city && !cityOrder.includes(day.city)) cityOrder.push(day.city);
+  }
+  const staticMapUrl = cityOrder.length
+    ? `https://bws-travel-proxy.springlam-co.workers.dev/static-map?cities=${cityOrder.map(encodeURIComponent).join(',')}`
+    : '';
+
+  // ── Cities section (from accommodations) ──
+  const cityRowsHtml = accommodations.map(a => {
+    const n = calcNights(a.checkin, a.checkout);
+    return `<div class="city-row intro-city">
+      <div class="nights-pill"><div class="n">${n || '?'}</div><div class="l">Nights</div></div>
+      <div><h3>${esc(a.city)}</h3><p>${esc(a.why || '')}</p></div>
+    </div>`;
+  }).join('') || recommended_cities.map(c =>
+    `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.why_recommended || '')}</p></div></div>`
+  ).join('');
+
+  // ── Day-by-day (group consecutive days by city) ──
+  const cityGroups = [];
+  for (const day of days) {
+    const last = cityGroups[cityGroups.length - 1];
+    if (!last || last.city !== day.city) cityGroups.push({ city: day.city, days: [day] });
+    else last.days.push(day);
+  }
+
+  const dayByDayHtml = cityGroups.map(group => {
+    const firstDay = group.days[0];
+    const lastDay = group.days[group.days.length - 1];
+    const nightsInCity = group.days.length;
+    const dateRange = `${formatDateLong(firstDay.date)} – ${formatDateLong(lastDay.date)}`;
+
+    const daysHtml = group.days.map(day => {
+      const morning = parseBadge(day.morning);
+      const afternoon = parseBadge(day.afternoon);
+      const evening = parseBadge(day.evening);
+      const bk = parseRestLine(day.breakfast_suggestion);
+      const dinner = parseRestLine(day.restaurant_suggestion);
+
+      const slotHtml = (slot) => slot.cls
+        ? `<span class="badge ${slot.cls}">${slot.label}</span>${slot.body}`
+        : slot.body;
+
+      const restLineHtml = (r) => r
+        ? `<div class="restaurant-line"><span class="r-label">${esc(r.label)}</span><strong>${esc(r.name)}</strong>${r.neighborhood ? ` · ${esc(r.neighborhood)}` : ''}${r.desc ? ` — ${esc(r.desc)}` : ''}</div>`
+        : '';
+
+      return `<div class="day">
+        <div class="day-head">
+          <div class="d-date">${esc(formatDayHead(day.date))}</div>
+          <div class="d-focus">${esc(day.neighborhood_focus || '')}</div>
+          ${day.estimated_daily_cost ? `<div class="d-cost">${esc(day.estimated_daily_cost)}</div>` : ''}
+        </div>
+        <div class="slot"><div class="slot-label">Morning</div><div class="slot-body">${slotHtml(morning)}</div></div>
+        ${afternoon.body ? `<div class="slot"><div class="slot-label">Afternoon</div><div class="slot-body">${slotHtml(afternoon)}</div></div>` : ''}
+        ${evening.body ? `<div class="slot"><div class="slot-label">Evening</div><div class="slot-body">${slotHtml(evening)}</div></div>` : ''}
+        ${restLineHtml(bk)}
+        ${restLineHtml(dinner)}
+      </div>`;
+    }).join('');
+
+    return `<div class="city-band"><div class="cb-city">${esc(group.city)}</div><div class="cb-meta">${esc(dateRange)} · ${nightsInCity} nights</div></div>${daysHtml}`;
+  }).join('');
+
+  // ── Hidden Finds ──
+  const hiddenFindsHtml = hidden_finds.map(f =>
+    `<div class="find-card">
+      <div class="emoji">${esc(f.emoji)}</div>
+      <h4>${esc(f.title)}</h4>
+      <p>${esc(f.description)}</p>
+      <div class="find-city">${esc(f.city)}</div>
+      <div>
+        <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affViator(f.city, f.title))}">Search Viator →</a>
+        <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affGYG(f.city, f.title))}">Search GetYourGuide →</a>
+      </div>
+    </div>`
+  ).join('');
+
+  // ── Restaurants (grouped by city) ──
+  const restCities = [...new Set(restaurants.map(r => r.city))];
+  const restaurantsHtml = restCities.map(city => {
+    const cityRests = restaurants.filter(r => r.city === city);
+    const cardsHtml = cityRests.map(r =>
+      `<div class="rest-card">
+        <div class="rest-head"><h4>${esc(r.name)}</h4><span class="rest-type">${esc(r.venue_type)}</span></div>
+        <p class="rest-desc">${esc(r.known_for || r.why || '')}</p>
+        <div class="rest-meta"><strong>Cuisine:</strong> ${esc(r.cuisine_category)} · <strong>Price:</strong> ${esc(r.price_range)} · <strong>Area:</strong> ${esc(r.neighborhood)}</div>
+        <a class="aff" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${encodeURIComponent(r.name + ' ' + city)}">Find on Google Maps →</a>
+      </div>`
+    ).join('');
+    return `<div class="city-band"><div class="cb-city">${esc(city)}</div></div>${cardsHtml}`;
+  }).join('');
+
+  // ── Accommodations (grouped by city) ──
+  const accommodationsHtml = accommodations.map(a => {
+    const n = calcNights(a.checkin, a.checkout);
+    return `<div class="city-band"><div class="cb-city">${esc(a.city)}</div></div>
+    <div class="card card-accent">
+      <div class="rest-head">
+        <h4 style="margin:0;font-size:18px;">${esc(a.name)}</h4>
+        <span class="rest-type">${esc(a.recommended_type)}</span>
+      </div>
+      <div class="rest-meta" style="margin:8px 0;">
+        <strong>Neighbourhood:</strong> ${esc(a.neighborhood)}<br>
+        <strong>Check-in:</strong> ${esc(formatDateLong(a.checkin))} &nbsp;·&nbsp; <strong>Check-out:</strong> ${esc(formatDateLong(a.checkout))}${n ? ` &nbsp;·&nbsp; <strong>${n} nights</strong>` : ''} &nbsp;·&nbsp; <strong>Per night:</strong> ${esc(a.estimated_cost_per_night)}
+      </div>
+      <p style="margin:8px 0 10px;">${esc(a.why)}</p>
+      <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affBooking(a.city))}">Search Booking.com →</a>
+    </div>`;
+  }).join('');
+
+  // ── Transport legs ──
+  const transportHtml = transport.map(t =>
+    `<div class="leg">
+      <div class="leg-route">${esc(t.from)}<span class="arrow">→</span>${esc(t.to)}</div>
+      <div class="leg-meta">
+        <span><strong>Mode:</strong> ${esc(t.recommended_mode)}</span>
+        <span><strong>Duration:</strong> ${esc(t.duration)}</span>
+        <span><strong>Cost:</strong> ${esc(t.estimated_cost)}</span>
+      </div>
+      <div class="leg-tip">${esc(t.booking_tip)}</div>
+    </div>`
+  ).join('');
+
+  // ── Book Before You Go ──
+  const bookRowsHtml = book_before_you_go.map(b =>
+    `<tr>
+      <td><strong>${esc(b.item_name)}</strong>${b.date ? `<br><span style="color:var(--muted)">${esc(b.date)}</span>` : ''}</td>
+      <td>${priorityBadge(b.booking_priority)}</td>
+      <td>${esc(b.booking_tip)}${b.booking_link ? `<br><a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(b.booking_link)}">Book →</a>` : ''}</td>
+      <td>${esc(b.est_cost)}</td>
+    </tr>`
+  ).join('');
+
+  // ── Practical Info ──
+  const pi = practical_info;
+  const practicalCards = [
+    pi.weather_summary     && ['☀️', 'Weather',           pi.weather_summary],
+    pi.visa_requirements   && ['🛂', 'Visa &amp; Entry',   (pi.visa_requirements + (pi.entry_requirements ? ' ' + pi.entry_requirements : ''))],
+    pi.currency            && ['💴', 'Currency &amp; Payments', pi.currency],
+    pi.connectivity        && ['📱', 'Connectivity',       pi.connectivity],
+    pi.transport_tips      && ['🚆', 'Getting Around',     pi.transport_tips],
+    pi.packing_tips        && ['🎒', 'Packing Tips',       pi.packing_tips],
+    pi.must_know           && ['💡', 'Must Know',          pi.must_know],
+  ].filter(Boolean).map(([ico, title, body]) =>
+    `<div class="card info-card"><h4><span class="ico">${ico}</span>${title}</h4><p>${esc(body)}</p></div>`
+  ).join('');
+
+  // ── Assemble full page ──
+  // Copy the full <style> block verbatim from /Users/springlam/Desktop/TravelPlanner/itinerary-template.html
+  // (Read that file and embed the CSS content between the <style> tags as the CSS variable below)
+  const CSS = `
+  :root {
+    --accent: #7c3aed;
+    --accent-soft: #f4efff;
+    --text: #0f0c1e;
+    --muted: #7c72a0;
+    --border: #e8e3f5;
+    --gold: #b8860b;
+    --gold-soft: #fbf3df;
+    --teal: #0d8a7a;
+    --teal-soft: #e2f5f1;
+    --purple: #7c3aed;
+    --purple-soft: #f4efff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 56px 48px 72px;
+  }
+
+  /* Each major section begins a new printed page */
+  .section { page-break-before: always; }
+
+  /* ── Section headers ───────────────────────────── */
+  .section-header {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-left: 5px solid var(--accent);
+    padding: 4px 0 4px 16px;
+    margin: 0 0 28px;
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin: -20px 0 28px 21px;
+  }
+
+  /* ── Cover page ────────────────────────────────── */
+  .cover {
+    page-break-after: always;
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin-bottom: 48px;
+  }
+  .logo .spring { color: var(--text); }
+  .cover-eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .cover-country {
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .cover-name {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 0;
+    margin-bottom: 36px;
+  }
+  .cover-meta div { line-height: 1.4; }
+  .cover-meta .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .cover-meta .value { font-size: 17px; font-weight: 600; }
+  .cover-cities-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .cover-cities { list-style: none; padding: 0; margin: 0; }
+  .cover-cities li {
+    font-size: 19px;
+    font-weight: 600;
+    padding: 10px 0 10px 18px;
+    border-left: 3px solid var(--accent);
+    margin-bottom: 10px;
+  }
+  .cover-cities li span { color: var(--muted); font-weight: 500; font-size: 15px; }
+
+  /* ── Generic cards ─────────────────────────────── */
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .card-accent { border-left: 4px solid var(--accent); }
+
+  .lead {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ── Tier badges ───────────────────────────────── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 9px;
+    border-radius: 5px;
+    vertical-align: middle;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  .badge-iconic { background: var(--gold-soft); color: var(--gold); }
+  .badge-local  { background: var(--teal-soft); color: var(--teal); }
+  .badge-hidden { background: var(--purple-soft); color: var(--purple); }
+
+  /* ── City rows (Your Cities) ───────────────────── */
+  .city-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .city-row .nights-pill {
+    flex: 0 0 auto;
+    text-align: center;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-width: 76px;
+  }
+  .city-row .nights-pill .n { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .city-row .nights-pill .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .city-row h3 { margin: 0 0 4px; font-size: 19px; }
+  .city-row p { margin: 0; color: var(--muted); }
+
+  /* ── Day-by-day ────────────────────────────────── */
+  .city-band {
+    margin: 36px 0 20px;
+    padding: 10px 0 10px 16px;
+    border-left: 5px solid var(--accent);
+  }
+  .city-band:first-child { margin-top: 0; }
+  .city-band .cb-city { font-size: 20px; font-weight: 700; }
+  .city-band .cb-meta { font-size: 13px; color: var(--muted); }
+
+  .day {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .day-head .d-date { font-size: 16px; font-weight: 700; }
+  .day-head .d-focus { font-size: 13px; color: var(--muted); }
+  .day-head .d-cost { font-size: 13px; color: var(--accent); font-weight: 600; }
+
+  .slot { margin-bottom: 14px; }
+  .slot:last-child { margin-bottom: 0; }
+  .slot .slot-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .slot .slot-body { font-size: 15px; }
+
+  .restaurant-line {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .restaurant-line .r-label {
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    margin-right: 6px;
+  }
+
+  /* ── Affiliate links ───────────────────────────── */
+  .aff {
+    display: inline-block;
+    margin-top: 6px;
+    margin-right: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #7c3aed;
+    text-decoration: none;
+  }
+  .aff:hover { color: #5b21b6; }
+
+  /* ── Hidden finds ──────────────────────────────── */
+  .finds-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .find-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--purple);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .find-card .emoji { font-size: 26px; line-height: 1; }
+  .find-card h4 { margin: 10px 0 6px; font-size: 16px; }
+  .find-card p { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+  .find-card .find-city {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple);
+  }
+
+  /* ── Restaurants ───────────────────────────────── */
+  .rest-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .rest-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .rest-head h4 { margin: 0; font-size: 16px; }
+  .rest-type {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .rest-card .rest-desc { margin: 6px 0 8px; }
+  .rest-meta { font-size: 13px; color: var(--muted); }
+  .rest-meta strong { color: var(--text); font-weight: 600; }
+
+  /* ── Tables ────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    padding: 0 12px 10px;
+  }
+  tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .prio {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .prio-now { background: #fdeaea; color: #c0392b; }
+  .prio-soon { background: var(--gold-soft); color: var(--gold); }
+  .prio-arrival { background: var(--teal-soft); color: var(--teal); }
+
+  /* ── Transport ─────────────────────────────────── */
+  .leg {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+  }
+  .leg-route { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .leg-route .arrow { color: var(--accent); margin: 0 8px; }
+  .leg-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .leg-meta span { margin-right: 18px; }
+  .leg-meta strong { color: var(--text); font-weight: 600; }
+  .leg-tip { font-size: 14px; }
+
+  /* ── Practical info ────────────────────────────── */
+  .info-block { margin-bottom: 18px; }
+  .info-block h4 {
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .info-block p { margin: 0; }
+  .info-card { margin-bottom: 12px; }
+  .info-card h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .info-card h4 .ico {
+    font-size: 16px;
+    margin-right: 7px;
+    letter-spacing: normal;
+  }
+  .info-card p { margin: 0; }
+
+  .emergency-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid #c0392b;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .emergency-card h4 { margin: 0 0 8px; font-size: 16px; }
+  .emergency-card .erow { font-size: 14px; margin-bottom: 4px; }
+  .emergency-card .erow .ek {
+    display: inline-block;
+    min-width: 150px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .emergency-number { font-weight: 700; color: #c0392b; }
+
+  .footer-note {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ── Route map (static maps image) ─────────────── */
+  .route-map {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 4px 0 18px;
+  }
+
+  /* ── Enriched place data (rating / hours) ──────── */
+  .rest-enrich { font-size: 13px; color: var(--muted); margin: 6px 0 2px; }
+  .rest-rating { color: var(--gold); font-weight: 700; }
+
+  /* ── Section disclaimer ────────────────────────── */
+  .disclaimer {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Download bar (screen only) ────────────────── */
+  .dl-bar { max-width: 820px; margin: 0 auto; padding: 24px 48px 0; }
+  .print-btn {
+    display: block;
+    width: 100%;
+    background: #7c3aed;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .print-btn:hover { background: #6d28d9; }
+  .print-hint { font-size: 12px; color: var(--muted); text-align: center; margin: 8px 0 0; }
+
+  /* ── Combined intro page (cover + cities + overview) ── */
+  .intro-page { padding-top: 36px; padding-bottom: 36px; }
+  .intro-page .logo { margin-bottom: 18px; }
+  .intro-country {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .intro-page .cover-name { margin-bottom: 20px; }
+  .intro-meta { padding: 16px 0; margin-bottom: 26px; }
+  .intro-subhead {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-left: 5px solid var(--accent);
+    padding: 3px 0 3px 14px;
+    margin: 0 0 14px;
+  }
+  .intro-subhead.spaced { margin-top: 26px; }
+  .intro-city { padding: 13px 18px; margin-bottom: 12px; }
+  .intro-city h3 { font-size: 17px; }
+  .intro-city p { font-size: 14px; }
+  .intro-city .nights-pill { padding: 8px 14px; min-width: 64px; }
+  .intro-city .nights-pill .n { font-size: 22px; }
+  .intro-overview .lead { font-size: 15px; line-height: 1.6; }
+
+  /* ── Print rules ───────────────────────────────── */
+  @media print {
+    .dl-bar, .print-btn, .print-hint { display: none !important; }
+    @page { margin: 14mm; }
+    body { font-size: 12pt; }
+    .page { max-width: none; margin: 0; padding: 0; }
+    .screen-only { display: none !important; }
+    .lead, .slot-body, .rest-desc, .leg-tip, .info-block p,
+    .city-row p, .find-card p, td, .erow { color: #000 !important; }
+    .card, .day, .city-row, .leg, .find-card, .rest-card,
+    .emergency-card { break-inside: avoid; }
+    .intro-overview { break-inside: auto; }
+    .aff { color: var(--accent) !important; }
+    .finds-grid { grid-template-columns: 1fr 1fr; }
+  }
+`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your ${esc(country)} Itinerary — BuiltWithSpring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>${CSS}</style>
+</head>
+<body>
+<div class="dl-bar screen-only">
+  <button class="print-btn" type="button" onclick="window.print()">⬇ Download as PDF</button>
+  <p class="print-hint">In the print dialog, choose 'Save as PDF'</p>
+</div>
+<div class="page intro-page">
+  <div class="logo">Built<span class="spring">WithSpring</span></div>
+  <div class="cover-eyebrow">Your Personalized Itinerary</div>
+  <h1 class="intro-country">${esc(country)}</h1>
+  <div class="cover-name">Prepared for ${esc(firstName)}</div>
+  <div class="cover-meta intro-meta">
+    <div><div class="label">Arrival</div><div class="value">${esc(formatDateLong(arrivalDate))}</div></div>
+    <div><div class="label">Departure</div><div class="value">${esc(formatDateLong(departureDate))}</div></div>
+    <div><div class="label">Duration</div><div class="value">${totalNights} nights</div></div>
+  </div>
+  <h2 class="intro-subhead">Your Cities</h2>
+  ${cityRowsHtml}
+  ${staticMapUrl ? `<img class="route-map" alt="${esc(country)} route map" src="${esc(staticMapUrl)}">` : ''}
+  <h2 class="intro-subhead spaced">Trip Overview</h2>
+  <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
+</div>
+<div class="page section">
+  <h2 class="section-header">Day-by-Day Plan</h2>
+  ${dayByDayHtml}
+  <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>
+${hidden_finds.length ? `<div class="page section">
+  <h2 class="section-header">Hidden Finds</h2>
+  <p class="section-sub">Places you almost certainly wouldn't have found on your own.</p>
+  <div class="finds-grid">${hiddenFindsHtml}</div>
+</div>` : ''}
+${restaurants.length ? `<div class="page section">
+  <h2 class="section-header">Restaurants</h2>
+  <p class="section-sub">Extra dining options beyond your day-by-day picks, grouped by city.</p>
+  ${restaurantsHtml}
+  <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>` : ''}
+${accommodations.length ? `<div class="page section">
+  <h2 class="section-header">Accommodation Picks</h2>
+  ${accommodationsHtml}
+</div>` : ''}
+${transport.length ? `<div class="page section">
+  <h2 class="section-header">Transport Between Cities</h2>
+  ${transportHtml}
+</div>` : ''}
+${book_before_you_go.length ? `<div class="page section">
+  <h2 class="section-header">Book Before You Go</h2>
+  <table><thead><tr><th>What to book</th><th>When</th><th>Why it matters</th><th>Est. cost</th></tr></thead>
+  <tbody>${bookRowsHtml}</tbody></table>
+</div>` : ''}
+<div class="page section">
+  <h2 class="section-header">Practical &amp; Emergency Info</h2>
+  ${practicalCards}
+  <div class="footer-note screen-only">BuiltWithSpring · Crafted for your trip · Affiliate links help support this service at no extra cost to you.</div>
+</div>
+</body></html>`;
+}
+// ── END renderItinerary ──────────────────────────────────────────
 
 // ── Itinerary generation ────────────────────────────────────────
 // Top-level keys every valid itinerary must contain.
@@ -1419,6 +2356,13 @@ async function fulfillOrder(env, session) {
       }
     }
 
+    // ── TASK 4: Generate and store itinerary HTML page ──
+    const itineraryId = Math.random().toString(36).substring(2, 12);
+    const itineraryHtml = renderItinerary(formData, itinerary);
+    await env.PREVIEW_STORE.put(`itinerary_${itineraryId}`, itineraryHtml, { expirationTtl: 60 * 60 * 24 * 365 });
+    const itineraryUrl = `https://bws-travel-proxy.springlam-co.workers.dev/itinerary/${itineraryId}`;
+    // ── END TASK 4 ──
+
     // Make now only receives the final parsed JSON plus the identifiers it needs
     // to write the Sheet row and email the traveler.
     const makePayload = {
@@ -1431,6 +2375,7 @@ async function fulfillOrder(env, session) {
       arrivalDate: formData.arrivalDate,
       departureDate: formData.departureDate,
       itinerary,
+      itineraryUrl,
     };
 
     try {
