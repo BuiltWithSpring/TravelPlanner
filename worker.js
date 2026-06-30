@@ -2356,7 +2356,7 @@ Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedg
 // Always resolves — returns the itinerary object or a clean error object.
 // NOTE: Perplexity is no longer used pre-generation. It runs post-generation
 // in verifyAndEnrichWithPerplexity (called from fulfillOrder) to web-check
-// Claude's venue picks and inject fresh hidden gems.
+// Claude's venue picks and replace closed venues and low-quality/stale gems.
 async function generateItinerary(env, d) {
   try {
     const basePrompt = ITINERARY_PROMPT(d, null);
@@ -2480,13 +2480,12 @@ async function enrichItineraryWithPlaces(env, itinerary) {
 }
 
 // ── Perplexity post-generation verification ──────────────────────────────────
-// Runs AFTER Claude generates the itinerary JSON. Extracts the specific venue
-// names Claude chose, asks Perplexity sonar-pro to web-check each one, and:
-//   • Swaps out any permanently-closed restaurant with a suggested replacement
-//   • Flags hidden finds that can't be verified (leaves them, logs a warning)
-//   • Appends 1–2 fresh hidden gems per city that aren't already in the list
-// Mutates itinerary in place. Fails silently — itinerary always ships.
+// Verifies restaurants, accommodations, and hidden finds via Perplexity
+// web-check. Replaces closed venues and low-quality/stale gems in place —
+// count stays flat. Mutates itinerary in place. Fails silently — itinerary
+// always ships.
 async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
+  console.log('Perplexity post-gen verification starting...');
   if (!Array.isArray(itinerary.days) || !itinerary.days.length) return;
 
   // 1. Collect restaurants and hidden finds to verify
@@ -2502,6 +2501,16 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
   const hiddenFinds = (itinerary.hidden_finds || []).map(f => ({ name: f.title, city: f.city }));
   const cities = [...new Set(itinerary.days.map(d => d.city).filter(Boolean))];
 
+  // One accommodation per city (these are live references into itinerary.accommodations,
+  // so mutating them updates the itinerary in place).
+  const accommodations = [];
+  const seenAccomCities = new Set();
+  for (const a of (itinerary.accommodations || [])) {
+    if (!a || !a.city || seenAccomCities.has(a.city)) continue;
+    seenAccomCities.add(a.city);
+    accommodations.push(a);
+  }
+
   if (!restaurants.length && !cities.length) return;
 
   // 2. Build verification prompt — structured so we can parse the response reliably
@@ -2514,9 +2523,22 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
     `R${i + 1} | ${r.city} | ${r.name}`
   ).join('\n');
 
+  const accommodationLines = accommodations.map((a, i) =>
+    `A${i + 1} | ${a.city} | ${a.name} | ${a.estimated_cost_per_night || ''} | ${a.recommended_type || ''}`
+  ).join('\n');
+
   const gemLines = hiddenFinds.map((g, i) =>
     `G${i + 1} | ${g.city} | ${g.name}`
   ).join('\n');
+
+  // Traveler profile, used to bias gem verification + replacements toward their interests.
+  const travelStyle = formData.travelStyle || formData.budgetTier || '';
+  const interestList = (formData.interests && typeof formData.interests === 'object')
+    ? Object.keys(formData.interests).join(', ')
+    : '';
+  const groupDesc = formData.groupSize ? `Group of ${formData.groupSize}` : (formData.travelParty || 'travelers');
+  const profileTraits = [travelStyle, interestList].filter(Boolean).join(', ') || 'general interests';
+  const travelerProfile = `Traveler profile: ${groupDesc} traveling ${profileTraits}. When evaluating gems and selecting replacements, prioritize picks that match these interests over generic sightseeing.`;
 
   const verificationPrompt = `
 You are verifying travel recommendations for a ${formData.country} trip in ${month}.
@@ -2524,8 +2546,13 @@ You are verifying travel recommendations for a ${formData.country} trip in ${mon
 RESTAURANTS TO VERIFY (web-search each one):
 ${restaurantLines || '(none)'}
 
+ACCOMMODATIONS TO VERIFY (web-search each one):
+${accommodationLines || '(none)'}
+
 HIDDEN GEMS TO VERIFY (web-search each one):
 ${gemLines || '(none)'}
+
+${travelerProfile}
 
 For each item, respond on ONE LINE in EXACTLY this format:
 
@@ -2534,15 +2561,17 @@ R[N] | OPEN | (no replacement needed)
 R[N] | CLOSED | Replacement Name | neighbourhood | one line why it's a great substitute
 R[N] | UNCERTAIN | (cannot confirm — leave as is)
 
-For hidden gems:
-G[N] | VERIFIED | (exists and accessible)
-G[N] | NOT FOUND | Replacement Name — why it's special, max 15 words
-G[N] | UNCERTAIN | (cannot confirm — leave as is)
+For accommodations:
+A[N] | OPEN | (confirmed operating)
+A[N] | CLOSED | Replacement Name | property type | price range | one sentence why it's comparable
+A[N] | UNCERTAIN | (cannot confirm — leave as is)
+Replacement constraints: same city, same price tier (within 20%), same property type (masseria stays masseria, cave hotel stays cave hotel, boutique stays boutique), minimum 4-star reviews.
 
-After verifying, add NEW hidden gems for each city (places NOT already in the list above):
-NEW | ${cities.join(' | ')}
-Format each new gem on its own line:
-NEW_GEM | [City] | [Emoji] | [Title, max 6 words] | [Description, max 25 words, why it's special]
+For hidden gems (prioritize matches to the traveler profile above):
+G[N] | VERIFIED | (real, still genuinely hidden, matches traveler interests)
+G[N] | NOT FOUND | Replacement Name — why it's a better pick, max 20 words
+G[N] | MAINSTREAM | Replacement Name — why this is more hidden/current, max 20 words
+G[N] | STALE | Replacement Name — why this is more current, max 20 words
 
 Real places only. Web-search before answering. No hedging.
 `.trim();
@@ -2583,35 +2612,40 @@ Real places only. Web-search before answering. No hedging.
       continue;
     }
 
-    // Hidden gem verification — flag only; we don't remove gems, just log
+    // Accommodation verification — swap permanently-closed properties for a comparable one
+    if (/^A\d+$/i.test(parts[0])) {
+      const idx = parseInt(parts[0].slice(1), 10) - 1;
+      const status = (parts[1] || '').toUpperCase();
+      const accom = accommodations[idx];
+      if (!accom) continue;
+
+      if (status === 'CLOSED' && parts[2] && parts[2] !== '(no replacement needed)') {
+        const oldName = accom.name;
+        accom.name = parts[2];
+        if (parts[3]) accom.recommended_type = parts[3];
+        if (parts[4]) accom.estimated_cost_per_night = parts[4];
+        if (parts[5]) accom.why = parts[5];
+        console.log(`Perplexity: replaced closed accommodation ${oldName} → ${accom.name} (${accom.city})`);
+      }
+      continue;
+    }
+
+    // Hidden gem verification — replace gems that aren't real, are too mainstream, or stale
     if (/^G\d+$/i.test(parts[0])) {
       const idx = parseInt(parts[0].slice(1), 10) - 1;
       const status = (parts[1] || '').toUpperCase();
       const gem = hiddenFinds[idx];
       if (!gem) continue;
-      if (status === 'NOT FOUND' && parts[2]) {
-        // Swap unverifiable gem with replacement
+      if ((status === 'NOT FOUND' || status === 'MAINSTREAM' || status === 'STALE') && parts[2]) {
+        // Swap the gem with Perplexity's replacement (keeps hidden_finds count flat)
         const itinGem = (itinerary.hidden_finds || [])[idx];
         if (itinGem) {
           itinGem.title = parts[2].split('—')[0].trim();
           itinGem.description = parts[2].split('—').slice(1).join('—').trim() || itinGem.description;
-          console.log(`Perplexity: replaced unverified gem "${gem.name}" → "${itinGem.title}" (${gem.city})`);
+          console.log(`Perplexity: replaced gem "${gem.name}" → "${itinGem.title}" (${gem.city})`);
         }
       }
       continue;
-    }
-
-    // New hidden gems injected by Perplexity
-    if (parts[0] === 'NEW_GEM' && parts.length >= 5) {
-      const city   = parts[1];
-      const emoji  = parts[2] || '✨';
-      const title  = parts[3];
-      const desc   = parts[4];
-      if (city && title && desc) {
-        if (!Array.isArray(itinerary.hidden_finds)) itinerary.hidden_finds = [];
-        itinerary.hidden_finds.push({ emoji, title, description: desc, city });
-        console.log(`Perplexity: added new gem "${title}" (${city})`);
-      }
     }
   }
 }
@@ -2650,9 +2684,10 @@ async function fulfillOrder(env, session) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
     } else {
       // ── Post-gen Perplexity verification ────────────────────────────────────
-      // Web-checks Claude's restaurant and hidden gem picks, swaps out any
-      // permanently-closed venues, and appends fresh hidden gems per city.
-      // Isolated — any failure leaves the itinerary intact and still ships.
+      // Web-checks Claude's restaurant, accommodation, and hidden gem picks,
+      // replacing closed venues and low-quality/stale gems in place (count
+      // stays flat). Isolated — any failure leaves the itinerary intact and
+      // still ships.
       if (env.USE_PERPLEXITY === 'true') {
         try {
           await verifyAndEnrichWithPerplexity(env, itinerary, formData);
