@@ -113,11 +113,10 @@ export default {
         const overview = previewData.overview || '';
         const cities = Array.isArray(previewData.recommended_cities) ? previewData.recommended_cities :
                        Array.isArray(previewData.cities) ? previewData.cities : [];
-        const teaser = previewData.teaser_day || null;
-        const teaserLabel = teaser ? (teaser.title || teaser.day || 'Day 1') : '';
-        const teaserMorning = teaser ? (teaser.morning || '') : '';
-        const teaserAfternoon = teaser ? (teaser.afternoon || '') : '';
-        const teaserEvening = teaser ? (teaser.evening || '') : '';
+        const destination = (fData.country || previewData.country || '').trim();
+        // Preview-time "hidden finds" come from the preview's local_picks ({emoji,title,description}).
+        // The full itinerary's hidden_finds (with city) only exists post-payment, so no city label here.
+        const localPicks = Array.isArray(previewData.local_picks) ? previewData.local_picks.slice(0, 3) : [];
 
         // Helper: truncate overview to ~180 chars at a word boundary
         const overviewSnippet = overview.length > 180
@@ -132,12 +131,14 @@ export default {
           `<span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;padding:4px 12px;border-radius:99px;margin:3px 4px 3px 0;">${name}</span>`
         ).join('');
 
-        // Teaser day rows
-        const teaserRows = [
-          teaserMorning ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">🌅</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Morning</strong> — ${teaserMorning}</td></tr>` : '',
-          teaserAfternoon ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">☀️</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Afternoon</strong> — ${teaserAfternoon}</td></tr>` : '',
-          teaserEvening ? `<tr><td style="padding:6px 0;vertical-align:top;"><span style="font-size:15px;">🌙</span></td><td style="padding:6px 0 6px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">Evening</strong> — ${teaserEvening}</td></tr>` : '',
-        ].filter(Boolean).join('');
+        // Hidden finds cards (name + one-line description) from the preview's local_picks
+        const hiddenFindsCards = localPicks.map(f => {
+          const emoji = f.emoji || '💎';
+          const title = f.title || '';
+          const desc = f.description || '';
+          if (!title && !desc) return '';
+          return `<tr><td style="padding:8px 0;vertical-align:top;"><span style="font-size:18px;">${emoji}</span></td><td style="padding:8px 0 8px 10px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;line-height:1.5;"><strong style="color:#0f0c1e;">${title}</strong>${desc ? `<br>${desc}` : ''}</td></tr>`;
+        }).filter(Boolean).join('');
 
         const greeting = firstName ? `Hey ${firstName},` : 'Hey there,';
 
@@ -198,12 +199,11 @@ export default {
     <!-- Divider -->
     <hr style="border:none;border-top:1px solid #e4e0f5;margin:0 0 24px;"/>
 
-    <!-- Teaser day -->
-    ${teaserRows ? `
-    <p style="margin:0 0 12px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.06em;">A taste of what's inside</p>
-    ${teaserLabel ? `<p style="margin:0 0 12px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#0f0c1e;">📍 ${teaserLabel}${cityNames[0] ? ` · ${cityNames[0]}` : ''}</p>` : ''}
+    <!-- Hidden finds teaser -->
+    ${hiddenFindsCards ? `
+    <p style="margin:0 0 12px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.06em;">A taste of what's inside your ${destination || 'trip'} itinerary</p>
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
-      ${teaserRows}
+      ${hiddenFindsCards}
     </table>
     ` : ''}
 
@@ -493,6 +493,57 @@ export default {
     }
     // ── END TASK 4 ──
 
+    // ── Route: /admin/retry — Re-queue a failed Stripe session ────
+    if (url.pathname === '/admin/retry' && request.method === 'GET') {
+      // Auth: check Authorization header first, then ?secret= query param.
+      const authHeader = request.headers.get('Authorization') || '';
+      const secretParam = url.searchParams.get('secret') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : secretParam;
+
+      if (!env.ADMIN_SECRET || !token || token !== env.ADMIN_SECRET) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      const sessionId = url.searchParams.get('session');
+      if (!sessionId) {
+        return corsResponse({ error: 'Missing required param: session' }, 400);
+      }
+
+      // Re-fetch the Stripe session so we have the full object the queue consumer expects.
+      let stripeSession;
+      try {
+        const stripeRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`, {
+          headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` }
+        });
+        if (!stripeRes.ok) {
+          const errText = await stripeRes.text();
+          console.error('[admin/retry] Stripe session fetch failed:', stripeRes.status, errText);
+          return corsResponse({ error: `Stripe session fetch failed: ${stripeRes.status}` }, 502);
+        }
+        stripeSession = await stripeRes.json();
+      } catch (fetchErr) {
+        console.error('[admin/retry] Stripe fetch threw:', fetchErr && fetchErr.message);
+        return corsResponse({ error: 'Failed to fetch Stripe session.' }, 500);
+      }
+
+      // Re-queue into ITINERARY_QUEUE — the consumer will run fulfillOrder again.
+      try {
+        await env.ITINERARY_QUEUE.send(stripeSession);
+        console.log('[admin/retry] Re-queued session:', sessionId);
+        return new Response(
+          `<html><body style="font-family:sans-serif;padding:40px;max-width:480px;">` +
+          `<h2 style="color:#7c3aed;">✓ Session re-queued</h2>` +
+          `<p>Session <strong>${sessionId}</strong> has been sent back to the queue.</p>` +
+          `<p style="color:#7c72a0;font-size:13px;">Generation will start momentarily. Check Cloudflare logs for progress.</p>` +
+          `</body></html>`,
+          { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+      } catch (queueErr) {
+        console.error('[admin/retry] Queue send failed:', queueErr && queueErr.message);
+        return corsResponse({ error: 'Failed to enqueue session.' }, 500);
+      }
+    }
+
     return corsResponse({ error: 'Not found' }, 404);
   },
 
@@ -777,6 +828,56 @@ async function sendFeedbackEmail(env, { name, email, country, rating, comment, r
   });
   if (!res.ok) {
     throw new Error(`Resend send failed: ${res.status} ${await res.text()}`);
+  }
+}
+
+// ── Admin: failure alert email ───────────────────────────────────
+// Sends a Resend alert to Spring when itinerary generation fails.
+// Best-effort — never throws; a mail delivery hiccup must not mask the original error.
+async function sendFailureAlert(env, session, errorMessage) {
+  try {
+    const sessionId = (session && session.id) || 'unknown';
+    const customerEmail = (session && session.customer_details && session.customer_details.email)
+      || (session && session.metadata && session.metadata.email) || '';
+    const firstName = (session && session.metadata && session.metadata.firstName) || '';
+    const lastName  = (session && session.metadata && session.metadata.lastName)  || '';
+    const country   = (session && session.metadata && session.metadata.country)   || '';
+    const customerName = [firstName, lastName].filter(Boolean).join(' ') || '(unknown)';
+
+    // Build a pre-authenticated one-click retry link so Spring can re-queue without a tool.
+    const secret = env.ADMIN_SECRET || '';
+    const retryUrl = `https://bws-travel-proxy.springlam-co.workers.dev/admin/retry?session=${encodeURIComponent(sessionId)}${secret ? '&secret=' + encodeURIComponent(secret) : ''}`;
+
+    const html =
+      `<h2 style="color:#c0392b;">⚠️ Itinerary generation failed</h2>` +
+      `<table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">` +
+      `<tr><td style="padding:6px 16px 6px 0;color:#7c72a0;font-weight:600;">Session ID</td><td style="padding:6px 0;">${sessionId}</td></tr>` +
+      `<tr><td style="padding:6px 16px 6px 0;color:#7c72a0;font-weight:600;">Customer</td><td style="padding:6px 0;">${customerName}${customerEmail ? ' &lt;' + customerEmail + '&gt;' : ''}</td></tr>` +
+      (country ? `<tr><td style="padding:6px 16px 6px 0;color:#7c72a0;font-weight:600;">Country</td><td style="padding:6px 0;">${country}</td></tr>` : '') +
+      `<tr><td style="padding:6px 16px 6px 0;color:#7c72a0;font-weight:600;">Error</td><td style="padding:6px 0;color:#c0392b;">${errorMessage || 'unknown'}</td></tr>` +
+      `</table>` +
+      `<p style="margin-top:24px;">` +
+      `<a href="${retryUrl}" style="background:#7c3aed;color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;">` +
+      `Retry generation →</a></p>` +
+      `<p style="font-size:12px;color:#7c72a0;margin-top:12px;">The retry link re-queues this session. Clicking it more than once is safe — the queue consumer is idempotent.</p>`;
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Travel Planner Alerts <hello@builtwithspring.com>',
+        to: ['hello@builtwithspring.com'],
+        subject: `⚠️ Itinerary failed — ${customerName}${country ? ' · ' + country : ''} · ${sessionId}`,
+        html
+      })
+    });
+    if (!res.ok) {
+      console.error('[alert] Resend failed:', res.status, await res.text());
+    } else {
+      console.log('[alert] Failure alert sent for session:', sessionId);
+    }
+  } catch (alertErr) {
+    console.error('[alert] sendFailureAlert threw:', alertErr && alertErr.message);
   }
 }
 
@@ -3079,6 +3180,7 @@ async function fulfillOrder(env, session) {
     const itinerary = await generateItinerary(env, { ...formData, approvedCities, teaserDay, selectedSections, flags });
     if (itinerary && itinerary.error) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
+      await sendFailureAlert(env, session, itinerary.message);
     } else {
       // ── Post-gen Perplexity verification ────────────────────────────────────
       // Web-checks Claude's restaurant, accommodation, and hidden gem picks,
@@ -3138,5 +3240,6 @@ async function fulfillOrder(env, session) {
     }
   } catch (err) {
     console.error('fulfillOrder error:', err.message);
+    await sendFailureAlert(env, session, err.message);
   }
 }
