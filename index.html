@@ -732,7 +732,7 @@
       <div class="fg">
         <label class="fl">Transport preference <span class="req">*</span></label>
         <div class="cc-grid g2" id="tripStructureGrid">
-          <div class="mc on" onclick="pickTripStructure(this,&#39;ai&#39;)" data-value="ai" id="ts-ai">
+          <div class="mc" onclick="pickTripStructure(this,&#39;ai&#39;)" data-value="ai" id="ts-ai">
             <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">AI optimises for me</span></div>
             <div class="mc-sub">Best mix of train, flight, and car per leg</div>
           </div>
@@ -1212,7 +1212,7 @@
       document.getElementById('gsw').classList.toggle('hidden', !(t==='Friends'||t==='Family + kids'||t==='Family'));
     }
   }
-  let tripStructure = 'ai'; // default — AI optimises
+  let tripStructure = null; // no default — a deliberate selection is required
   function pickTripStructure(el, val) {
     const aiBtn   = document.getElementById('ts-ai');
     const roadBtn = document.getElementById('ts-road');
@@ -1232,7 +1232,7 @@
       const wasOn = roadBtn.classList.contains('on');
       [aiBtn, roadBtn, trainBtn, flyBtn].forEach(b => b.classList.remove('on'));
       if (!wasOn) { roadBtn.classList.add('on'); tripStructure = 'road_trip'; }
-      else { aiBtn.classList.add('on'); tripStructure = 'ai'; }
+      else { tripStructure = null; } // deselected — leave empty (no AI fallback)
       return;
     }
 
@@ -1247,7 +1247,7 @@
     if (trainOn && flyOn)   tripStructure = 'train, flying';
     else if (trainOn)       tripStructure = 'train';
     else if (flyOn)         tripStructure = 'flying';
-    else { aiBtn.classList.add('on'); tripStructure = 'ai'; } // nothing selected — revert to AI
+    else { tripStructure = null; } // nothing selected — leave empty
   }
   let selectedPaceEl = null;
   function pickPace(el) {
