@@ -854,7 +854,8 @@
         <div class="prev-section-label">💎 Hidden finds</div>
         <div id="localFinds" class="local-finds"></div>
 
-        <!-- Teaser day -->
+        <!-- Teaser day (day-by-day only) -->
+        <div id="sampleDaySection">
         <div class="prev-section-label">📅 A taste of your itinerary</div>
         <div class="teaser-card" style="margin-bottom:1.25rem;">
           <div class="teaser-head">
@@ -868,6 +869,7 @@
             <div class="teaser-row"><span class="teaser-emoji">🍽️</span><div class="teaser-text" id="teaserRestaurant"></div></div>
           </div>
           <div class="teaser-foot" id="teaserCTA">🔒 Your other days are waiting</div>
+        </div>
         </div>
 
         <!-- Visa badge -->
@@ -1483,8 +1485,15 @@
       </div>`
     ).join('');
 
-    // Teaser day
-    if (preview.teaser_day) {
+    // Section selection (default to all four for pre-feature previews → shows Sample Day)
+    const sel = (formData && Array.isArray(formData.selectedSections) && formData.selectedSections.length)
+      ? formData.selectedSections
+      : ['day_by_day','accommodations','transportation','food'];
+    const hasDay = sel.includes('day_by_day');
+
+    // Teaser day (day-by-day only)
+    document.getElementById('sampleDaySection').style.display = hasDay ? '' : 'none';
+    if (hasDay && preview.teaser_day) {
       const td = preview.teaser_day;
       document.getElementById('teaserCityLabel').textContent = td.city||'';
       document.getElementById('teaserDayLabel').textContent = 'Sample Day in '+(td.city||'');
@@ -1509,12 +1518,7 @@
     const totalDays = formData&&formData.arrivalDate&&formData.departureDate ? Math.round((new Date(formData.departureDate)-new Date(formData.arrivalDate))/(1000*60*60*24)) : 7;
     const totalCities = (preview.cities||[]).length||3;
 
-    // Build the checklist from the traveler's selected sections (default to all four for
-    // shared previews that predate section-select).
-    const sel = (formData && Array.isArray(formData.selectedSections) && formData.selectedSections.length)
-      ? formData.selectedSections
-      : ['day_by_day','accommodations','transportation','food'];
-    const hasDay = sel.includes('day_by_day');
+    // Build the checklist from the traveler's selected sections (sel/hasDay computed above).
     const incl = [];
     incl.push(hasDay
       ? '✅ '+totalDays+'-day day-by-day itinerary with booking links'
