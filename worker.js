@@ -1594,8 +1594,6 @@ ${book_before_you_go.length ? `<div class="page section">
 // ── END renderItinerary ──────────────────────────────────────────
 
 // ── Itinerary generation ────────────────────────────────────────
-// Top-level keys every valid itinerary must contain.
-const REQUIRED_KEYS = ['overview', 'days', 'accommodations', 'transport', 'restaurants', 'city_guide', 'book_before_you_go', 'practical_info'];
 
 // Appended to the prompt on retry to force clean JSON output.
 const JSON_RETRY_INSTRUCTION = '\n\nIMPORTANT: Return only valid JSON. No markdown formatting, no code fences, no explanation before or after. Your response must start with { and end with }.';
@@ -2089,6 +2087,101 @@ Must see: ${d.mustSee || ''}
 Extra notes: ${d.extraNotes || ''}`;
 };
 
+// ── MODE B: recommendations-only prompt (no day-by-day schedule) ────────────────
+const RECS_PROMPT = (d, flags) => {
+  const interests = JSON.stringify(d.interests || {});
+  const cuisinePreferences = JSON.stringify(d.cuisinePreferences || []);
+  const citiesRequested = JSON.stringify(d.citiesToVisit || []);
+  const approvedCities = JSON.stringify(d.approvedCities || []);
+  const travelStyle = d.travelStyle || d.budgetTier || '';
+  return `You are an expert travel planner. Generate a city-organized best-of recommendations list for ${d.country || 'the destination'}.
+Do not create a day-by-day schedule. For each city, consolidate your best activities, restaurants, and hidden finds into a stacked list organized by city. This should be a robust, thorough list — include everything you would have recommended across the full trip.
+
+Return ONLY valid JSON starting with { and ending with }. No markdown, no code fences.
+
+CITIES: Use the approved city plan if provided; otherwise select the best-fit cities for this traveler.
+Approved cities: ${approvedCities}
+Cities requested: ${citiesRequested}
+
+For EACH city provide:
+- activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
+- restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words).
+- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title (max 6 words), description (max 25 words), city.
+
+Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
+${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only, NOT day-by-day routing.` : ''}
+${flags.wantAccommodations ? `\nACCOMMODATIONS: Provide hotel picks per city (1–2 each) matched to the traveler's accommodation style and budget.` : ''}
+
+TRAVELER PREFERENCES:
+Country: ${d.country || ''}
+Arrival date: ${d.arrivalDate || ''}
+Departure date: ${d.departureDate || ''}
+Travel party: ${d.travelParty || ''}
+Group size: ${d.groupSize || 'not specified'}
+Travel style: ${travelStyle}
+Accommodation style: ${JSON.stringify(d.accommodationStyle || [])}
+Interests weighted: ${interests}
+Cuisine preferences: ${cuisinePreferences}
+Must see: ${d.mustSee || ''}
+Extra notes: ${d.extraNotes || ''}
+
+Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
+
+OUTPUT — return exactly this JSON:
+{
+  "overview": "string — max 3 sentences, second person",
+  "cities": [
+    {
+      "city": "string",
+      "activities": [
+        { "name": "string", "description": "string — max 25 words", "spot_tier": "Iconic · Local Pick · Hidden Gem" }
+      ],
+      "restaurants": [
+        { "name": "string", "venue_type": "Breakfast · Brunch · Cafe · Bakery · Lunch · Dinner · Street Food · Dessert", "cuisine_category": "string", "price_range": "string", "known_for": "string — max 8 words", "neighborhood": "string", "why": "string — max 10 words" }
+      ],
+      "hidden_finds": [
+        { "emoji": "string", "title": "string — max 6 words", "description": "string — max 25 words", "city": "string" }
+      ]
+    }
+  ],${flags.wantAccommodations ? `
+  "accommodations": [
+    { "city": "string", "recommended_type": "string", "name": "string", "neighborhood": "string", "estimated_cost_per_night": "string", "why": "string — max 15 words" }
+  ],` : ''}${flags.wantTransportation ? `
+  "getting_around": { "overview": "string — 2–3 sentences", "tips": ["string", "string"] },` : ''}
+  "book_before_you_go": [
+    { "item_name": "string", "city": "string", "date": "string", "est_cost": "string", "booking_priority": "Book now · 4–6 weeks ahead · On arrival", "booking_tip": "string — one sentence", "booking_link": "string — official URL or empty string" }
+  ],
+  "practical_info": {
+    "weather_summary": "string", "visa_requirements": "string", "entry_requirements": "string",
+    "currency": "string", "connectivity": "string", "transport_tips": "string",
+    "packing_tips": "string", "must_know": "string", "booking_priority": "string"
+  }
+}
+
+Real named places only. No hedging.`;
+};
+
+// Assemble the generation prompt for the requested sections. Mode A (schedule) = the full
+// day-by-day prompt with conditional directives that drop accommodations/transport when not
+// requested. Mode B (recs) = a city-organized best-of list, no schedule.
+function buildPrompt(d, flags) {
+  const bbyg = () => {
+    const r = ['BOOK BEFORE YOU GO FILTER:'];
+    if (!flags.wantAccommodations) r.push('- Do NOT include hotel/accommodation booking items.');
+    if (!flags.wantTransportation)  r.push('- Do NOT include transport booking tips (rail passes, inter-city flights, transfers).');
+    r.push('- ALWAYS include when relevant: visa/entry requirements, activity/attraction reservations that sell out or need timed entry, and travel insurance.');
+    return r.join('\n');
+  };
+  if (flags.wantDayByDay) {
+    const add = ['\n──────────────────────────────────────────────\nSECTION SELECTION OVERRIDES (apply after all steps above):'];
+    if (!flags.wantAccommodations) add.push('ACCOMMODATIONS NOT REQUESTED: Output "accommodations": []. Recommend no hotels/lodging anywhere in the output.');
+    if (!flags.wantTransportation)  add.push('TRANSPORTATION NOT REQUESTED: Output "transport": []. No inter-city routing or transfer logistics. Airports only anchor the first/last city.');
+    add.push(bbyg());
+    return ITINERARY_PROMPT(d, null) + '\n' + add.join('\n\n');
+  }
+  return RECS_PROMPT(d, flags) + '\n\n' + bbyg();
+}
+
 // Strip markdown fences and extract a parseable JSON object from Claude's text.
 // Returns the parsed object, or null if nothing parseable was found.
 function parseClaudeResponse(rawText) {
@@ -2114,8 +2207,13 @@ function parseClaudeResponse(rawText) {
 }
 
 // Validate the parsed object has every required top-level key.
-function hasRequiredKeys(obj) {
-  return !!obj && typeof obj === 'object' && !Array.isArray(obj) && REQUIRED_KEYS.every(k => k in obj);
+function hasRequiredKeys(obj, mode = 'schedule') {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  // accommodations/transport are conditional (section-select), so not required.
+  const req = mode === 'recs'
+    ? ['overview', 'cities', 'book_before_you_go', 'practical_info']
+    : ['overview', 'days', 'restaurants', 'city_guide', 'book_before_you_go', 'practical_info'];
+  return req.every(k => k in obj);
 }
 
 // Shared streaming Anthropic call. Forces stream:true, reads the SSE stream,
@@ -2390,7 +2488,10 @@ Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedg
 // Claude's venue picks and replace closed venues and low-quality/stale gems.
 async function generateItinerary(env, d) {
   try {
-    const basePrompt = ITINERARY_PROMPT(d, null);
+    const flags = d.flags || { wantDayByDay: true, wantAccommodations: true, wantTransportation: true };
+    const mode = flags.wantDayByDay ? 'schedule' : 'recs';
+    const finalize = (p) => { p.mode = mode; p.selected_sections = d.selectedSections || []; return p; };
+    const basePrompt = buildPrompt(d, flags);
 
     // Scale output budget + timeout to trip length (same tiers as tripTier in
     // ITINERARY_PROMPT): STANDARD ≤7n, MEDIUM 8–10n, LONG 11–14n.
@@ -2406,7 +2507,7 @@ async function generateItinerary(env, d) {
     // Attempt 1 — base prompt
     let rawText = await callClaude(env, basePrompt, maxTokens, timeoutMs);
     let parsed = parseClaudeResponse(rawText);
-    if (hasRequiredKeys(parsed)) return parsed;
+    if (hasRequiredKeys(parsed, mode)) return finalize(parsed);
     console.error('Itinerary attempt 1 failed (parse or missing keys). Raw response:', rawText);
 
     // LONG trips: skip the retry — a second 9-min call risks exceeding the queue
@@ -2419,7 +2520,7 @@ async function generateItinerary(env, d) {
     // Attempt 2 — retry once with strict JSON instruction appended
     rawText = await callClaude(env, basePrompt + JSON_RETRY_INSTRUCTION, maxTokens, timeoutMs);
     parsed = parseClaudeResponse(rawText);
-    if (hasRequiredKeys(parsed)) return parsed;
+    if (hasRequiredKeys(parsed, mode)) return finalize(parsed);
     console.error('Itinerary retry failed (parse or missing keys). Raw response:', rawText);
 
     return { error: true, message: 'Itinerary generation failed — please try again.' };
@@ -2535,11 +2636,15 @@ async function enrichItineraryWithPlaces(env, itinerary) {
 // always ships.
 async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
   console.log('Perplexity post-gen verification starting...');
-  if (!Array.isArray(itinerary.days) || !itinerary.days.length) return;
+  const isRecs = itinerary.mode === 'recs';
+  const days = Array.isArray(itinerary.days) ? itinerary.days : [];
+  const recCities = Array.isArray(itinerary.cities) ? itinerary.cities : [];
+  if (!days.length && !recCities.length) return;
 
   // 1. Collect restaurants and hidden finds to verify
+  // Restaurants: only day-by-day picks are verified (recs restaurants stay as generated).
   const restaurants = [];
-  for (const day of itinerary.days) {
+  for (const day of days) {
     if (!day || typeof day !== 'object') continue;
     const city = day.city || '';
     const dinnerName = extractRestaurantVenue(day.restaurant_suggestion);
@@ -2547,8 +2652,17 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
     const breakfastName = extractRestaurantVenue(day.breakfast_suggestion);
     if (breakfastName) restaurants.push({ day, field: 'breakfast_suggestion', name: breakfastName, city });
   }
-  const hiddenFinds = (itinerary.hidden_finds || []).map(f => ({ name: f.title, city: f.city }));
-  const cities = [...new Set(itinerary.days.map(d => d.city).filter(Boolean))];
+  // Hidden finds live at itinerary.hidden_finds (schedule) or cities[].hidden_finds (recs).
+  // Hold a live object reference per gem so REPLACE mutates the itinerary in place either way.
+  const gemRefs = [];
+  if (isRecs) {
+    for (const c of recCities) for (const g of (c.hidden_finds || [])) gemRefs.push({ obj: g, name: g.title, city: g.city || c.city });
+  } else {
+    for (const g of (itinerary.hidden_finds || [])) gemRefs.push({ obj: g, name: g.title, city: g.city });
+  }
+  const cities = isRecs
+    ? [...new Set(recCities.map(c => c.city).filter(Boolean))]
+    : [...new Set(days.map(d => d.city).filter(Boolean))];
 
   // One accommodation per city (these are live references into itinerary.accommodations,
   // so mutating them updates the itinerary in place).
@@ -2576,7 +2690,7 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
     `A${i + 1} | ${a.city} | ${a.name} | ${a.estimated_cost_per_night || ''} | ${a.recommended_type || ''}`
   ).join('\n');
 
-  const gemLines = hiddenFinds.map((g, i) =>
+  const gemLines = gemRefs.map((g, i) =>
     `G${i + 1} | ${g.city} | ${g.name}`
   ).join('\n');
 
@@ -2586,11 +2700,14 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
   const stripTier = (s) => (s || '').replace(/^\s*\[[^\]]*\]\s*/, '');
   const activityName = (s) => stripTier(s).split('—')[0].split(' - ')[0].trim();
   const existingActivities = [];
-  for (const day of itinerary.days) {
+  for (const day of days) {
     for (const slot of [day.morning, day.afternoon, day.evening]) {
       const name = activityName(slot);
       if (name) existingActivities.push(name);
     }
+  }
+  for (const c of recCities) {
+    for (const a of (c.activities || [])) { if (a && a.name) existingActivities.push(a.name); }
   }
   const existingActivityList = [...new Set(existingActivities)].join(', ');
 
@@ -2700,11 +2817,10 @@ Real places only. Web-search before answering. No hedging.
     if (/^G\d+$/i.test(parts[0])) {
       const idx = parseInt(parts[0].slice(1), 10) - 1;
       const status = (parts[1] || '').toUpperCase();
-      const gem = hiddenFinds[idx];
-      const itinGem = (itinerary.hidden_finds || [])[idx];
-      if (!gem || !itinGem) continue;
+      const gem = gemRefs[idx];
+      if (!gem || !gem.obj) continue;
       if (status === 'REPLACE' && parts[2]) {
-        const originalCity = gem.city || itinGem.city || '';
+        const originalCity = gem.city || (gem.obj && gem.obj.city) || '';
         console.log(`Perplexity: gem flagged REPLACE "${gem.name}" → "${parts[2]}" (original city: ${originalCity || 'unknown'})`);
         // City boundary check — never swap in a cross-city replacement.
         if (!originalCity) {
@@ -2773,7 +2889,7 @@ ${venueListText}`;
           const match = gemCards.find(g => g.venueName.toLowerCase() === venueName.toLowerCase()
             || g.venue.toLowerCase() === venueName.toLowerCase());
           if (!match) continue;
-          const itinGem = itinerary.hidden_finds[match.idx];
+          const itinGem = gemRefs[match.idx] && gemRefs[match.idx].obj;
           if (itinGem && title && description) {
             itinGem.title = title;
             itinGem.description = description;
@@ -2815,8 +2931,18 @@ async function fulfillOrder(env, session) {
       }
     }
 
+    // Section-select: what the traveler asked for (default to all four for old orders).
+    const selectedSections = (Array.isArray(formData.selectedSections) && formData.selectedSections.length)
+      ? formData.selectedSections
+      : ['day_by_day', 'accommodations', 'transportation', 'food'];
+    const flags = {
+      wantDayByDay: selectedSections.includes('day_by_day'),
+      wantAccommodations: selectedSections.includes('accommodations'),
+      wantTransportation: selectedSections.includes('transportation'),
+    };
+
     // Generate the full itinerary directly via Claude (no longer done in Make).
-    const itinerary = await generateItinerary(env, { ...formData, approvedCities, teaserDay });
+    const itinerary = await generateItinerary(env, { ...formData, approvedCities, teaserDay, selectedSections, flags });
     if (itinerary && itinerary.error) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
     } else {
