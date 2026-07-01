@@ -1357,7 +1357,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4000, selectedSections: formData.selectedSections, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8000, selectedSections: formData.selectedSections, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
       });
       clearTimeout(timeoutId); clearInterval(msgInterval);
       if (!response.ok) throw new Error('Worker ' + response.status);
