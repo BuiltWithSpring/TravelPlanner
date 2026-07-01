@@ -2344,7 +2344,7 @@ Cities requested: ${citiesRequested}
 For EACH city provide:
 - city_teaser: ONE evocative sentence on what makes this city special on this trip (sensory, specific, not logistical).
 - activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
-- restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words).
+- restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words). Never use the destination city or country name as the restaurant name (e.g. "Chengdu Restaurant" in Chengdu is not acceptable — use the venue's actual name).
 - hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title (max 6 words), description (max 25 words), city.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
