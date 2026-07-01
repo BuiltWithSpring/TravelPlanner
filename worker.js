@@ -2401,7 +2401,7 @@ async function generateItinerary(env, d) {
       return sum || 0;
     })();
     const maxTokens = tripNights >= 11 ? 64000 : tripNights >= 8 ? 48000 : 32000;
-    const timeoutMs = tripNights >= 11 ? 540000 : tripNights >= 8 ? 420000 : 300000;
+    const timeoutMs = tripNights >= 11 ? 720000 : tripNights >= 8 ? 420000 : 300000;
 
     // Attempt 1 — base prompt
     let rawText = await callClaude(env, basePrompt, maxTokens, timeoutMs);
