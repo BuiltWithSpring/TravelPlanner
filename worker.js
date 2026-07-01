@@ -141,6 +141,20 @@ export default {
 
         const greeting = firstName ? `Hey ${firstName},` : 'Hey there,';
 
+        // "What's included" checklist — dynamic from the traveler's selected sections (stored in
+        // formData). Default to all sections for previews that predate section-select.
+        const sel = (Array.isArray(fData.selectedSections) && fData.selectedSections.length)
+          ? fData.selectedSections
+          : ['day_by_day', 'accommodations', 'transportation', 'food'];
+        const checkRow = (t) => `<tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;${t}</td></tr>`;
+        const checklistRows = [
+          sel.includes('day_by_day') ? checkRow('Day-by-day plans for every city') : checkRow('City-by-city activity & restaurant guide'),
+          checkRow('Local restaurant picks & hidden finds'),
+          ...(sel.includes('accommodations') ? [checkRow('Accommodation picks per city')] : []),
+          ...(sel.includes('transportation') ? [checkRow('Route-optimised transport guide')] : []),
+          checkRow('What to book before you go'),
+        ].join('');
+
         const previewEmailHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,10 +221,7 @@ export default {
     <div style="background:#f7f5ff;border-radius:12px;padding:20px 24px;margin-bottom:4px;">
       <p style="margin:0 0 10px;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;color:#0f0c1e;text-transform:uppercase;letter-spacing:0.05em;">Your full itinerary includes</p>
       <table cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Day-by-day plans for every city</td></tr>
-        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Local restaurant picks & hidden finds</td></tr>
-        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;Accommodation & transport guide</td></tr>
-        <tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;What to book before you go</td></tr>
+        ${checklistRows}
       </table>
     </div>
 
