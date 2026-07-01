@@ -105,7 +105,7 @@ Select 2–3 genuinely non-tourist finds relevant to this trip. Must be specific
 - Span different cities if the trip has multiple stops
 - Must match the traveler's interests and travel party
 ${researchBlock}
-VISA: Assume the traveler is a tourist visiting from abroad for under 14 days. Output the typical entry requirement for this destination for short-stay holiday visitors. Examples: "✅ Visa-free for most Western passport holders — verify for your nationality" or "⚠️ eVisa required for most nationalities — apply online before travel". Max 15 words.
+VISA: visa_badge is a short generic visa reminder — do NOT assume the traveler's nationality or whether they need a visa. Always use a neutral format like "🛂 Visa may be required — check requirements for your passport before travel". Never say "no visa required" or reference a specific passport type.
 TONE: Always second person. Never traveler's name or "the couple/group/traveler".
 HARD INSTRUCTIONS: mustSee and extraNotes override all defaults. Never ignore them.
 
