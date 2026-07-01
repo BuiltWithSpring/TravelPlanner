@@ -567,16 +567,6 @@
       </div>
 
       <div class="fg">
-        <label class="fl">Where are you headed? <span class="req">*</span></label>
-        <div class="tag-wrap" id="countryWrap" onclick="document.getElementById(&#39;countryInp&#39;).focus()" style="position: relative;">
-          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" autocomplete="new-password" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
-        <div class="ac-list"></div></div>
-        <div class="hint">One country per itinerary — press Enter to confirm.</div>
-        <div class="error-msg" id="err-country">Please enter a country</div>
-        <div class="error-msg" id="err-country-max" style="display:none;">One country only — remove it first to change.</div>
-      </div>
-
-      <div class="fg">
         <label class="fl">Who's travelling? <span class="req">*</span></label>
         <div class="cc-grid g5" id="pg">
           <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
@@ -600,7 +590,17 @@
     <div class="step" id="step2">
       <div class="step-eyebrow">Step 2 of 4</div>
       <div class="step-title">Your trip details</div>
-      <div class="step-sub">Airports, dates, and how you want to plan your cities.</div>
+      <div class="step-sub">Your destination, airports, dates, and travel style.</div>
+
+      <div class="fg">
+        <label class="fl">Where are you headed? <span class="req">*</span></label>
+        <div class="tag-wrap" id="countryWrap" onclick="document.getElementById(&#39;countryInp&#39;).focus()" style="position: relative;">
+          <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" autocomplete="new-password" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
+        <div class="ac-list"></div></div>
+        <div class="hint">One country per itinerary — press Enter to confirm.</div>
+        <div class="error-msg" id="err-country">Please enter a country</div>
+        <div class="error-msg" id="err-country-max" style="display:none;">One country only — remove it first to change.</div>
+      </div>
 
       <div class="r2">
         <div class="fg">
@@ -608,7 +608,7 @@
           <div class="ac-wrap">
             <input class="inp" type="text" id="arrivalAirport" autocomplete="off" placeholder="Search city or airport code…">
           <div class="ac-list"></div></div>
-          <div class="hint">Start typing a city, airport, or code — pick from the list.</div>
+          <div class="hint" id="hint-arrivalAirport">Start typing a city, airport, or code — pick from the list.</div>
           <div class="error-msg" id="err-arrivalAirport">Please enter your arrival airport</div>
         </div>
         <div class="fg">
@@ -616,7 +616,7 @@
           <div class="ac-wrap">
             <input class="inp" type="text" id="departureAirport" autocomplete="off" placeholder="Search city or airport code…">
           <div class="ac-list"></div></div>
-          <div class="hint">Can be same as arrival.</div>
+          <div class="hint" id="hint-departureAirport">Can be same as arrival.</div>
           <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
           <div class="error-msg" id="err-airport-country">Heads up — your arrival and departure airports are in different countries. This planner covers one country per trip, so it'll focus on your arrival country. You can continue if that's intended.</div>
         </div>
@@ -1019,6 +1019,7 @@
     tag.className = 'tag';
     tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
     wrap.insertBefore(tag, inp);
+    updateAirportHints();
   }
   function removeCountryTag() {
     countryTag = null;
@@ -1027,6 +1028,19 @@
     const inp = document.getElementById('countryInp');
     inp.placeholder = 'Type a country and press Enter…'; inp.focus();
     document.getElementById('err-country-max').style.display='none';
+    updateAirportHints();
+  }
+  // Reflect the confirmed country in the airport field hints.
+  function updateAirportHints() {
+    const arrH = document.getElementById('hint-arrivalAirport');
+    const depH = document.getElementById('hint-departureAirport');
+    if (countryTag) {
+      if (arrH) arrH.textContent = `Showing airports in ${countryTag}.`;
+      if (depH) depH.textContent = `Showing airports in ${countryTag} — can be same as arrival.`;
+    } else {
+      if (arrH) arrH.textContent = 'Start typing a city, airport, or code — pick from the list.';
+      if (depH) depH.textContent = 'Can be same as arrival.';
+    }
   }
   function autoSaveCountryTag() {
     const inp = document.getElementById('countryInp');
@@ -1085,13 +1099,13 @@
     if (!document.getElementById('firstName').value.trim()) { showError('err-firstName','firstName'); ok=false; }
     if (!document.getElementById('lastName').value.trim()) { showError('err-lastName','lastName'); ok=false; }
     if (!document.getElementById('email').value.trim()) { showError('err-email','email'); ok=false; }
-    if (!countryTag) { showError('err-country','countryWrap'); ok=false; }
     if (!document.querySelector('#pg .cc.on')) { showError('err-party',null); ok=false; }
     if (!ok) window.scrollTo({top:0,behavior:'smooth'});
     return ok;
   }
   function validateStep2() {
     clearErrors(); let ok = true;
+    if (!countryTag) { showError('err-country','countryWrap'); ok=false; }
     const today = new Date().toISOString().split('T')[0];
     const arr = document.getElementById('arrDate').value;
     const dep = document.getElementById('depDate').value;
@@ -1645,8 +1659,12 @@
 
   function getAirportMatches(q) {
     q = q.toLowerCase();
+    // Country is confirmed before airports are shown, so always filter to it.
+    // normalizeCountry() reconciles dataset label mismatches (e.g. "USA" vs "United States").
+    const want = normalizeCountry(countryTag);
     const exact = [], starts = [], contains = [];
     for (const a of AIRPORTS) {
+      if (normalizeCountry(a.co) !== want) continue;
       const hay = (a.code + ' ' + a.city + ' ' + a.name + ' ' + a.co).toLowerCase();
       if (hay.indexOf(q) < 0) continue;
       const item = { code: a.code, main: '— ' + a.name + ', ' + a.city + ', ' + a.co, value: a.code };
