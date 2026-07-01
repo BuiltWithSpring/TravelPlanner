@@ -3232,6 +3232,22 @@ async function fulfillOrder(env, session) {
     const itineraryUrl = `https://bws-travel-proxy.springlam-co.workers.dev/itinerary/${itineraryId}`;
     // ── END TASK 4 ──
 
+    // Ready-to-use "What's inside" bullets for the n8n delivery email — dynamic by section
+    // so recs-only orders don't advertise a day-by-day plan they didn't get.
+    const cityCount = (Array.isArray(itinerary.cities) && itinerary.cities.length)
+      ? itinerary.cities.length
+      : (Array.isArray(approvedCities) ? approvedCities.length : 0);
+    const whatsInside = [];
+    whatsInside.push(flags.wantDayByDay
+      ? 'Day-by-day plan with morning, afternoon & evening'
+      : `City-by-city activity & restaurant guide${cityCount ? ' for ' + cityCount + ' cities' : ''}`);
+    if (selectedSections.includes('food')) whatsInside.push('Restaurant guide with ratings & Google Maps links');
+    if (flags.wantAccommodations) whatsInside.push('Accommodation picks by neighbourhood');
+    if (flags.wantTransportation) whatsInside.push('Transport between cities with booking links');
+    whatsInside.push("Hidden Finds — handpicked spots you wouldn't find on your own");
+    whatsInside.push('Book Before You Go — sorted by urgency');
+    whatsInside.push('Practical info, visa, currency & emergency contacts');
+
     // Make now only receives the final parsed JSON plus the identifiers it needs
     // to write the Sheet row and email the traveler.
     const makePayload = {
@@ -3245,6 +3261,7 @@ async function fulfillOrder(env, session) {
       departureDate: formData.departureDate,
       itinerary,
       itineraryUrl,
+      whatsInside,
     };
 
     let delivered = false;
