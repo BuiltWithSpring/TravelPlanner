@@ -1069,6 +1069,8 @@
     const trn = document.getElementById('sec-transportation').checked;
     const accFg = document.getElementById('accom').closest('.fg');
     if (accFg) accFg.classList.toggle('hidden', !acc);
+    const trFg = document.getElementById('tripStructureGrid').closest('.fg');
+    if (trFg) trFg.classList.toggle('hidden', !trn);
     const showAirports = day || trn;
     const arrFg = document.getElementById('arrivalAirport').closest('.fg');
     const depFg = document.getElementById('departureAirport').closest('.fg');
@@ -1279,7 +1281,7 @@
       arrivalDate: document.getElementById('arrDate').value,
       departureDate: document.getElementById('depDate').value,
       cityPlanningMode: currentMode==='ai' ? 'AI recommended' : 'Traveler selected',
-      tripStructure: tripStructure === 'ai' ? null : tripStructure,
+      tripStructure: (!document.getElementById('sec-transportation').checked || tripStructure === 'ai') ? null : tripStructure,
       citiesToVisit: currentMode==='know' ? tags : [],
       aiCityRecommendation: currentMode==='ai',
       anchorCities: currentMode==='ai' ? anchorTags : [],
