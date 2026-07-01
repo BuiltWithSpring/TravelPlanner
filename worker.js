@@ -3252,6 +3252,20 @@ async function fulfillOrder(env, session) {
     whatsInside.push('Book Before You Go — sorted by urgency');
     whatsInside.push('Practical info, visa, currency & emergency contacts');
 
+    // Normalize hidden finds across Mode A (top-level array) and Mode B (nested in cities)
+    const allFinds = itinerary.mode === 'recs'
+      ? (itinerary.cities || []).flatMap(c => c.hidden_finds || [])
+      : (itinerary.hidden_finds || []);
+    const teaserFinds = allFinds.slice(0, 3);
+    const hiddenFindsTeaserHtml = teaserFinds.map(f => `
+  <div style="display:flex;gap:14px;align-items:flex-start;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+    <div style="font-size:22px;line-height:1.2;flex-shrink:0;">${f.emoji || '💎'}</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#5b21b6;margin-bottom:4px;">${f.title || ''}</div>
+      <div style="font-size:13px;color:#374151;line-height:1.5;">${f.description || ''}</div>
+    </div>
+  </div>`).join('');
+
     // Make now only receives the final parsed JSON plus the identifiers it needs
     // to write the Sheet row and email the traveler.
     const makePayload = {
@@ -3266,6 +3280,7 @@ async function fulfillOrder(env, session) {
       itinerary,
       itineraryUrl,
       whatsInside,
+      hiddenFindsTeaserHtml,
     };
 
     let delivered = false;
