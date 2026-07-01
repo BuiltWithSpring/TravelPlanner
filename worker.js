@@ -1033,6 +1033,15 @@ function renderItinerary(formData, itinerary) {
     </tr>`
   ).join('');
 
+  // ── Getting Around (populated in Mode B recs; empty otherwise) ──
+  const ga = itinerary.getting_around;
+  const gettingAroundHtml = (ga && (ga.overview || (Array.isArray(ga.tips) && ga.tips.length)))
+    ? `<div class="page section"><h2 class="section-header">Getting Around ${esc(country)}</h2>
+      ${ga.overview ? `<div class="card card-accent"><p class="lead">${esc(ga.overview)}</p></div>` : ''}
+      ${(Array.isArray(ga.tips) && ga.tips.length) ? `<div class="card">${ga.tips.map(t => `<p style="margin:0 0 8px;">• ${esc(t)}</p>`).join('')}</div>` : ''}
+    </div>`
+    : '';
+
   // ── Practical Info ──
   const pi = practical_info;
   const practicalCards = [
@@ -1040,7 +1049,7 @@ function renderItinerary(formData, itinerary) {
     pi.visa_requirements   && ['🛂', 'Visa &amp; Entry',   (pi.visa_requirements + (pi.entry_requirements ? ' ' + pi.entry_requirements : ''))],
     pi.currency            && ['💴', 'Currency &amp; Payments', pi.currency],
     pi.connectivity        && ['📱', 'Connectivity',       pi.connectivity],
-    pi.transport_tips      && ['🚆', 'Getting Around',     pi.transport_tips],
+    pi.transport_tips      && !gettingAroundHtml && ['🚆', 'Getting Around',     pi.transport_tips],
     pi.packing_tips        && ['🎒', 'Packing Tips',       pi.packing_tips],
     pi.must_know           && ['💡', 'Must Know',          pi.must_know],
   ].filter(Boolean).map(([ico, title, body]) =>
@@ -1553,14 +1562,16 @@ function renderItinerary(formData, itinerary) {
       const acts = (c.activities || []).map(a =>
         `<div class="card"><h4 style="margin:0 0 4px;font-size:16px;">${tierBadge(a.spot_tier)}${escName(a.name)}</h4><p style="margin:0;color:var(--muted);">${esc(a.description || '')}</p></div>`
       ).join('');
-      const rests = (c.restaurants || []).map(r =>
-        `<div class="rest-card">
-        <div class="rest-head"><h4>${escName(r.name)}</h4><span class="rest-type">${esc(r.venue_type)}</span></div>
+      const rests = (c.restaurants || []).map(r => {
+        // Only show venue-type tags that make sense without a schedule; drop meal-time labels.
+        const showTag = ['Street Food', 'Cafe', 'Fine Dining', 'Bar', 'Brunch Spot'].includes(r.venue_type);
+        return `<div class="rest-card">
+        <div class="rest-head"><h4>${escName(r.name)}</h4>${showTag ? `<span class="rest-type">${esc(r.venue_type)}</span>` : ''}</div>
         <p class="rest-desc">${esc(r.known_for || r.why || '')}</p>
         <div class="rest-meta"><strong>Cuisine:</strong> ${esc(r.cuisine_category)} · <strong>Price:</strong> ${esc(r.price_range)} · <strong>Area:</strong> ${esc(r.neighborhood)}</div>
         <a class="aff" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${encodeURIComponent((r.name || '') + ' ' + c.city)}">Find on Google Maps →</a>
-      </div>`
-      ).join('');
+      </div>`;
+      }).join('');
       const gems = (c.hidden_finds || []).map(f =>
         `<div class="find-card">
         <div class="emoji">${esc(f.emoji)}</div>
@@ -1578,14 +1589,6 @@ function renderItinerary(formData, itinerary) {
       ${rests ? `<h2 class="intro-subhead spaced">Restaurants</h2>${rests}` : ''}
       ${gems ? `<h2 class="intro-subhead spaced">Hidden Finds</h2><div class="finds-grid">${gems}</div>` : ''}`;
     }).join('');
-
-    const ga = itinerary.getting_around;
-    const gettingAroundHtml = (ga && (ga.overview || (Array.isArray(ga.tips) && ga.tips.length)))
-      ? `<div class="page section"><h2 class="section-header">Getting Around ${esc(country)}</h2>
-      ${ga.overview ? `<div class="card card-accent"><p class="lead">${esc(ga.overview)}</p></div>` : ''}
-      ${(Array.isArray(ga.tips) && ga.tips.length) ? `<div class="card">${ga.tips.map(t => `<p style="margin:0 0 8px;">• ${esc(t)}</p>`).join('')}</div>` : ''}
-    </div>`
-      : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
