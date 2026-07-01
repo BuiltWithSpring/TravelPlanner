@@ -887,19 +887,16 @@ function renderItinerary(formData, itinerary) {
     if (!g) { g = { city: a.city, hotels: [] }; cityAccomGroups.push(g); }
     g.hotels.push(a);
   }
+  const teaserByCity = {};
+  for (const c of recommended_cities) { if (c && c.city) teaserByCity[c.city] = c.city_teaser || ''; }
   const cityRowsHtml = cityAccomGroups.map(g => {
     const n = calcNights(g.hotels[0].checkin, g.hotels[0].checkout);
-    const optionsHtml = g.hotels.length === 1
-      ? `<p>${escName(g.hotels[0].name)}${g.hotels[0].why ? ` — ${esc(g.hotels[0].why)}` : ''}</p>`
-      : g.hotels.map((h, i) =>
-          `<p><strong>Option ${i + 1}:</strong> ${escName(h.name)}${h.why ? ` — ${esc(h.why)}` : ''}</p>`
-        ).join('');
     return `<div class="city-row intro-city">
       <div class="nights-pill"><div class="n">${n || '?'}</div><div class="l">Nights</div></div>
-      <div><h3>${esc(g.city)}</h3>${optionsHtml}</div>
+      <div><h3>${esc(g.city)}</h3><p>${esc(teaserByCity[g.city] || '')}</p></div>
     </div>`;
   }).join('') || recommended_cities.map(c =>
-    `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.why_recommended || '')}</p></div></div>`
+    `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.city_teaser || c.why_recommended || '')}</p></div></div>`
   ).join('');
 
   // ── Day-by-day (group consecutive days by city) ──
@@ -1544,7 +1541,7 @@ function renderItinerary(formData, itinerary) {
     };
     const recsCities = Array.isArray(itinerary.cities) ? itinerary.cities : [];
     const recsCityRows = recsCities.map(c =>
-      `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3></div></div>`
+      `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3>${c.city_teaser ? `<p>${esc(c.city_teaser)}</p>` : ''}</div></div>`
     ).join('');
     const recsCitiesHtml = recsCities.map(c => {
       const acts = (c.activities || []).map(a =>
@@ -1798,6 +1795,7 @@ Calculate total trip days from arrival to departure.
 - AI true, no cities → select from scratch weighted by interests, travel party, travel style, weather, routing.
 - Too many cities → keep best subset, explain removals. Too few → add complementary cities.
 - Every city must have why_recommended max 25 words: "[City] is [known for] — chosen for your [interest or preference]." Never generic or logistical.
+- Every city must also have city_teaser: ONE evocative sentence (~15 words) on what makes this city special on this trip — sensory and specific, never logistical. Example: "Ancient canal town where silk weaving and garden culture meet."
 
 STEP 2B — TRIP STRUCTURE
 Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
@@ -2075,7 +2073,8 @@ OUTPUT — return exactly this JSON:
   "recommended_cities": [
     {
       "city": "string",
-      "why_recommended": "string — max 25 words"
+      "why_recommended": "string — max 25 words",
+      "city_teaser": "string — REQUIRED. One evocative sentence on what makes this city special on this trip."
     }
   ],
   "days": [
@@ -2220,6 +2219,7 @@ Approved cities: ${approvedCities}
 Cities requested: ${citiesRequested}
 
 For EACH city provide:
+- city_teaser: ONE evocative sentence on what makes this city special on this trip (sensory, specific, not logistical).
 - activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
 - restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words).
 - hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title (max 6 words), description (max 25 words), city.
@@ -2249,6 +2249,7 @@ OUTPUT — return exactly this JSON:
   "cities": [
     {
       "city": "string",
+      "city_teaser": "string — REQUIRED. One evocative sentence on what makes this city special on this trip.",
       "activities": [
         { "name": "string", "description": "string — max 25 words", "spot_tier": "Iconic · Local Pick · Hidden Gem" }
       ],
