@@ -2063,6 +2063,8 @@ Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full
 - Restaurant suggestion must be a specific real venue and must NOT duplicate any venue in the restaurants array (Food & Drink tab) — the day-by-day picks and the Food & Drink list are disjoint sets, so together they broaden the traveler's dining options.
 - BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array.
 
+DEPARTURE DAY: The final day of the trip is a departure day. Schedule a morning activity only if the departure flight realistically allows it (i.e. departure is after 12:00 — assume 3 hours pre-departure for international flights, 2 hours for domestic). If the departure time is unknown or early, leave the morning slot as "departure transfer and airport check-in" only. Never schedule afternoon or evening activities on a departure day.
+
 STEP 11 — ACTIVITY TIME BUDGET VALIDATION
 Before finalizing each day, validate the day's activities against a realistic time budget.
 
