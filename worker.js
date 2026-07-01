@@ -895,9 +895,15 @@ function renderItinerary(formData, itinerary) {
       <div class="nights-pill"><div class="n">${n || '?'}</div><div class="l">Nights</div></div>
       <div><h3>${esc(g.city)}</h3><p>${esc(teaserByCity[g.city] || '')}</p></div>
     </div>`;
-  }).join('') || recommended_cities.map(c =>
-    `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.city_teaser || c.why_recommended || '')}</p></div></div>`
-  ).join('');
+  }).join('')
+    || recommended_cities.map(c =>
+        `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3><p>${esc(c.city_teaser || c.why_recommended || '')}</p></div></div>`
+      ).join('')
+    || (Array.isArray(formData.approvedCities) ? formData.approvedCities : []).map(c => {
+        const cityName = (typeof c === 'string') ? c : (c.city || '');
+        const teaser = (typeof c === 'object') ? (c.city_teaser || '') : '';
+        return `<div class="city-row intro-city"><div><h3>${esc(cityName)}</h3>${teaser ? `<p>${esc(teaser)}</p>` : ''}</div></div>`;
+      }).join('');
 
   // ── Day-by-day (group consecutive days by city) ──
   const cityGroups = [];
@@ -3087,7 +3093,7 @@ async function fulfillOrder(env, session) {
 
     // ── TASK 4: Generate and store itinerary HTML page ──
     const itineraryId = Math.random().toString(36).substring(2, 12);
-    const itineraryHtml = renderItinerary(formData, itinerary);
+    const itineraryHtml = renderItinerary({ ...formData, approvedCities }, itinerary);
     await env.PREVIEW_STORE.put(`itinerary_${itineraryId}`, itineraryHtml, { expirationTtl: 60 * 60 * 24 * 365 });
     const itineraryUrl = `https://bws-travel-proxy.springlam-co.workers.dev/itinerary/${itineraryId}`;
     // ── END TASK 4 ──
