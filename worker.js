@@ -2157,7 +2157,7 @@ Select the most surprising, non-obvious experiences or places, scaled by the num
 - 1–2 cities → 3 Hidden Finds PER CITY
 - 3+ cities → 2 Hidden Finds PER CITY
 These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
-Each entry: emoji, title (max 6 words), description (max 25 words — why it's special and not obvious), city.
+Each entry: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words — why it's special and not obvious), city.
 Each Hidden Find must be a place NOT already listed as a morning, afternoon, or evening activity in the day-by-day — no repeats from the daily plan. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
 These appear as a standalone section in the PDF — make them count.
 
@@ -2272,7 +2272,7 @@ OUTPUT — return exactly this JSON:
     // Variable length — NOT a fixed 5. Count = (cities ≤ 2 ? 3 : 2) × number of cities.
     {
       "emoji": "string — single relevant emoji",
-      "title": "string — max 6 words",
+      "title": "string — max 8 words",
       "description": "string — max 25 words, why it's special and non-obvious",
       "city": "string"
     }
@@ -2347,7 +2347,7 @@ For EACH city provide:
 - city_teaser: ONE evocative sentence on what makes this city special on this trip (sensory, specific, not logistical).
 - activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
 - restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words). Never use the destination city or country name as the restaurant name (e.g. "Chengdu Restaurant" in Chengdu is not acceptable — use the venue's actual name).
-- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title (max 6 words), description (max 25 words), city.
+- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words), city.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
 ${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only, NOT day-by-day routing.` : ''}
@@ -2382,7 +2382,7 @@ OUTPUT — return exactly this JSON:
         { "name": "string", "venue_type": "Breakfast · Brunch · Cafe · Bakery · Lunch · Dinner · Street Food · Dessert", "cuisine_category": "string", "price_range": "string", "known_for": "string — max 8 words", "neighborhood": "string", "why": "string — max 10 words" }
       ],
       "hidden_finds": [
-        { "emoji": "string", "title": "string — max 6 words", "description": "string — max 25 words", "city": "string" }
+        { "emoji": "string", "title": "string — max 8 words", "description": "string — max 25 words", "city": "string" }
       ]
     }
   ],${flags.wantAccommodations ? `
