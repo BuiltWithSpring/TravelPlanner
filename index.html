@@ -241,6 +241,8 @@
     .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
     textarea.inp { resize: vertical; line-height: 1.6; }
     .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+    .char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+    .char-count.warn { color: #c0392b; }
     .chk-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
     .chk { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
     .chk input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex: 0 0 auto; }
@@ -814,12 +816,14 @@
 
       <div class="fg">
         <label class="fl">Must-see spots <span class="opt">optional</span></label>
-        <textarea class="inp" rows="2" id="mustSee" placeholder="Pre-booked tours, specific experiences, places you&#39;ve always wanted to go…"></textarea>
+        <textarea class="inp" rows="2" id="mustSee" maxlength="600" placeholder="Pre-booked tours, specific experiences, places you&#39;ve always wanted to go…" oninput="updateCharCount(this,'mustSeeCount')"></textarea>
+        <div class="char-count" id="mustSeeCount">0 / 600</div>
       </div>
 
       <div class="fg">
         <label class="fl">Anything else? <span class="opt">optional</span></label>
-        <textarea class="inp" rows="2" id="extraNotes" placeholder="Arrival/departure times, dietary needs, anniversary trip, mobility considerations…"></textarea>
+        <textarea class="inp" rows="2" id="extraNotes" maxlength="600" placeholder="Arrival/departure times, dietary needs, anniversary trip, mobility considerations…" oninput="updateCharCount(this,'extraNotesCount')"></textarea>
+        <div class="char-count" id="extraNotesCount">0 / 600</div>
       </div>
 
       <div class="brow">
@@ -1084,6 +1088,16 @@
     if (arrFg) arrFg.classList.toggle('hidden', !showAirports);
     if (depFg) depFg.classList.toggle('hidden', !showAirports);
     if (!showAirports) document.getElementById('err-airport-country').classList.remove('on');
+  }
+
+  // ── CHAR COUNTERS ──────────────────────────────────
+  function updateCharCount(el, counterId) {
+    const max = parseInt(el.getAttribute('maxlength'), 10) || 600;
+    const len = el.value.length;
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+    counter.textContent = len + ' / ' + max;
+    counter.classList.toggle('warn', len >= 550);
   }
 
   // ── ERRORS ─────────────────────────────────────────
