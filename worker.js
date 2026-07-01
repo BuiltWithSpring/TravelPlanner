@@ -974,6 +974,16 @@ function renderItinerary(formData, itinerary) {
   for (const day of days) {
     if (day.city && !cityOrder.includes(day.city)) cityOrder.push(day.city);
   }
+  // Mode B: no days — fall back to recommended_cities order
+  if (!cityOrder.length) {
+    const fallback = Array.isArray(itinerary && itinerary.cities)
+      ? itinerary.cities
+      : recommended_cities;
+    for (const c of fallback) {
+      const name = c && c.city;
+      if (name && !cityOrder.includes(name)) cityOrder.push(name);
+    }
+  }
   const staticMapUrl = cityOrder.length
     ? `https://bws-travel-proxy.springlam-co.workers.dev/static-map?cities=${cityOrder.map(encodeURIComponent).join(',')}`
     : '';
@@ -1720,6 +1730,7 @@ function renderItinerary(formData, itinerary) {
   </div>
   <h2 class="intro-subhead">Your Cities</h2>
   ${recsCityRows}
+  ${staticMapUrl ? `<img class="route-map" alt="${esc(country)} route map" src="${esc(staticMapUrl)}">` : ''}
   <h2 class="intro-subhead spaced">Trip Overview</h2>
   <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
 </div>
