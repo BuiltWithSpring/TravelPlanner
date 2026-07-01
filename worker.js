@@ -1102,7 +1102,7 @@ function renderItinerary(formData, itinerary) {
       </div>
       <div class="rest-meta" style="margin:8px 0;">
         <strong>Neighbourhood:</strong> ${esc(a.neighborhood)}<br>
-        <strong>Check-in:</strong> ${esc(formatDateLong(a.checkin))} &nbsp;·&nbsp; <strong>Check-out:</strong> ${esc(formatDateLong(a.checkout))}${n ? ` &nbsp;·&nbsp; <strong>${n} nights</strong>` : ''} &nbsp;·&nbsp; <strong>Per night:</strong> ${esc(a.estimated_cost_per_night)}
+        ${a.checkin ? `<strong>Check-in:</strong> ${esc(formatDateLong(a.checkin))} &nbsp;·&nbsp; <strong>Check-out:</strong> ${esc(formatDateLong(a.checkout))}${n ? ` &nbsp;·&nbsp; <strong>${n} nights</strong>` : ''} &nbsp;·&nbsp; ` : ''}<strong>Per night:</strong> ${esc(a.estimated_cost_per_night)}
       </div>
       <p style="margin:8px 0 10px;">${esc(a.why)}</p>
       <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affBooking(a.city))}">Search Booking.com →</a>
