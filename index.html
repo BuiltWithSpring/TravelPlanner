@@ -241,6 +241,11 @@
     .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
     textarea.inp { resize: vertical; line-height: 1.6; }
     .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+    .chk-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+    .chk { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
+    .chk input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex: 0 0 auto; }
+    .chk-locked, .chk-locked input { cursor: default; color: var(--muted); }
+    .chk-note { font-size: 12px; color: var(--muted); font-style: italic; margin-left: 4px; }
     .hint a { color: var(--accent); text-decoration: none; }
     .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -581,6 +586,17 @@
       <div class="fg hidden" id="gsw">
         <label class="fl">How many people?</label>
         <input class="inp" type="number" id="groupSize" min="2" max="50" placeholder="Number of people">
+      </div>
+
+      <div class="fg">
+        <label class="fl">What do you need? <span class="req">*</span></label>
+        <div class="chk-grid" id="sections">
+          <label class="chk"><input type="checkbox" id="sec-day_by_day" checked onchange="onSectionsChange()"> Day-by-Day Itinerary</label>
+          <label class="chk"><input type="checkbox" id="sec-accommodations" checked onchange="onSectionsChange()"> Accommodations</label>
+          <label class="chk"><input type="checkbox" id="sec-transportation" checked onchange="onSectionsChange()"> Transportation</label>
+          <label class="chk chk-locked"><input type="checkbox" id="sec-food" checked disabled> Food &amp; Activity Recs <span class="chk-note">Always included</span></label>
+        </div>
+        <div class="hint">Choose what your itinerary includes. Food &amp; activity recommendations are always included.</div>
       </div>
 
       <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
@@ -1037,6 +1053,30 @@
     addCountryTag({ key:'Enter', preventDefault:()=>{} });
   }
 
+  // ── SECTION SELECTION ──────────────────────────────
+  function getSelectedSections() {
+    const out = [];
+    if (document.getElementById('sec-day_by_day').checked)     out.push('day_by_day');
+    if (document.getElementById('sec-accommodations').checked) out.push('accommodations');
+    if (document.getElementById('sec-transportation').checked) out.push('transportation');
+    out.push('food'); // always included
+    return out;
+  }
+  // Reactively show/hide Step 2 fields based on the Step 1 section choices.
+  function onSectionsChange() {
+    const day = document.getElementById('sec-day_by_day').checked;
+    const acc = document.getElementById('sec-accommodations').checked;
+    const trn = document.getElementById('sec-transportation').checked;
+    const accFg = document.getElementById('accom').closest('.fg');
+    if (accFg) accFg.classList.toggle('hidden', !acc);
+    const showAirports = day || trn;
+    const arrFg = document.getElementById('arrivalAirport').closest('.fg');
+    const depFg = document.getElementById('departureAirport').closest('.fg');
+    if (arrFg) arrFg.classList.toggle('hidden', !showAirports);
+    if (depFg) depFg.classList.toggle('hidden', !showAirports);
+    if (!showAirports) document.getElementById('err-airport-country').classList.remove('on');
+  }
+
   // ── ERRORS ─────────────────────────────────────────
   function clearErrors() {
     document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('on'));
@@ -1097,8 +1137,11 @@
     const today = new Date().toISOString().split('T')[0];
     const arr = document.getElementById('arrDate').value;
     const dep = document.getElementById('depDate').value;
-    if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport','arrivalAirport'); ok=false; }
-    if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport','departureAirport'); ok=false; }
+    const airportsVisible = !document.getElementById('arrivalAirport').closest('.fg').classList.contains('hidden');
+    if (airportsVisible) {
+      if (!document.getElementById('arrivalAirport').value.trim()) { showError('err-arrivalAirport','arrivalAirport'); ok=false; }
+      if (!document.getElementById('departureAirport').value.trim()) { showError('err-departureAirport','departureAirport'); ok=false; }
+    }
     refreshStep2Validity(); // cross-airport mismatch is a non-blocking warning only — never blocks Continue
     if (!arr) { showError('err-arrDate','arrDate'); ok=false; }
     else if (arr < today) { document.getElementById('err-arrDate-past').style.display='block'; ok=false; }
@@ -1246,6 +1289,7 @@
       paceOfTravel: getPace(),
       travelStyle: getSelected('bg'),
       accommodationStyle: getMultiSelected('accom'),
+      selectedSections: getSelectedSections(),
       interests: getInterests(),
       cuisinePreferences: getChips(),
       mustSee: document.getElementById('mustSee').value,
@@ -1299,7 +1343,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4000, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:4000, selectedSections: formData.selectedSections, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
       });
       clearTimeout(timeoutId); clearInterval(msgInterval);
       if (!response.ok) throw new Error('Worker ' + response.status);
@@ -1781,6 +1825,8 @@
     const arrInp = document.getElementById('arrivalAirport');
     const depInp = document.getElementById('departureAirport');
     err.classList.remove('on'); arrInp.classList.remove('field-error'); depInp.classList.remove('field-error');
+    // Airports may be hidden if neither Day-by-Day nor Transportation is selected.
+    if (arrInp.closest('.fg').classList.contains('hidden')) return;
     const ca = airportCountryOf(arrV), cd = airportCountryOf(depV);
 
     // Airport(s) outside the selected country — non-blocking heads-up. regionOf() reconciles
@@ -1836,6 +1882,7 @@
     if (anchorInp && anchorWrap) attachAutocomplete(anchorInp, anchorWrap, makeCityMatcher(anchorInp), m => {
       addTag(m.value, anchorTags, anchorWrap, anchorInp, 3); // must-include cities — same tag behavior, max 3
     });
+    onSectionsChange(); // set initial Step 2 field visibility from default checkbox state
   })();
 
   window.addEventListener('pageshow', e => { if (e.persisted) { formData=null; backToLanding(); } });
