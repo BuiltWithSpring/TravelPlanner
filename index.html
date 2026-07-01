@@ -457,6 +457,8 @@
     .local-find-emoji { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
     .local-find-title { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 3px; }
     .local-find-desc { font-size: 12.5px; color: var(--ink2); line-height: 1.55; }
+    .local-finds.recs-teaser-mode .local-find-title { font-size: 14px; }
+    .local-finds.recs-teaser-mode .local-find-emoji { font-size: 22px; }
 
     /* ── VISA BADGE ──────────────────────────────────── */
     .visa-badge { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 500; line-height: 1.5; margin-bottom: 1.25rem; }
@@ -853,6 +855,7 @@
         <!-- Local finds -->
         <div class="prev-section-label">💎 Hidden finds</div>
         <div id="localFinds" class="local-finds"></div>
+        <div id="recsTeaser" class="teaser-foot" style="display:none;margin-bottom:1.25rem;">🔒 Your full city guides are waiting</div>
 
         <!-- Teaser day (day-by-day only) -->
         <div id="sampleDaySection">
@@ -1493,6 +1496,15 @@
 
     // Teaser day (day-by-day only)
     document.getElementById('sampleDaySection').style.display = hasDay ? '' : 'none';
+
+    // Hidden Finds becomes the primary teaser in Mode B — relabel, emphasize, add locked footer.
+    const findsLabel = document.querySelector('#localFinds').previousElementSibling;
+    if (findsLabel) {
+      findsLabel.textContent = hasDay ? '💎 Hidden finds' : '✨ A taste of your picks';
+    }
+    document.getElementById('localFinds').classList.toggle('recs-teaser-mode', !hasDay);
+    const recsTeaserEl = document.getElementById('recsTeaser');
+    if (recsTeaserEl) recsTeaserEl.style.display = hasDay ? 'none' : '';
     if (hasDay && preview.teaser_day) {
       const td = preview.teaser_day;
       document.getElementById('teaserCityLabel').textContent = td.city||'';
