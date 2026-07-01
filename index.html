@@ -730,7 +730,7 @@
       </div>
 
       <div class="fg">
-        <label class="fl">Any transport preferences? <span class="opt">optional</span></label>
+        <label class="fl">Transport preference <span class="req">*</span></label>
         <div class="cc-grid g2" id="tripStructureGrid">
           <div class="mc on" onclick="pickTripStructure(this,&#39;ai&#39;)" data-value="ai" id="ts-ai">
             <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">AI optimises for me</span></div>
@@ -749,17 +749,19 @@
             <div class="mc-sub">Fly between cities independently</div>
           </div>
         </div>
+        <div class="error-msg" id="err-transport">Please select a transport preference</div>
       </div>
 
       <div class="fg">
-        <label class="fl">Accommodation preferences <span class="opt">optional · opt-out</span></label>
+        <label class="fl">Accommodation type <span class="req">*</span></label>
         <div class="cc-grid g4" id="accom">
           <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏨</span><div class="ct">Hotel</div></div>
           <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏡</span><div class="ct">Airbnb</div></div>
           <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🛏️</span><div class="ct">Hostel</div></div>
           <div class="cc" onclick="this.classList.toggle(&#39;on&#39;)"><span class="ci">🏕️</span><div class="ct">Unique</div></div>
         </div>
-        <div class="hint">Select your preferred style(s) only if you'd like accommodation recommendations. Leave blank if you've already booked or don't need them — your itinerary will then include no accommodation suggestions.</div>
+        <div class="hint">Select at least one preferred style.</div>
+        <div class="error-msg" id="err-accom">Please select an accommodation type</div>
       </div>
 
       <div class="brow">
@@ -1166,6 +1168,11 @@
       if (!anyPace) { showError('err-pace',null); ok=false; }
     }
     if (!document.querySelector('#bg .cc.on')) { showError('err-budget',null); ok=false; }
+    // Accommodation type + transport preference are required only when shown.
+    const accVisible = !document.getElementById('accom').closest('.fg').classList.contains('hidden');
+    if (accVisible && !document.querySelector('#accom .cc.on')) { showError('err-accom',null); ok=false; }
+    const trVisible = !document.getElementById('tripStructureGrid').closest('.fg').classList.contains('hidden');
+    if (trVisible && !document.querySelector('#tripStructureGrid .mc.on')) { showError('err-transport',null); ok=false; }
     if (!ok) window.scrollTo({top:0,behavior:'smooth'});
     return ok;
   }
