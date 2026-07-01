@@ -1362,6 +1362,7 @@ function renderItinerary(formData, itinerary) {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 16px;
     border-bottom: 1px solid var(--border);
     padding-bottom: 12px;
     margin-bottom: 16px;
@@ -2073,6 +2074,7 @@ STEP 12 — BOOK BEFORE YOU GO
 A curated advance-booking guide — not a tracker. Include only items that genuinely benefit from booking ahead: flights, accommodation, high-demand restaurants, activities that sell out, rail passes, entry tickets with timed slots. Sort by urgency: Book now → 4–6 weeks ahead → On arrival.
 Every entry needs: item_name, city, date, est_cost, booking_priority, booking_tip (one sentence — where and how to book, and why booking ahead matters for this item), booking_link (most direct official booking URL; leave empty string if no reliable URL exists).
 Do NOT include generic items that need no advance booking (e.g. free parks, markets, casual walk-in cafes). Quality over quantity — only items where the link genuinely helps the traveler act.
+SCHEDULED-ONLY: Any activity, attraction, experience, or restaurant in this list MUST already appear in the days array (as a scheduled morning/afternoon/evening activity or a day's restaurant_suggestion). Do NOT introduce supplementary attractions or experiences that are not in the day-by-day plan. Logistics items — flights, accommodation, inter-city transport/rail passes, and visa/entry requirements — are exempt and may be included as usual.
 
 STEP 13 — CITY GUIDE
 A reference pool of EXTRA options not already in your daily plan, weighted by interest scores. These are ADDITIONAL ideas beyond the day-by-day — never the same entries.
