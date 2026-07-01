@@ -2630,7 +2630,15 @@ async function generateItinerary(env, d) {
     // Attempt 1 — base prompt
     let rawText = await callClaude(env, basePrompt, maxTokens, timeoutMs);
     let parsed = parseClaudeResponse(rawText);
-    if (hasRequiredKeys(parsed, mode)) return finalize(parsed);
+    if (hasRequiredKeys(parsed, mode)) {
+      // Debug: warn if content looks suspiciously empty
+      const daysEmpty = mode === 'schedule' && Array.isArray(parsed.days) && parsed.days.length === 0;
+      const overviewEmpty = !parsed.overview || parsed.overview.trim() === '';
+      if (daysEmpty || overviewEmpty) {
+        console.error('[DEBUG] hasRequiredKeys passed but content is empty — days:', parsed.days?.length, '| overview length:', (parsed.overview || '').length, '| raw response length:', rawText?.length, '| first 500 chars of raw:', rawText?.substring(0, 500));
+      }
+      return finalize(parsed);
+    }
     console.error('Itinerary attempt 1 failed (parse or missing keys). Raw response:', rawText);
 
     // LONG trips: skip the retry — a second 9-min call risks exceeding the queue
