@@ -3142,6 +3142,13 @@ ${venueListText}`;
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
   try {
+    // Idempotency guard — a retry (or duplicate queue delivery) must not double-deliver.
+    const sessionId = session && session.id;
+    if (sessionId && await env.PREVIEW_STORE.get(`done:${sessionId}`)) {
+      console.log('[fulfillOrder] Already completed, skipping session:', sessionId);
+      return;
+    }
+
     const metadata = session.metadata || {};
     const formDataId = metadata.formDataId;
 
@@ -3181,6 +3188,7 @@ async function fulfillOrder(env, session) {
     if (itinerary && itinerary.error) {
       console.error('Itinerary generation failed for session', session.id, '-', itinerary.message);
       await sendFailureAlert(env, session, itinerary.message);
+      return; // stop — do not render or POST a broken itinerary to n8n
     } else {
       // ── Post-gen Perplexity verification ────────────────────────────────────
       // Web-checks Claude's restaurant, accommodation, and hidden gem picks,
@@ -3226,17 +3234,25 @@ async function fulfillOrder(env, session) {
       itineraryUrl,
     };
 
+    let delivered = false;
     try {
       const makeResponse = await fetch(env.N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(makePayload)
       });
+      delivered = makeResponse.ok;
       if (!makeResponse.ok) {
         console.error('Make webhook failed:', makeResponse.status, await makeResponse.text());
       }
     } catch (makeErr) {
       console.error('Make webhook error:', makeErr.message);
+    }
+
+    // Mark complete only if delivery to n8n succeeded, so a failed delivery stays
+    // retryable via /admin/retry (the guard above skips only truly-delivered sessions).
+    if (sessionId && delivered) {
+      await env.PREVIEW_STORE.put(`done:${sessionId}`, '1', { expirationTtl: 60 * 60 * 24 * 7 });
     }
   } catch (err) {
     console.error('fulfillOrder error:', err.message);
