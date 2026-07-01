@@ -1519,7 +1519,7 @@
     incl.push(hasDay
       ? '✅ '+totalDays+'-day day-by-day itinerary with booking links'
       : '✅ City-by-city activity & restaurant guide for '+totalCities+' cities');
-    incl.push('✅ Curated restaurants across '+totalCities+' cities');
+    if (hasDay) incl.push('✅ Curated restaurants across '+totalCities+' cities');
     incl.push('✅ Hidden finds — hidden activities & finds');
     if (sel.includes('accommodations')) incl.push('✅ Accommodation picks per city');
     if (sel.includes('transportation')) incl.push('✅ Route-optimised transport — least time, least hassle');

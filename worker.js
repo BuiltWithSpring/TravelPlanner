@@ -149,7 +149,7 @@ export default {
         const checkRow = (t) => `<tr><td style="padding:3px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;color:#3d3660;">✓&nbsp;&nbsp;${t}</td></tr>`;
         const checklistRows = [
           sel.includes('day_by_day') ? checkRow('Day-by-day plans for every city') : checkRow('City-by-city activity & restaurant guide'),
-          checkRow('Local restaurant picks & hidden finds'),
+          ...(sel.includes('day_by_day') ? [checkRow('Local restaurant picks & hidden finds')] : []),
           ...(sel.includes('accommodations') ? [checkRow('Accommodation picks per city')] : []),
           ...(sel.includes('transportation') ? [checkRow('Route-optimised transport guide')] : []),
           checkRow('What to book before you go'),
