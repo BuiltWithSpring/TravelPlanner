@@ -2049,6 +2049,8 @@ Match to trip structure:
 
 Every booking_tip is one sentence including booking window. Never label a road shuttle as Train. Flag cities with multiple airports.
 
+GUILIN → YANGSHUO ROUTING: When the itinerary includes a Guilin-to-Yangshuo leg, the Li River cruise (Guilin → Yangshuo, ~4.5 hours, morning departure) IS the recommended transfer — list it as the transport mode for this leg. On the travel day, schedule the cruise as the morning activity slot. Do NOT schedule the Li River cruise as a standalone day activity on any day the traveler is already staying in Yangshuo — it cannot be done in reverse and cannot be repeated.
+
 STEP 10 — GEOGRAPHIC CLUSTERING
 Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On travel days all activities near hotel or departure point only. Assign neighborhood_focus and restaurant_suggestion per day using this logic:
 - Regular days → restaurant_suggestion must always be DINNER. Name a specific, real, well-regarded dinner restaurant suited to that city's evening. Lunch is never the restaurant_suggestion unless the traveler has an explicit half-day or no evening activity in that city. Label clearly as Dinner. Breakfast is handled separately — see below.
