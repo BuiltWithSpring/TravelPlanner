@@ -1523,6 +1523,109 @@ function renderItinerary(formData, itinerary) {
   }
 `;
 
+  // ── MODE B (recs) — city-organized stacked list, no day-by-day schedule ──
+  if (itinerary.mode === 'recs') {
+    const tierBadge = (t) => {
+      const m = { 'Iconic': 'badge-iconic', 'Local Pick': 'badge-local', 'Hidden Gem': 'badge-hidden' };
+      return (t && m[t]) ? `<span class="badge ${m[t]}">${esc(t)}</span> ` : '';
+    };
+    const recsCities = Array.isArray(itinerary.cities) ? itinerary.cities : [];
+    const recsCityRows = recsCities.map(c =>
+      `<div class="city-row intro-city"><div><h3>${esc(c.city)}</h3></div></div>`
+    ).join('');
+    const recsCitiesHtml = recsCities.map(c => {
+      const acts = (c.activities || []).map(a =>
+        `<div class="card"><h4 style="margin:0 0 4px;font-size:16px;">${tierBadge(a.spot_tier)}${escName(a.name)}</h4><p style="margin:0;color:var(--muted);">${esc(a.description || '')}</p></div>`
+      ).join('');
+      const rests = (c.restaurants || []).map(r =>
+        `<div class="rest-card">
+        <div class="rest-head"><h4>${escName(r.name)}</h4><span class="rest-type">${esc(r.venue_type)}</span></div>
+        <p class="rest-desc">${esc(r.known_for || r.why || '')}</p>
+        <div class="rest-meta"><strong>Cuisine:</strong> ${esc(r.cuisine_category)} · <strong>Price:</strong> ${esc(r.price_range)} · <strong>Area:</strong> ${esc(r.neighborhood)}</div>
+        <a class="aff" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${encodeURIComponent((r.name || '') + ' ' + c.city)}">Find on Google Maps →</a>
+      </div>`
+      ).join('');
+      const gems = (c.hidden_finds || []).map(f =>
+        `<div class="find-card">
+        <div class="emoji">${esc(f.emoji)}</div>
+        <h4>${escName(f.title)}</h4>
+        <p>${esc(f.description)}</p>
+        <div class="find-city">${esc(f.city || c.city)}</div>
+        <div>
+          <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affViator(f.city || c.city, f.title))}">Search Viator →</a>
+          <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affGYG(f.city || c.city, f.title))}">Search GetYourGuide →</a>
+        </div>
+      </div>`
+      ).join('');
+      return `<div class="city-band"><div class="cb-city">${esc(c.city)}</div></div>
+      ${acts ? `<h2 class="intro-subhead">Activities</h2>${acts}` : ''}
+      ${rests ? `<h2 class="intro-subhead spaced">Restaurants</h2>${rests}` : ''}
+      ${gems ? `<h2 class="intro-subhead spaced">Hidden Finds</h2><div class="finds-grid">${gems}</div>` : ''}`;
+    }).join('');
+
+    const ga = itinerary.getting_around;
+    const gettingAroundHtml = (ga && (ga.overview || (Array.isArray(ga.tips) && ga.tips.length)))
+      ? `<div class="page section"><h2 class="section-header">Getting Around ${esc(country)}</h2>
+      ${ga.overview ? `<div class="card card-accent"><p class="lead">${esc(ga.overview)}</p></div>` : ''}
+      ${(Array.isArray(ga.tips) && ga.tips.length) ? `<div class="card">${ga.tips.map(t => `<p style="margin:0 0 8px;">• ${esc(t)}</p>`).join('')}</div>` : ''}
+    </div>`
+      : '';
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your ${esc(country)} Recommendations — BuiltWithSpring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>${CSS}</style>
+</head>
+<body>
+<div class="dl-bar screen-only">
+  <button class="print-btn" type="button" onclick="window.print()">⬇ Download as PDF</button>
+  <p class="print-hint">In the print dialog, choose 'Save as PDF'</p>
+</div>
+<div class="page intro-page">
+  <div class="logo">Built<span class="spring">WithSpring</span></div>
+  <div class="cover-eyebrow">Your Personalized Recommendations</div>
+  <h1 class="intro-country">${esc(country)}</h1>
+  <div class="cover-name">Prepared for ${esc(firstName)}</div>
+  <div class="cover-meta intro-meta">
+    <div><div class="label">Arrival</div><div class="value">${esc(formatDateLong(arrivalDate))}</div></div>
+    <div><div class="label">Departure</div><div class="value">${esc(formatDateLong(departureDate))}</div></div>
+    <div><div class="label">Duration</div><div class="value">${totalNights} nights</div></div>
+  </div>
+  <h2 class="intro-subhead">Your Cities</h2>
+  ${recsCityRows}
+  <h2 class="intro-subhead spaced">Trip Overview</h2>
+  <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
+</div>
+<div class="page section">
+  <h2 class="section-header">Best of Your Trip</h2>
+  <p class="section-sub">A city-by-city stack of everything worth your time — no fixed schedule.</p>
+  ${recsCitiesHtml}
+  <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>
+${gettingAroundHtml}
+${accommodations.length ? `<div class="page section">
+  <h2 class="section-header">Accommodation Picks</h2>
+  ${accommodationsHtml}
+</div>` : ''}
+${book_before_you_go.length ? `<div class="page section">
+  <h2 class="section-header">Book Before You Go</h2>
+  <table><thead><tr><th>What to book</th><th>When</th><th>Why it matters</th><th>Est. cost</th></tr></thead>
+  <tbody>${bookRowsHtml}</tbody></table>
+</div>` : ''}
+<div class="page section">
+  <h2 class="section-header">Practical &amp; Emergency Info</h2>
+  ${practicalCards}
+  <div class="footer-note screen-only">BuiltWithSpring · Crafted for your trip · Affiliate links help support this service at no extra cost to you.</div>
+</div>
+</body></html>`;
+  }
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
