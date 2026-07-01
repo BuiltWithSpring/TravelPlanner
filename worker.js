@@ -54,7 +54,9 @@ export default {
     // ── Route: /preview — Anthropic API proxy ──────────────────
     if (url.pathname === '/preview' && request.method === 'POST') {
       try {
-        const body = sanitizeDeep(await request.json());
+        // selectedSections is our own field for section-select logic — strip it so it's
+        // never forwarded to Anthropic (unrecognised fields cause a 400).
+        const { selectedSections, ...body } = sanitizeDeep(await request.json());
 
         // Same streaming SSE path as the itinerary call — keeps a continuous byte
         // flow so larger previews never trip Cloudflare's outbound idle timeout.
