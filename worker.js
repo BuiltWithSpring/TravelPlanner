@@ -2062,6 +2062,7 @@ Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full
 - Restaurant suggestion should always be geographically logical for that day's context.
 - Restaurant suggestion must be a specific real venue and must NOT duplicate any venue in the restaurants array (Food & Drink tab) — the day-by-day picks and the Food & Drink list are disjoint sets, so together they broaden the traveler's dining options.
 - BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array.
+- BREAKFAST PLACEMENT: the breakfast spot must be geographically close to where that day's morning activity takes place — or near the hotel if it is an early-departure day. Never recommend a breakfast spot in a different neighbourhood that forces the traveler to backtrack before the morning activity. For example: if the morning activity is in West Vancouver, put breakfast near West Vancouver or the West End — never in Mount Pleasant or Gastown.
 
 DEPARTURE DAY: The final day of the trip is a departure day. Schedule a morning activity only if the departure flight realistically allows it (i.e. departure is after 12:00 — assume 3 hours pre-departure for international flights, 2 hours for domestic). If the departure time is unknown or early, leave the morning slot as "departure transfer and airport check-in" only. Never schedule afternoon or evening activities on a departure day.
 
@@ -2160,7 +2161,7 @@ Select the most surprising, non-obvious experiences or places, scaled by the num
 - 3+ cities → 2 Hidden Finds PER CITY
 These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
 Each entry: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words — why it's special and not obvious), city.
-Each Hidden Find must be a place NOT already listed as a morning, afternoon, or evening activity in the day-by-day — no repeats from the daily plan. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
+Each Hidden Find must be a place NOT already appearing anywhere else in the itinerary — not as a morning, afternoon, or evening activity, not as an evening suggestion, and not as any restaurant recommendation (restaurant_suggestion, breakfast_suggestion, or an entry in the restaurants array). Cross-check every hidden find against the full itinerary before including it. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
 These appear as a standalone section in the PDF — make them count.
 
 STEP 14 — ACTIVITY FRAMING
@@ -2189,7 +2190,7 @@ STEP 15 — OUTPUT FORMATTING
 
 STEP 16 — ACCURACY
 Only use what was submitted. Never reference or invent details not provided. Never invent property names, venue names, or transport services you cannot reasonably verify exist.
-Never assume or infer the traveler's nationality from their name or any other detail. For visa_requirements and entry_requirements in practical_info, provide general requirements covering the most common passport types: US/Canada, UK, EU, Australia. Note if visa-free for most Western passports. Include visa-on-arrival availability, e-visa options, and processing time.
+Never assume or infer the traveler's nationality — not from their name, their departure city, or any other detail — and never state or imply that this is a domestic trip or that the traveler is a citizen of the destination country. For visa_requirements and entry_requirements in practical_info, give generic, passport-agnostic advice: state that entry requirements vary by passport, name the most common visa-free nationalities for this destination if well-known (e.g. US/Canada, UK, EU, Australia), cover visa-on-arrival availability, e-visa options, and processing time, and always tell the traveler to verify their own passport's specific requirements before travel.
 Always address the traveler directly as "you" throughout the entire output — never refer to them by name or in third person.
 Treat mustSee and extraNotes as hard instructions, not suggestions. Apply them before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
 Cross-country airports: if arrival and departure airports are in different countries, note this in the overview and clarify which country the itinerary covers. Never plan activities or cities outside the submitted country.
@@ -2349,11 +2350,11 @@ For EACH city provide:
 - city_teaser: ONE evocative sentence on what makes this city special on this trip (sensory, specific, not logistical).
 - activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
 - restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words). Never use the destination city or country name as the restaurant name (e.g. "Chengdu Restaurant" in Chengdu is not acceptable — use the venue's actual name).
-- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words), city.
+- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words), city. None of these may duplicate a venue, bar, or place already listed in this city's activities or restaurants — cross-check before including.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
 ${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only, NOT day-by-day routing.` : ''}
-${flags.wantAccommodations ? `\nACCOMMODATIONS: Provide hotel picks per city (1–2 each) matched to the traveler's accommodation style and budget.` : ''}
+${flags.wantAccommodations ? `\nACCOMMODATIONS: Provide exactly 3 hotel picks per city (never fewer than 3), matched to the traveler's accommodation style and budget.` : ''}
 
 TRAVELER PREFERENCES:
 Country: ${d.country || ''}
@@ -2369,6 +2370,8 @@ Must see: ${d.mustSee || ''}
 Extra notes: ${d.extraNotes || ''}
 
 Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
+
+VISA & ENTRY: Never assume or infer the traveler's nationality, and never state or imply that this is a domestic trip or that the traveler is a citizen of the destination country. For visa_requirements and entry_requirements, give generic, passport-agnostic advice: state that entry requirements vary by passport, name the most common visa-free nationalities for this destination if well-known (e.g. US/Canada, UK, EU, Australia), cover visa-on-arrival availability, e-visa options, and processing time, and always tell the traveler to verify their own passport's specific requirements before travel.
 
 OUTPUT — return exactly this JSON:
 {
@@ -3285,11 +3288,29 @@ async function fulfillOrder(env, session) {
 
     let delivered = false;
     try {
-      const makeResponse = await fetch(env.N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(makePayload)
-      });
+      // Retry the n8n delivery up to 3 times: wait 3s before attempt 2, 6s before attempt 3.
+      // Retries on both non-ok responses and network errors; the final response/error
+      // falls through to the existing failure handling below.
+      let makeResponse = null;
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) {
+          await new Promise(r => setTimeout(r, attempt === 2 ? 3000 : 6000));
+        }
+        try {
+          makeResponse = await fetch(env.N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(makePayload)
+          });
+          lastErr = null;
+          if (makeResponse.ok) break;
+        } catch (fetchErr) {
+          lastErr = fetchErr;
+          makeResponse = null;
+        }
+      }
+      if (lastErr) throw lastErr;
       delivered = makeResponse.ok;
       if (!makeResponse.ok) {
         console.error('n8n webhook failed:', makeResponse.status, await makeResponse.text());
