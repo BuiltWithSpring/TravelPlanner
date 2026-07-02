@@ -3318,6 +3318,7 @@ async function fulfillOrder(env, session) {
       }
     } catch (makeErr) {
       console.error('Make webhook error:', makeErr.message);
+      await sendFailureAlert(env, session, `n8n delivery failed: ${makeErr.message}`);
     }
 
     // Mark complete only if delivery to n8n succeeded, so a failed delivery stays
