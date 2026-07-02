@@ -3292,7 +3292,8 @@ async function fulfillOrder(env, session) {
       });
       delivered = makeResponse.ok;
       if (!makeResponse.ok) {
-        console.error('Make webhook failed:', makeResponse.status, await makeResponse.text());
+        console.error('n8n webhook failed:', makeResponse.status, await makeResponse.text());
+        await sendFailureAlert(env, session, `n8n delivery failed with status ${makeResponse.status}`);
       }
     } catch (makeErr) {
       console.error('Make webhook error:', makeErr.message);
