@@ -1613,6 +1613,73 @@ function renderItinerary(formData, itinerary) {
   .print-btn:hover { background: #6d28d9; }
   .print-hint { font-size: 12px; color: var(--muted); text-align: center; margin: 8px 0 0; }
 
+  /* ── Itinerary header (title row + Download PDF) ── */
+  .itin-header {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 20px 48px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .itin-header .logo { margin: 0; }
+  .dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    color: var(--accent);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 16px;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dl-btn:hover { background: var(--accent-soft); }
+
+  /* ── Tab bar (desktop only; mobile falls back to full scroll) ── */
+  .tab-bar { display: none; }
+  @media (min-width: 768px) {
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      max-width: 820px;
+      margin: 14px auto 0;
+      padding: 8px 40px;
+      background: rgba(255,255,255,0.96);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--accent); }
+    .tab-btn.active { background: var(--accent); color: #ffffff; }
+    /* Desktop: only the active section shows. Mobile keeps every section stacked. */
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+  }
+
   /* ── Combined intro page (cover + cities + overview) ── */
   .intro-page { padding-top: 36px; padding-bottom: 36px; }
   .intro-page .logo { margin-bottom: 18px; }
@@ -1646,6 +1713,9 @@ function renderItinerary(formData, itinerary) {
   /* ── Print rules ───────────────────────────────── */
   @media print {
     .dl-bar, .print-btn, .print-hint { display: none !important; }
+    /* Hide the interactive chrome and reveal every section regardless of active tab */
+    .itin-header, .tab-bar { display: none !important; }
+    .tab-section { display: block !important; }
     @page { margin: 14mm; }
     body { font-size: 12pt; }
     .page { max-width: none; margin: 0; padding: 0; }
@@ -1659,6 +1729,36 @@ function renderItinerary(formData, itinerary) {
     .finds-grid { grid-template-columns: 1fr 1fr; }
   }
 `;
+
+  // ── Tab bar + section switching (screen, ≥768px only). On mobile the tab bar
+  // is hidden and every .tab-section stays stacked, so this is a no-op there. ──
+  const buildTabBar = (tabs) =>
+    `<nav class="tab-bar screen-only" role="tablist">${tabs.map(t =>
+      `<button class="tab-btn" type="button" data-tab="${t.id}">${t.label}</button>`).join('')}</nav>`;
+
+  const TAB_SCRIPT = `<script>
+(function(){
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.tab-section'));
+  if (!btns.length) return;
+  var ids = sections.map(function(s){ return s.getAttribute('data-tab'); });
+  function activate(id){
+    if (ids.indexOf(id) === -1) id = 'overview';
+    sections.forEach(function(s){ s.classList.toggle('active', s.getAttribute('data-tab') === id); });
+    btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === id); });
+    try { sessionStorage.setItem('itinTab', id); } catch(e){}
+  }
+  btns.forEach(function(b){ b.addEventListener('click', function(){ activate(b.getAttribute('data-tab')); }); });
+  var saved = 'overview';
+  try { saved = sessionStorage.getItem('itinTab') || 'overview'; } catch(e){}
+  activate(saved);
+})();
+</script>`;
+
+  const itinHeader = `<div class="itin-header screen-only">
+  <div class="logo">Built<span class="spring">WithSpring</span></div>
+  <button class="dl-btn" type="button" onclick="window.print()" title="In the print dialog, choose 'Save as PDF'">⬇ Download PDF</button>
+</div>`;
 
   // ── MODE B (recs) — city-organized stacked list, no day-by-day schedule ──
   if (itinerary.mode === 'recs') {
@@ -1702,6 +1802,16 @@ function renderItinerary(formData, itinerary) {
       ${gems ? `<h2 class="intro-subhead spaced">Hidden Finds</h2><div class="finds-grid">${gems}</div>` : ''}`;
     }).join('');
 
+    // Only render a tab (button + section) when its underlying data is non-empty.
+    const tabsB = [
+      { id: 'overview',  label: 'Overview',           show: true },
+      { id: 'bestof',    label: 'Best Of',            show: true },
+      { id: 'transport', label: 'Getting There',      show: !!gettingAroundHtml },
+      { id: 'stays',     label: 'Where to Stay',      show: accommodations.length > 0 },
+      { id: 'book',      label: 'Book Before You Go', show: book_before_you_go.length > 0 },
+      { id: 'practical', label: 'Practical Info',     show: true },
+    ].filter(t => t.show);
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1714,12 +1824,10 @@ function renderItinerary(formData, itinerary) {
 <style>${CSS}</style>
 </head>
 <body>
-<div class="dl-bar screen-only">
-  <button class="print-btn" type="button" onclick="window.print()">⬇ Download as PDF</button>
-  <p class="print-hint">In the print dialog, choose 'Save as PDF'</p>
-</div>
+${itinHeader}
+${buildTabBar(tabsB)}
+<div class="tab-section" data-tab="overview">
 <div class="page intro-page">
-  <div class="logo">Built<span class="spring">WithSpring</span></div>
   <div class="cover-eyebrow">Your Personalized Recommendations</div>
   <h1 class="intro-country">${esc(country)}</h1>
   <div class="cover-name">Prepared for ${esc(firstName)}</div>
@@ -1734,29 +1842,51 @@ function renderItinerary(formData, itinerary) {
   <h2 class="intro-subhead spaced">Trip Overview</h2>
   <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
 </div>
+</div>
+<div class="tab-section" data-tab="bestof">
 <div class="page section">
   <h2 class="section-header">Best of Your Trip</h2>
   <p class="section-sub">A city-by-city stack of everything worth your time — no fixed schedule.</p>
   ${recsCitiesHtml}
   <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
 </div>
-${gettingAroundHtml}
-${accommodations.length ? `<div class="page section">
+</div>
+${gettingAroundHtml ? `<div class="tab-section" data-tab="transport">${gettingAroundHtml}</div>` : ''}
+${accommodations.length ? `<div class="tab-section" data-tab="stays">
+<div class="page section">
   <h2 class="section-header">Accommodation Picks</h2>
   ${accommodationsHtml}
+</div>
 </div>` : ''}
-${book_before_you_go.length ? `<div class="page section">
+${book_before_you_go.length ? `<div class="tab-section" data-tab="book">
+<div class="page section">
   <h2 class="section-header">Book Before You Go</h2>
   <table><thead><tr><th>What to book</th><th>When</th><th>Why it matters</th><th>Est. cost</th></tr></thead>
   <tbody>${bookRowsHtml}</tbody></table>
+</div>
 </div>` : ''}
+<div class="tab-section" data-tab="practical">
 <div class="page section">
   <h2 class="section-header">Practical &amp; Emergency Info</h2>
   ${practicalCards}
   <div class="footer-note screen-only">BuiltWithSpring · Crafted for your trip · Affiliate links help support this service at no extra cost to you.</div>
 </div>
+</div>
+${TAB_SCRIPT}
 </body></html>`;
   }
+
+  // Only render a tab (button + section) when its underlying data is non-empty.
+  const tabsA = [
+    { id: 'overview',    label: 'Overview',           show: true },
+    { id: 'plan',        label: 'Day by Day',         show: true },
+    { id: 'hidden',      label: 'Hidden Finds',       show: hidden_finds.length > 0 },
+    { id: 'restaurants', label: 'Restaurants',        show: restaurants.length > 0 },
+    { id: 'stays',       label: 'Where to Stay',      show: accommodations.length > 0 },
+    { id: 'transport',   label: 'Getting There',      show: transport.length > 0 },
+    { id: 'book',        label: 'Book Before You Go', show: book_before_you_go.length > 0 },
+    { id: 'practical',   label: 'Practical Info',     show: true },
+  ].filter(t => t.show);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1770,12 +1900,10 @@ ${book_before_you_go.length ? `<div class="page section">
 <style>${CSS}</style>
 </head>
 <body>
-<div class="dl-bar screen-only">
-  <button class="print-btn" type="button" onclick="window.print()">⬇ Download as PDF</button>
-  <p class="print-hint">In the print dialog, choose 'Save as PDF'</p>
-</div>
+${itinHeader}
+${buildTabBar(tabsA)}
+<div class="tab-section" data-tab="overview">
 <div class="page intro-page">
-  <div class="logo">Built<span class="spring">WithSpring</span></div>
   <div class="cover-eyebrow">Your Personalized Itinerary</div>
   <h1 class="intro-country">${esc(country)}</h1>
   <div class="cover-name">Prepared for ${esc(firstName)}</div>
@@ -1790,40 +1918,56 @@ ${book_before_you_go.length ? `<div class="page section">
   <h2 class="intro-subhead spaced">Trip Overview</h2>
   <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
 </div>
+</div>
+<div class="tab-section" data-tab="plan">
 <div class="page section">
   <h2 class="section-header">Day-by-Day Plan</h2>
   ${dayByDayHtml}
   <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
 </div>
-${hidden_finds.length ? `<div class="page section">
+</div>
+${hidden_finds.length ? `<div class="tab-section" data-tab="hidden">
+<div class="page section">
   <h2 class="section-header">Hidden Finds</h2>
   <p class="section-sub">Places you almost certainly wouldn't have found on your own.</p>
   <div class="finds-grid">${hiddenFindsHtml}</div>
+</div>
 </div>` : ''}
-${restaurants.length ? `<div class="page section">
+${restaurants.length ? `<div class="tab-section" data-tab="restaurants">
+<div class="page section">
   <h2 class="section-header">Restaurants</h2>
   <p class="section-sub">Extra dining options beyond your day-by-day picks, grouped by city.</p>
   ${restaurantsHtml}
   <p class="disclaimer">Hours and availability verified at time of generation — confirm before visiting.</p>
+</div>
 </div>` : ''}
-${accommodations.length ? `<div class="page section">
+${accommodations.length ? `<div class="tab-section" data-tab="stays">
+<div class="page section">
   <h2 class="section-header">Accommodation Picks</h2>
   ${accommodationsHtml}
+</div>
 </div>` : ''}
-${transport.length ? `<div class="page section">
+${transport.length ? `<div class="tab-section" data-tab="transport">
+<div class="page section">
   <h2 class="section-header">Transport Between Cities</h2>
   ${transportHtml}
+</div>
 </div>` : ''}
-${book_before_you_go.length ? `<div class="page section">
+${book_before_you_go.length ? `<div class="tab-section" data-tab="book">
+<div class="page section">
   <h2 class="section-header">Book Before You Go</h2>
   <table><thead><tr><th>What to book</th><th>When</th><th>Why it matters</th><th>Est. cost</th></tr></thead>
   <tbody>${bookRowsHtml}</tbody></table>
+</div>
 </div>` : ''}
+<div class="tab-section" data-tab="practical">
 <div class="page section">
   <h2 class="section-header">Practical &amp; Emergency Info</h2>
   ${practicalCards}
   <div class="footer-note screen-only">BuiltWithSpring · Crafted for your trip · Affiliate links help support this service at no extra cost to you.</div>
 </div>
+</div>
+${TAB_SCRIPT}
 </body></html>`;
 }
 // ── END renderItinerary ──────────────────────────────────────────
