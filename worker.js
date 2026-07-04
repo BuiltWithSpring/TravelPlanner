@@ -1595,24 +1595,6 @@ function renderItinerary(formData, itinerary) {
     border-top: 1px solid var(--border);
   }
 
-  /* ── Download bar (screen only) ────────────────── */
-  .dl-bar { max-width: 820px; margin: 0 auto; padding: 24px 48px 0; }
-  .print-btn {
-    display: block;
-    width: 100%;
-    background: #7c3aed;
-    color: #ffffff;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .print-btn:hover { background: #6d28d9; }
-  .print-hint { font-size: 12px; color: var(--muted); text-align: center; margin: 8px 0 0; }
-
   /* ── Itinerary header (title row + Download PDF) ── */
   .itin-header {
     max-width: 820px;
@@ -1712,7 +1694,6 @@ function renderItinerary(formData, itinerary) {
 
   /* ── Print rules ───────────────────────────────── */
   @media print {
-    .dl-bar, .print-btn, .print-hint { display: none !important; }
     /* Hide the interactive chrome and reveal every section regardless of active tab */
     .itin-header, .tab-bar { display: none !important; }
     .tab-section { display: block !important; }
