@@ -2285,6 +2285,14 @@ FINAL DEPARTURE DAY (last day of the trip, returning home):
 - EVENING slot: N/A
 - DINNER field: N/A
 
+ARRIVAL DAY (first day of the trip, arriving from home):
+- MORNING slot: N/A — traveler is arriving; customs, baggage, and transfer to accommodation consume the morning. Write: "N/A — arriving at [Airport name] and transferring to accommodation in [neighborhood/area]."
+- AFTERNOON slot: ONE easy, low-energy activity close to the arrival accommodation — a neighborhood walk, a first café, a local market browse, a scenic square. Keep it light. Assign a tier badge.
+- EVENING slot: ONE activity at the arrival city. Assign a tier badge.
+- DINNER field: recommend a real restaurant near the arrival accommodation — first meal in the new city.
+
+This structure applies regardless of pace setting. Do NOT assign a morning activity on the first day of the trip.
+
 Never assign any activity at the departing city on a departure day.
 Never write "Departure." or "Departure" as a standalone word in any slot — use N/A.
 EXCEPTION: when the inter-city transfer is itself the scheduled sightseeing experience (e.g. the Guilin → Yangshuo Li River cruise), that transfer occupies the morning slot as its named activity instead of N/A.
@@ -2371,6 +2379,7 @@ Category to type mapping:
 - Nightlife & bars → Nightlife (rooftop bar, jazz club, live music, cocktail bar only)
 
 Quality filter: widely visited, highly regarded, or iconic only.
+SEASONAL EVENT ACCURACY (CRITICAL): When including a seasonal event or festival as a city guide activity (e.g. Day of the Dead, cherry blossom, carnival, Songkran), only describe the traveler as experiencing it if the trip dates overlap with the actual event window, or the trip ends within 7 days of the event start. If the trip ends more than 7 days before the event begins: you MAY mention the event as future context ("Oaxaca's Day of the Dead (Nov 1–2) is one of Mexico's most extraordinary festivals — consider timing a future visit") but you MUST NOT imply the traveler will see preparations, atmosphere, or early decorations during their actual visit dates. Do not include the event as an activity recommendation in the city guide. Apply the same rule to the Practical Info section — do not claim the traveler's dates overlap with seasonal atmosphere unless the dates are genuinely close.
 
 Each entry must include:
 - type: from the type list above
@@ -2432,12 +2441,14 @@ Before finalizing ANY hidden find, cross-check its venue name against EVERY othe
 If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions.
 This means a venue cannot be both a Hidden Find AND a restaurants entry. If Expendio de Maiz Sin Nombre is in the restaurants array as a Dinner, it cannot also be a Hidden Find. Choose one placement only — restaurants array OR hidden finds, never both.
 
-Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it.
+Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it. NAME VARIATIONS: Treat names as matching even when one includes a category prefix or uses different spacing/formatting. Strip the following prefixes before comparing: Cerveceria, Mezcalería, Mezcaleria, Café, Cafe, Bar, Cantina, Pulquería, Pulqueria, Taquería, Taqueria, Restaurante, Restaurant, Cocina. Example: "Cerveceria Tierra Adentro" and "TierrAdentro" — strip "Cerveceria" and normalize spacing → both reduce to "tierra adentro" → same venue → exclude from hidden finds.
 Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places not already anywhere in the output.
 These appear as a standalone section in the PDF — make them count.
 
 STEP 14 — ACTIVITY FRAMING
 (Covers how to fill and word each day's activity slots: pace structure, slot–venue fit, and field formatting.)
+CULTURAL RESTRICTION WARNINGS: For any venue or experience with a strictly enforced rule that would surprise or create risk for a foreign visitor, include the key restriction in the activity description — woven into the description itself, not as a footnote. Required warnings for known high-risk venues: San Juan Chamula church (Chiapas) — "Photography is strictly forbidden inside — phones and cameras have been confiscated and confrontations occur." Any active mosque (non-tourist context) — include dress code note. Example for San Juan Chamula: ✓ "[Iconic] San Juan Chamula — a Tzotzil Maya village church where Catholic saints and pre-Hispanic shamanic rituals fuse; unlike anywhere on earth. Photography strictly forbidden inside — leave your camera at the entrance." ✗ "[Iconic] San Juan Chamula — a Tzotzil Maya village church where Catholic saints and pre-Hispanic shamanic rituals fuse inside a candle-and-pine-needle-covered church."
+
 Pace density rules — apply to every day-by-day entry (governed by PACE STRUCTURE below):
 - Fast pace → populate morning, afternoon AND evening with distinct, fully-committed activities. All 3 slots required. EXCEPTION: on a day dominated by a full-day activity or a 90+ min day trip, follow STEP 11 instead (the big activity is the day; add one light nearby evening activity only).
 - Relaxed pace → follow PACE STRUCTURE below: morning activity, a free afternoon, and one relaxed evening activity. EXCEPTION: on a day dominated by a full-day activity or a 90+ min day trip, follow STEP 11 instead (the big activity IS the day — no separate morning/evening activities).
@@ -2688,7 +2699,7 @@ For EACH city provide:
     WRONG: "Pinot Poured With Local Pride" / "A Hidden Garden at Dusk" / "Craft Beer Off the Beaten Path"
     RIGHT: "Eyrie Vineyards Tasting Room" / "Fredericksburg Herb Farm" / "Occidental Brewing"
     If you cannot name a specific real venue, do not include it as a hidden find.
-  HIDDEN FINDS — DEDUPLICATION (CRITICAL): Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this city's list — every activity and every restaurant. If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions. Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it.
+  HIDDEN FINDS — DEDUPLICATION (CRITICAL): Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this city's list — every activity and every restaurant. If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions. Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it. NAME VARIATIONS: Treat names as matching even when one includes a category prefix or uses different spacing/formatting. Strip the following prefixes before comparing: Cerveceria, Mezcalería, Mezcaleria, Café, Cafe, Bar, Cantina, Pulquería, Pulqueria, Taquería, Taqueria, Restaurante, Restaurant, Cocina. Example: "Cerveceria Tierra Adentro" and "TierrAdentro" — strip "Cerveceria" and normalize spacing → both reduce to "tierra adentro" → same venue → exclude from hidden finds.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
 ${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only.` : ''}
