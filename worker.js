@@ -19,8 +19,12 @@ export default {
       }
 
       // Purple path connecting the cities in order + a purple marker per city.
+      // Build `path` from RAW city names — the whole string is encodeURIComponent'd
+      // below, so pre-encoding here would double-encode (e.g. "San Antonio" →
+      // "San%2520Antonio"), which Google cannot geocode → g.co/staticmaperror.
+      // `markers` is NOT wrapped in encodeURIComponent, so it uses single-encoded names.
       const encodedCities = cities.map((c) => encodeURIComponent(c));
-      const path = `color:0x7c3aedff|weight:3|${encodedCities.join('|')}`;
+      const path = `color:0x7c3aedff|weight:3|${cities.join('|')}`;
       const markers = encodedCities
         .map((c) => `markers=color:purple%7C${c}`)
         .join('&');
@@ -900,6 +904,8 @@ function escName(s) {
 }
 
 function parseBadge(text) {
+  // Treat "N/A" (e.g. a departure/transit-day slot) as empty so the slot renders nothing.
+  if (/^n\s*\/?\s*a\.?$/i.test(String(text || '').trim())) return { cls: '', label: '', body: '' };
   const m = String(text || '').match(/^\[(Iconic|Local Pick|Hidden Gem)\]\s*/);
   if (!m) return { cls: '', label: '', body: esc(text) };
   const map = { 'Iconic': ['badge-iconic','Iconic'], 'Local Pick': ['badge-local','Local Pick'], 'Hidden Gem': ['badge-hidden','Hidden Gem'] };
@@ -934,10 +940,14 @@ function priorityBadge(p) {
 
 function parseRestLine(text) {
   if (!text) return null;
+  // Treat "N/A" (e.g. departure-day dinner) as no meal — render nothing.
+  const isNA = (s) => /^n\s*\/?\s*a\.?$/i.test((s || '').trim());
+  if (isNA(text)) return null;
   const ci = text.indexOf(':');
   if (ci === -1) return { label: 'Meal', name: text, neighborhood: '', desc: '' };
   const label = text.slice(0, ci).trim();
   const parts = text.slice(ci + 1).split('|').map(p => p.trim());
+  if (isNA(parts[0])) return null;
   return { label, name: parts[0] || '', neighborhood: parts[1] || '', desc: parts[2] || '' };
 }
 
@@ -988,6 +998,14 @@ function renderItinerary(formData, itinerary) {
     ? `https://bws-travel-proxy.springlam-co.workers.dev/static-map?cities=${cityOrder.map(encodeURIComponent).join(',')}`
     : '';
 
+  // Static-map <img> + a styled fallback that reveals itself if the map fails to load
+  // (e.g. the Static Maps API errors for a given city combination). The onerror hides
+  // the broken image and shows the route as a simple city list instead of a broken-map error.
+  const mapFallbackInner = `<span class="rmf-label">Your Route</span>${cityOrder.map(esc).join('<span class="rmf-arrow">→</span>')}`;
+  const staticMapHtml = staticMapUrl
+    ? `<img class="route-map" alt="${esc(country)} route map" src="${esc(staticMapUrl)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"><div class="route-map-fallback" style="display:none;">${mapFallbackInner}</div>`
+    : '';
+
   // ── Cities section (from accommodations) ──
   // Group accommodations by city (preserve first-seen order) so each city renders as ONE
   // card. Claude returns up to two hotels per city; list them as Option 1 / Option 2.
@@ -1026,17 +1044,36 @@ function renderItinerary(formData, itinerary) {
 
   const dayByDayHtml = cityGroups.map(group => {
     const firstDay = group.days[0];
-    // Use accommodation checkout for accurate night count + date range end
-    const cityAccom = accommodations.find(a => a.city === group.city);
-    const checkoutDate = cityAccom ? cityAccom.checkout : (() => {
-      const d = new Date(group.days[group.days.length - 1].date);
+    const lastDay = group.days[group.days.length - 1];
+    const groupStart = firstDay.date;
+
+    // A city can be visited more than once (e.g. a return leg before flying home), so
+    // match the accommodation stay to THIS leg by date window — not just the city name.
+    // A plain city-name find() would return the FIRST stay and render its earlier
+    // checkout as this leg's end date (e.g. "Oct 13 – Oct 3"). Fall back to the stay
+    // whose checkin lines up, then the closest checkin.
+    const cityAccoms = accommodations.filter(a => a && a.city === group.city);
+    const cityAccom =
+      cityAccoms.find(a => a.checkin && a.checkout && a.checkin <= groupStart && groupStart < a.checkout) ||
+      cityAccoms.find(a => a.checkin === groupStart) ||
+      cityAccoms.slice().sort((a, b) =>
+        Math.abs(Date.parse(a.checkin) - Date.parse(groupStart)) -
+        Math.abs(Date.parse(b.checkin) - Date.parse(groupStart))
+      )[0] || null;
+
+    // Day after the last scheduled day in this city — the fallback leg end.
+    const dayAfterLast = (() => {
+      const d = new Date(lastDay.date);
       d.setDate(d.getDate() + 1);
       return d.toISOString().split('T')[0];
     })();
-    const nightsInCity = cityAccom
-      ? (calcNights(cityAccom.checkin, cityAccom.checkout) || group.days.length)
-      : group.days.length;
-    const dateRange = `${formatDateLong(firstDay.date)} – ${formatDateLong(checkoutDate)}`;
+    // Use the accommodation checkout only when it's actually after this leg's start;
+    // otherwise (wrong/missing stay) fall back so the end can never precede the start.
+    const checkoutValid = cityAccom && cityAccom.checkout && cityAccom.checkout > groupStart;
+    const checkoutDate = checkoutValid ? cityAccom.checkout : dayAfterLast;
+    // Derive nights from the displayed range so header nights and dates always agree.
+    const nightsInCity = calcNights(groupStart, checkoutDate) || group.days.length;
+    const dateRange = `${formatDateLong(groupStart)} – ${formatDateLong(checkoutDate)}`;
 
     const daysHtml = group.days.map(day => {
       const morning = parseBadge(day.morning);
@@ -1059,7 +1096,7 @@ function renderItinerary(formData, itinerary) {
           <div class="d-focus">${esc(day.neighborhood_focus || '')}</div>
           ${day.estimated_daily_cost ? `<div class="d-cost">${esc(day.estimated_daily_cost)}</div>` : ''}
         </div>
-        <div class="slot"><div class="slot-label">Morning</div><div class="slot-body">${slotHtml(morning)}</div></div>
+        ${morning.body ? `<div class="slot"><div class="slot-label">Morning</div><div class="slot-body">${slotHtml(morning)}</div></div>` : ''}
         ${afternoon.body ? `<div class="slot"><div class="slot-label">Afternoon</div><div class="slot-body">${slotHtml(afternoon)}</div></div>` : ''}
         ${evening.body ? `<div class="slot"><div class="slot-label">Evening</div><div class="slot-body">${slotHtml(evening)}</div></div>` : ''}
         ${restLineHtml(bk)}
@@ -1112,7 +1149,7 @@ function renderItinerary(formData, itinerary) {
       </div>
       <div class="rest-meta" style="margin:8px 0;">
         <strong>Neighbourhood:</strong> ${esc(a.neighborhood)}<br>
-        ${a.checkin ? `<strong>Check-in:</strong> ${esc(formatDateLong(a.checkin))} &nbsp;·&nbsp; <strong>Check-out:</strong> ${esc(formatDateLong(a.checkout))}${n ? ` &nbsp;·&nbsp; <strong>${n} nights</strong>` : ''} &nbsp;·&nbsp; ` : ''}<strong>Per night:</strong> ${esc(a.estimated_cost_per_night)}
+        ${a.checkin ? `<strong>Check-in:</strong> ${esc(formatDateLong(a.checkin))} &nbsp;·&nbsp; <strong>Check-out:</strong> ${esc(formatDateLong(a.checkout))}${n ? ` &nbsp;·&nbsp; <strong>${n} ${n === 1 ? 'night' : 'nights'}</strong>` : ''} &nbsp;·&nbsp; ` : ''}<strong>Per night:</strong> ${esc(a.estimated_cost_per_night)}
       </div>
       <p style="margin:8px 0 10px;">${esc(a.why)}</p>
       <a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(affBooking(a.city))}">Search Booking.com →</a>
@@ -1139,7 +1176,7 @@ function renderItinerary(formData, itinerary) {
     `<tr>
       <td><strong>${esc(b.item_name)}</strong>${b.date ? `<br><span style="color:var(--muted)">${esc(b.date)}</span>` : ''}</td>
       <td>${priorityBadge(b.booking_priority)}</td>
-      <td>${esc(b.booking_tip)}${b.booking_link ? `<br><a class="aff" target="_blank" rel="noopener noreferrer" href="${esc(b.booking_link)}">Book →</a>` : ''}</td>
+      <td>${esc(b.booking_tip)}</td>
       <td>${esc(b.est_cost)}</td>
     </tr>`
   ).join('');
@@ -1580,6 +1617,29 @@ function renderItinerary(formData, itinerary) {
     border-radius: 12px;
     margin: 4px 0 18px;
   }
+  /* Fallback shown (via inline onerror) when the static map fails to load. */
+  .route-map-fallback {
+    max-width: 600px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 4px 0 18px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .route-map-fallback .rmf-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .route-map-fallback .rmf-arrow { color: var(--accent); margin: 0 6px; }
 
   /* ── Enriched place data (rating / hours) ──────── */
   .rest-enrich { font-size: 13px; color: var(--muted); margin: 6px 0 2px; }
@@ -1815,11 +1875,11 @@ ${buildTabBar(tabsB)}
   <div class="cover-meta intro-meta">
     <div><div class="label">Arrival</div><div class="value">${esc(formatDateLong(arrivalDate))}</div></div>
     <div><div class="label">Departure</div><div class="value">${esc(formatDateLong(departureDate))}</div></div>
-    <div><div class="label">Duration</div><div class="value">${totalNights} nights</div></div>
+    <div><div class="label">Duration</div><div class="value">${totalNights} ${totalNights === 1 ? 'night' : 'nights'}</div></div>
   </div>
   <h2 class="intro-subhead">Your Cities</h2>
   ${recsCityRows}
-  ${staticMapUrl ? `<img class="route-map" alt="${esc(country)} route map" src="${esc(staticMapUrl)}">` : ''}
+  ${staticMapHtml}
   <h2 class="intro-subhead spaced">Trip Overview</h2>
   <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
 </div>
@@ -1891,11 +1951,11 @@ ${buildTabBar(tabsA)}
   <div class="cover-meta intro-meta">
     <div><div class="label">Arrival</div><div class="value">${esc(formatDateLong(arrivalDate))}</div></div>
     <div><div class="label">Departure</div><div class="value">${esc(formatDateLong(departureDate))}</div></div>
-    <div><div class="label">Duration</div><div class="value">${totalNights} nights</div></div>
+    <div><div class="label">Duration</div><div class="value">${totalNights} ${totalNights === 1 ? 'night' : 'nights'}</div></div>
   </div>
   <h2 class="intro-subhead">Your Cities</h2>
   ${cityRowsHtml}
-  ${staticMapUrl ? `<img class="route-map" alt="${esc(country)} route map" src="${esc(staticMapUrl)}">` : ''}
+  ${staticMapHtml}
   <h2 class="intro-subhead spaced">Trip Overview</h2>
   <div class="card card-accent intro-overview"><p class="lead">${esc(overview)}</p></div>
 </div>
@@ -2017,8 +2077,8 @@ Classify each city before allocating nights:
 - Micro → 0.5–1 night · Small → 1–2 · Medium → 2–3 · Large → 3–5 · Mega → 4–6
 
 Pace rules:
-- Full days → minimum nights. Dense schedule, maximize daily activities.
-- Relaxed days → maximum nights. Lighter schedule, room to breathe.
+- Fast pace → minimum nights. Dense schedule, maximize daily activities.
+- Relaxed pace → maximum nights. Lighter schedule, room to breathe.
 - Never compress below minimum. If cities × minimum > total days → remove cities.
 - Departure city classified Large or Mega → minimum 2 nights.
 - If departure city differs from arrival city and has significant tourist value → include it regardless of pace or night count. Compress other cities before removing the departure city.
@@ -2026,7 +2086,7 @@ Pace rules:
 Travel day deductions:
 - Travel 2–4 hours → half day lost. Over 4 hours → full day lost.
 - City losing full day to travel → add 1 night.
-- Travel days → max 2 activities near hotel or departure point. Flag clearly.
+- Travel days → activity placement follows DEPARTURE DAY STRUCTURE (STEP 10): no departing-city activities; a mid-trip transit day has one afternoon activity and one evening activity at the arrival city. Flag travel days clearly.
 
 STEP 2 — CITY SELECTION
 NOTE: If approved cities are provided above, skip city selection entirely — proceed to Step 3.
@@ -2034,12 +2094,18 @@ Only apply this step if no approved city plan exists.
 
 Calculate total trip days from arrival to departure.
 - All selected cities must be within the country submitted. Never recommend cities in other countries unless explicitly listed in must-see or extra notes.
+- SAFETY EXCLUSIONS — LEVEL 4 (DO NOT TRAVEL): Never recommend any destination classified as US State Department Travel Advisory Level 4. These are hard blocks — never suggest them as overnight destinations regardless of what the traveler requests. Current Level 4 countries (verified July 2026): Afghanistan, Belarus, Burkina Faso, Burma (Myanmar), Central African Republic, Chad, Democratic Republic of the Congo, Haiti, Iran, Iraq, Lebanon, Libya, Mali, Niger, North Korea, Russia, Somalia, South Sudan, Sudan, Syria, Uganda, Ukraine, Yemen. If the traveler submits one of these as their destination country, respond in the overview: "We're unable to generate an itinerary for [country] due to a current US State Department Level 4 (Do Not Travel) advisory. Please check travel.state.gov for the latest guidance."
+- SAFETY WARNINGS — LEVEL 3 (RECONSIDER TRAVEL): For destinations classified as Level 3, do not block city selection — many are popular tourist destinations with specific regional risks. Instead, add one sentence to the overview: "Note: [Country] is currently under a US State Department Level 3 (Reconsider Travel) advisory — review travel.state.gov before booking." Current Level 3 countries (verified July 2026): Azerbaijan, Bahrain, Bangladesh, Burundi, Colombia, Ethiopia, Guatemala, Guinea-Bissau, Guyana, Honduras, Israel/West Bank/Gaza, Kuwait, Mauritania, Nicaragua, Nigeria, Oman, Pakistan, Papua New Guinea, Qatar, Rwanda, São Tomé and Príncipe, Saudi Arabia, Tanzania, Trinidad and Tobago, United Arab Emirates, Venezuela.
+- MEXICO STATE-LEVEL EXCLUSIONS: Mexico is Level 2 overall but specific states carry Level 3/4. Never recommend these as overnight destinations: Guerrero state (including Acapulco), Sinaloa state (including Culiacán and Mazatlán areas outside designated tourist hotel zones), Tamaulipas state, Zacatecas state, Colima state, Michoacán state interior (excluding Morelia, which may be included with a caution note). If the traveler explicitly requests one of these in mustSee or extraNotes, add a note in the overview: "We've routed around [location] due to current travel advisories; please check the latest US State Department guidance before traveling." Suggest a safe alternative in the same region where possible.
+- ADVISORY ACCURACY: Advisory levels change. The lists above reflect July 2026 data. If there is any reason to believe a destination's status may have changed, note in the overview that the traveler should verify current advisories at travel.state.gov before booking.
 - Always consider arrival and departure airport cities as candidates. Include them for flying trips unless the traveler chose different cities or the airport has no tourist value.
-- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it. They need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: Full days pace → minimum nights for that city size. Relaxed pace → maximum nights. Never drop the arrival city unless the traveler explicitly names a different starting city or says "skip [city]" in mustSee or extraNotes.
+- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it. They need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: Fast pace → minimum nights for that city size. Relaxed pace → maximum nights. Never drop the arrival city unless the traveler explicitly names a different starting city or says "skip [city]" in mustSee or extraNotes.
 - DEPARTURE CITY RULE: Always include the departure airport city for at least 1 night unless the traveler explicitly says to skip it. Never route a traveler out of any city they have not spent at least one night in — they need accommodation, time to reach the airport, and a buffer for their flight. If the departure city is a world-class or must-visit destination → allocate nights based on typical visitor recommendations adjusted for their pace, same as arrival city logic above. Adjust other city night allocations to fit both arrival and departure city requirements.
 - Cities listed, AI false → respect list. Adjust count if needed. Explain changes in overview.
 - AI true, anchors provided → anchors are fixed. Fill remaining days with best-fit cities.
 - AI true, no cities → select from scratch weighted by interests, travel party, travel style, weather, routing.
+- NATURAL SITES AS DESTINATIONS (CRITICAL): Never create a combined overnight destination from two or more natural sites (waterfalls, hot springs, thermal pools, cloud forests, beaches, national parks, lagoons) that are not in the same valley or within 1.5 hours of each other. If a natural site has no local accommodation hub, treat it as a DAY TRIP from the nearest city — not an overnight destination. A combined destination like "Hierve el Agua & Valle Nacional" is only valid if both sites are within 1.5 hours of the same accommodation base. If they are not, include the closer one as a day trip from the origin city and omit or separately accommodate the other.
+- When a traveler or the AI selects a natural area as an overnight destination, verify it has real accommodation options (eco-lodges, guesthouses, or nearby village hotels) before placing it in the itinerary as an overnight stop. If accommodation is sparse or unverifiable, reclassify it as a day trip.
 - Too many cities → keep best subset, explain removals. Too few → add complementary cities.
 - Every city must have why_recommended max 25 words: "[City] is [known for] — chosen for your [interest or preference]." Never generic or logistical.
 - Every city must also have city_teaser: ONE evocative sentence (~15 words) on what makes this city special on this trip — sensory and specific, never logistical. Example: "Ancient canal town where silk weaving and garden culture meet."
@@ -2088,7 +2154,7 @@ STEP 5 — INTEREST WEIGHTS
 - 1–10% Low → city guide pool only. Never in day-by-day. Max 1 per city.
 - 0% → exclude entirely from all output.
 
-Relaxed days pace reduces frequency one tier: High → every 2–3 days, Medium → once per city stay.
+Relaxed pace reduces frequency one tier: High → every 2–3 days, Medium → once per city stay.
 
 STEP 6 — ACCOMMODATION
 The NUMBER of accommodations is driven entirely by how many accommodation styles the traveler selected (see "Accommodation style" in the trip details below). This SUPERSEDES any earlier per-city count or trip-length accommodation cap:
@@ -2117,7 +2183,7 @@ Every accommodation entry must include:
 STEP 7 — FOOD & DRINK
 Scale to Food & drink interest weight. These are HARD MINIMUMS per city — never go below them. Each venue type below is a SEPARATE entry in the restaurants array:
 
-NO DUPLICATION OF DAY-BY-DAY DINNERS: The restaurants array is a reference tab of ADDITIONAL dining options. Do NOT re-list any restaurant that already appears as a day's restaurant_suggestion in the day-by-day plan. Every entry in the restaurants array must be a DIFFERENT venue, not already named in any day's restaurant_suggestion — together the two sets widen the traveler's options rather than repeat. The per-day restaurant_suggestion itself is preserved exactly as is; this rule governs ONLY the separate restaurants array. The per-city minimum counts below describe this additional restaurants array.
+ADDITIONAL ARRAY: The restaurants array is a reference tab of ADDITIONAL dining options, separate from the day-by-day restaurant_suggestion picks; the per-city minimum counts below describe this additional array. (No venue may repeat between the two sets, or across days — enforced in STEP 14.5.)
 
 - 20%+ → MINIMUM per city (6 entries flat):
   · 1 breakfast spot (set venue_type: "Breakfast") — or Brunch in cities where brunch culture is strong e.g. New York, London, Sydney, Melbourne, Cape Town
@@ -2148,8 +2214,6 @@ Default to top 3 local cuisine styles if no preference selected.
 Filter by travel party first, then travel style tier.
 Fine dining + Budget → most affordable fine dining available.
 Every venue must include venue_type, known_for (max 8 words), neighborhood.
-Never recommend a venue at a time it is not known for.
-Never repeat the same venue as restaurant suggestion on consecutive days.
 Only include venues that are widely acclaimed or have strong local reputation.
 Bars and cocktail bars → city guide only, never in the restaurants array.
 
@@ -2177,26 +2241,61 @@ Every booking_tip is one sentence including booking window. Never label a road s
 GUILIN → YANGSHUO ROUTING: When the itinerary includes a Guilin-to-Yangshuo leg, the Li River cruise (Guilin → Yangshuo, ~4.5 hours, morning departure) IS the recommended transfer — list it as the transport mode for this leg. On the travel day, schedule the cruise as the morning activity slot. Do NOT schedule the Li River cruise as a standalone day activity on any day the traveler is already staying in Yangshuo — it cannot be done in reverse and cannot be repeated.
 
 STEP 10 — GEOGRAPHIC CLUSTERING
-Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On travel days all activities near hotel or departure point only. Assign neighborhood_focus and restaurant_suggestion per day using this logic:
+(Covers how each day is assembled: neighbourhood clustering, the per-day dinner and breakfast picks, and departure/transit-day structure.)
+Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full days around must-sees. Never zigzag. On departure/transit days, follow DEPARTURE DAY STRUCTURE below (no activities at the departing city; a transit-day afternoon activity and evening activity happen at the ARRIVAL city). Assign neighborhood_focus and restaurant_suggestion per day using this logic:
 - Regular days → restaurant_suggestion must always be DINNER. Name a specific, real, well-regarded dinner restaurant suited to that city's evening. Lunch is never the restaurant_suggestion unless the traveler has an explicit half-day or no evening activity in that city. Label clearly as Dinner. Breakfast is handled separately — see below.
-- Day trip days → restaurant_suggestion must always be a DINNER at the BASE city accommodation area (for the evening when the group returns). Never use a lunch spot at the day-trip destination as the restaurant_suggestion. If there is a standout lunch spot at the day-trip destination, work it into the afternoon activity description only (e.g. "Trattoria X — honest cucina povera in the trulli zone, ideal for lunch between sights"). Never leave a day without a dinner suggestion.
-- Departure day → pick a restaurant near the departure hotel or point — last meal in that city before leaving.
-- Arrival day → pick a restaurant near the arrival accommodation — first meal in the new city.
-- Full travel day → pick a restaurant near the arrival accommodation for dinner on arrival.
-- Never repeat the same venue on consecutive days across both restaurant_suggestion and restaurants array.
+- Day trip days → restaurant_suggestion must always be a DINNER at the BASE city accommodation area (for the evening when the group returns). Never use a lunch spot at the day-trip destination as the restaurant_suggestion. If there is a standout lunch spot at the day-trip destination, work it into the afternoon activity description only (e.g. "Trattoria X — honest cucina povera in the trulli zone, ideal for lunch between sights"). Never leave a day without a dinner suggestion — the FINAL departure day (returning home) is the sole exception, with its dinner field set to N/A.
+- Final departure day (the trip's LAST day, returning home) → set the dinner field to exactly N/A (see DEPARTURE DAY STRUCTURE below). Do not name a dinner restaurant on the final departure day.
+- Arrival day (the trip's FIRST day, arriving from home — not a mid-trip transit day) → pick a restaurant near the arrival accommodation for the first meal in the new city.
+- Full travel day / mid-trip transit day → dinner IS a real, specific restaurant near the ARRIVAL city accommodation (their first dinner in the new city); the activities are one afternoon slot and one evening slot at the arrival city (see DEPARTURE DAY STRUCTURE below).
 - Restaurant suggestion should always be geographically logical for that day's context.
-- Restaurant suggestion must be a specific real venue and must NOT duplicate any venue in the restaurants array (Food & Drink tab) — the day-by-day picks and the Food & Drink list are disjoint sets, so together they broaden the traveler's dining options.
-- BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array.
+- Restaurant suggestion must be a specific real venue (uniqueness vs the restaurants array and across days is enforced in STEP 14.5).
+- BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array. The ONLY exception is a transit day where no real breakfast venue can be confidently named — see TRANSIT DAY BREAKFAST below, which permits omitting the field rather than writing a placeholder.
 - BREAKFAST PLACEMENT: the breakfast spot must be geographically close to where that day's morning activity takes place — or near the hotel if it is an early-departure day. Never recommend a breakfast spot in a different neighbourhood that forces the traveler to backtrack before the morning activity. For example: if the morning activity is in West Vancouver, put breakfast near West Vancouver or the West End — never in Mount Pleasant or Gastown.
 
-DEPARTURE DAY: The final day of the trip is a departure day. Schedule a morning activity only if the departure flight realistically allows it (i.e. departure is after 12:00 — assume 3 hours pre-departure for international flights, 2 hours for domestic). If the departure time is unknown or early, leave the morning slot as "departure transfer and airport check-in" only. Never schedule afternoon or evening activities on a departure day.
+MEAL VENUE UNIQUENESS (CRITICAL):
+No restaurant, cafe, or food venue may appear more than once in the entire itinerary. This applies:
+- Across all meal types (BREAKFAST, DINNER)
+- Across all days, including consecutive nights in the same city
+- Across different cities (do not repeat a chain or franchise across cities)
+
+Before finalizing each meal recommendation, verify this venue has not already been recommended on any earlier day. If the same venue would appear twice, replace one instance with a different venue.
+
+TRANSIT DAY BREAKFAST:
+On any day the traveler is in transit — checking out and driving or flying to the next city — the breakfast, if named, MUST be in the city they are waking up in (the departure city), near the departure hotel or transit hub. They cannot eat at a restaurant they haven't reached yet. Example: Day 4 morning = "Drive from Austin to Fredericksburg" → breakfast is an Austin spot, not a Fredericksburg one.
+Either name a specific, real café/bakery/breakfast spot there, OR omit the breakfast field entirely for that day.
+Never write "Explore [neighbourhood] for breakfast", "Grab breakfast near [area]", or any area-based placeholder — it renders identically to a named venue and misleads customers. A transit-day breakfast must be a real named venue or nothing at all.
+
+DEPARTURE DAY STRUCTURE (CRITICAL):
+All departures are scheduled in the morning. Apply this structure on every departure day:
+
+TRANSIT DAYS (moving from one city to the next mid-trip):
+- MORNING slot: N/A — traveler is checking out and departing. Write a brief note, e.g., "N/A — checking out of [departure city] and catching the morning [train/flight] to [arrival city]."
+- AFTERNOON slot: ONE light activity at the ARRIVAL city — choose something easy and low-effort for arrival day (a neighborhood walk, a scenic viewpoint, a stroll through a local market, a lakeside path). Assign a tier badge.
+- EVENING slot: ONE activity at the ARRIVAL city. Assign a tier badge.
+
+BREAKFAST: recommend a departure-city breakfast venue as usual.
+DINNER: recommend an arrival-city dinner venue as usual.
+
+PACING NOTE: This transit day structure applies to ALL pacing modes including fast-paced itineraries. The MORNING=N/A note must appear as an explicit slot in the day-by-day output on every transit day, regardless of pace.
+
+FINAL DEPARTURE DAY (last day of the trip, returning home):
+- MORNING slot: N/A — traveler is checking out and heading to the airport
+- AFTERNOON slot: N/A
+- EVENING slot: N/A
+- DINNER field: N/A
+
+Never assign any activity at the departing city on a departure day.
+Never write "Departure." or "Departure" as a standalone word in any slot — use N/A.
+EXCEPTION: when the inter-city transfer is itself the scheduled sightseeing experience (e.g. the Guilin → Yangshuo Li River cruise), that transfer occupies the morning slot as its named activity instead of N/A.
+This structure overrides the STEP 14 PACE STRUCTURE slot pattern on departure days.
 
 STEP 11 — ACTIVITY TIME BUDGET VALIDATION
 Before finalizing each day, validate the day's activities against a realistic time budget.
 
 Time budgets per pace:
-- Full days → ~10 hours of activity time available
-- Relaxed days → ~6 hours of activity time available
+- Fast pace → ~10 hours of activity time available
+- Relaxed pace → ~6 hours of activity time available
 
 Activity time classifications:
 - Quick activity (market visit, viewpoint, short walk) → 1–2 hours
@@ -2205,17 +2304,37 @@ Activity time classifications:
 - Full-day activity (theme park, long day trip, trek) → 6–8 hours including transport
 
 Validation rules:
-- Full day activity → that is the day's primary activity. Add ONE light nearby evening activity only.
-- Day trip (90+ min each way) → counts as half-day minimum just for transport. Relaxed day + day trip → day trip IS the day, no other activities. Full days + day trip → only if destination is under 90 min each way, pair with one nearby activity max.
+- Full-day activity → that is the day's primary activity. Add ONE light nearby evening activity only.
+- Day trip (90+ min each way) → counts as half-day minimum just for transport. (STEP 4 sets the max allowable day-trip distance per travel party; this rule governs how many OTHER activities can share the day.) Relaxed pace + day trip → day trip IS the day, no other activities. Fast pace + day trip → pair with one nearby activity max only if the destination is under 90 min each way; at 90+ min each way the day trip stands alone.
 - Half-day activity → can pair with one standard activity on the same day max.
 - Never schedule 3 time-intensive activities (each 3+ hours) on the same day regardless of pace.
-- Travel days → max 2 quick activities near departure point only.
+- Travel/transit days → no activities at the departing city; follow DEPARTURE DAY STRUCTURE (a transit day has one afternoon activity and one evening activity at the arrival city).
 
 STEP 12 — BOOK BEFORE YOU GO
 A curated advance-booking guide — not a tracker. Include only items that genuinely benefit from booking ahead: flights, accommodation, high-demand restaurants, activities that sell out, rail passes, entry tickets with timed slots. Sort by urgency: Book now → 4–6 weeks ahead → On arrival.
-Every entry needs: item_name, city, date, est_cost, booking_priority, booking_tip (one sentence — where and how to book, and why booking ahead matters for this item), booking_link (most direct official booking URL; leave empty string if no reliable URL exists).
-Do NOT include generic items that need no advance booking (e.g. free parks, markets, casual walk-in cafes). Quality over quantity — only items where the link genuinely helps the traveler act.
+Every entry needs: item_name, city, date, est_cost, booking_priority, booking_tip (one sentence — where and how to book using the PLATFORM NAME ONLY in plain text, and why booking ahead matters for this item), booking_link (always an empty string — see NO URLS below).
+Do NOT include generic items that need no advance booking (e.g. free parks, markets, casual walk-in cafes). Quality over quantity — only items where booking ahead genuinely helps the traveler.
 SCHEDULED-ONLY: Any activity, attraction, experience, or restaurant in this list MUST already appear in the days array (as a scheduled morning/afternoon/evening activity or a day's restaurant_suggestion). Do NOT introduce supplementary attractions or experiences that are not in the day-by-day plan. Logistics items — flights, accommodation, inter-city transport/rail passes, and visa/entry requirements — are exempt and may be included as usual.
+
+BOOK BEFORE YOU GO — ALIGNMENT:
+Every restaurant listed in Book Before You Go for a specific date must exactly match the dinner restaurant listed in the day-by-day plan for that date. Every activity listed in Book Before You Go must actually appear in the day-by-day plan. Do not recommend booking a restaurant or activity that is not already in the plan. Cross-check every single Book Before You Go entry against the day-by-day before finalizing.
+
+BOOK BEFORE YOU GO — EXCLUSIONS:
+Do not include travel insurance in the Book Before You Go section.
+Travel insurance is a generic logistics item that is not specific to this itinerary. If there is nothing additional worth booking, omit the slot rather than filling it with a generic reminder.
+Only include items that are genuinely specific to this trip: venue reservations, timed entry tickets, permits, transport bookings, experience slots.
+
+BOOK BEFORE YOU GO — NO URLS:
+Never include hyperlinks or URLs in the Book Before You Go section.
+Instead, specify where to book using plain text — the platform name only.
+Examples of correct format:
+  - "Reserve via Resy"
+  - "Book via OpenTable"
+  - "Tickets via the venue's website"
+  - "Permits via Texas State Parks reservation system"
+  - "Reserve directly by phone"
+Never write a URL. The customer will search or use the platform name to find the booking page.
+The booking_link field must always be an empty string.
 
 STEP 13 — CITY GUIDE
 A reference pool of EXTRA options not already in your daily plan, weighted by interest scores. These are ADDITIONAL ideas beyond the day-by-day — never the same entries.
@@ -2275,30 +2394,92 @@ Rules:
 - Every trip must include at least 3 Local Pick entries across the day-by-day.
 - Do not label everything as Hidden Gem — use sparingly and only when truly justified.
 - Tier must reflect objective popularity, not subjective preference.
-- For day-by-day entries, include spot_tier as a prefix inside the activity string in square brackets: "[Iconic] " · "[Local Pick] " · "[Hidden Gem] "
-  Example morning: "[Local Pick] Yanaka Cemetery Walk — a quiet neighborhood necropolis turned local strolling ground, lined with cats and old craft shops."
+- For day-by-day entries, prefix the activity string with the tier in square brackets — "[Iconic] " · "[Local Pick] " · "[Hidden Gem] ". Example morning: "[Local Pick] Yanaka Cemetery Walk — a quiet neighborhood necropolis turned local strolling ground, lined with cats and old craft shops."
 - For city_guide entries, add spot_tier as a separate field (see JSON schema below).
-- CRITICAL FINAL CHECK: Before outputting, scan every morning, afternoon, and evening field across ALL days. Every single slot must begin with [Iconic], [Local Pick], or [Hidden Gem]. A slot missing this prefix is a formatting error — add the tier before outputting. No exceptions, no days skipped.
+- CRITICAL FINAL CHECK: before outputting, scan every morning, afternoon, and evening field across ALL days and confirm each begins with one of the three tier prefixes; add any that is missing. No days skipped. EXCEPTIONS (no prefix): the RELAXED-pace afternoon free-time slot (see PACE STRUCTURE), and any slot set to N/A on a departure/transit day (see DEPARTURE DAY STRUCTURE).
+- This applies to ALL slot types without exception — named venues, markets, ruins, archaeological sites, bars, mezcalerias, cantinas, distilleries, craft workshops, pottery studios, outdoor activities, hikes, cycling routes, river experiences, nature walks, viewpoints, and cultural performances. Every MORNING, AFTERNOON, and EVENING slot description must begin with [Iconic], [Local Pick], or [Hidden Gem] regardless of whether the experience is at a named establishment, an open-air market, a ruin, or a nature-based activity.
+  ✓ Correct: [Iconic] Mercado de Abastos — vast indigenous market where Zapotec vendors sell mole pastes and wildflowers
+  ✓ Correct: [Iconic] Monte Alban — ancient Zapotec hilltop city with sweeping valley panoramas
+  ✓ Correct: [Local Pick] Mezcaleria In Situ — curated library of over 40 small-batch mezcales
+  ✓ Correct: [Local Pick] Cycle the Li River Valley Loop through karst countryside
+  ✗ Wrong: Mercado de Abastos — vast indigenous market where Zapotec vendors sell mole pastes
+  ✗ Wrong: Monte Alban — ancient Zapotec hilltop city with sweeping valley panoramas
+  ✗ Wrong: Cycle the Li River Valley Loop through karst countryside
+- Pay special attention to the FIRST FULL DAY in each new city — this is the most common location for missed badges. After every transit day, confirm the following day's slots all carry badges.
 
 STEP 13.6 — HIDDEN FINDS
 Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
 - 1–2 cities → 3 Hidden Finds PER CITY
 - 3+ cities → 2 Hidden Finds PER CITY
 These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
-Each entry: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words — why it's special and not obvious), city.
-Each Hidden Find must be a place NOT already appearing anywhere else in the itinerary — not as a morning, afternoon, or evening activity, not as an evening suggestion, and not as any restaurant recommendation (restaurant_suggestion, breakfast_suggestion, or an entry in the restaurants array). Cross-check every hidden find against the full itinerary before including it. Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places.
+Each entry: emoji, title, description (max 25 words — why it's special and not obvious), city.
+
+HIDDEN FIND TITLES:
+The title of every hidden find must be the real, specific name of an actual venue, experience, or place — not a descriptive phrase or thematic label.
+WRONG: "Pinot Poured With Local Pride" / "A Hidden Garden at Dusk" / "Craft Beer Off the Beaten Path"
+RIGHT: "Eyrie Vineyards Tasting Room" / "Fredericksburg Herb Farm" / "Occidental Brewing"
+If you cannot name a specific real venue, do not include it as a hidden find. Max 8 words.
+
+HIDDEN FINDS — DEDUPLICATION (CRITICAL):
+Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this itinerary:
+- All morning activities (every day)
+- All afternoon activities (every day)
+- All evening activities (every day)
+- All breakfast restaurant picks (every day)
+- All dinner restaurant picks (every day)
+- All entries in the restaurants array (EVERY city, EVERY venue type — Breakfast, Cafe, Bakery, Lunch, Dinner, Street Food, Dessert)
+
+If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions.
+This means a venue cannot be both a Hidden Find AND a restaurants entry. If Expendio de Maiz Sin Nombre is in the restaurants array as a Dinner, it cannot also be a Hidden Find. Choose one placement only — restaurants array OR hidden finds, never both.
+
+Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it.
+Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places not already anywhere in the output.
 These appear as a standalone section in the PDF — make them count.
 
 STEP 14 — ACTIVITY FRAMING
-Pace density rules — apply to every day-by-day entry:
-- Full days → populate morning, afternoon AND evening with distinct activities. All 3 slots required.
-- Relaxed days → populate morning and either afternoon OR evening. If the day's activities are time-intensive, one slot can be a lighter, low-key suggestion — but it must still name a specific place (see the Free time rule below), never a generic placeholder.
+(Covers how to fill and word each day's activity slots: pace structure, slot–venue fit, and field formatting.)
+Pace density rules — apply to every day-by-day entry (governed by PACE STRUCTURE below):
+- Fast pace → populate morning, afternoon AND evening with distinct, fully-committed activities. All 3 slots required. EXCEPTION: on a day dominated by a full-day activity or a 90+ min day trip, follow STEP 11 instead (the big activity is the day; add one light nearby evening activity only).
+- Relaxed pace → follow PACE STRUCTURE below: morning activity, a free afternoon, and one relaxed evening activity. EXCEPTION: on a day dominated by a full-day activity or a 90+ min day trip, follow STEP 11 instead (the big activity IS the day — no separate morning/evening activities).
+
+PACE STRUCTURE:
+Relaxed pace and fast pace must produce structurally different itineraries — not just different language.
+
+RELAXED PACE:
+- Morning slot: one unhurried activity (coffee, a park, a market, a slow neighbourhood walk)
+- Afternoon slot: write "Free afternoon — rest, explore at your own pace, or revisit somewhere you loved." Do NOT assign a specific venue or activity.
+- Evening slot: one relaxed evening activity (drinks at a local bar, live music, a sunset walk)
+- The day feels spacious. Two committed activities per day maximum.
+
+FAST PACE:
+- Morning slot: one activity
+- Afternoon slot: one activity (a specific venue or neighbourhood, fully committed)
+- Evening slot: one activity
+- All three slots are filled with specific recommendations.
+
+Never describe a 3-slot day as "relaxed" or "unhurried." Relaxed pace means the afternoon slot is always free time.
+This slot pattern (both paces) yields to STEP 11 when a full-day activity or a 90+ min day trip dominates the day — then the big activity is the day, and to DEPARTURE DAY STRUCTURE on departure/transit days.
 
 All day-by-day activity fields: "[Activity name] — [one line what it is and why it suits this traveler]." No duration, category label, neighborhood tag, or pipes. Max 20 words.
-NEVER output "Free time" (or "Free time — explore [neighborhood] at your own pace", or any generic placeholder) as a morning, afternoon, or evening slot entry. Every slot must name a specific place in that city — a named neighbourhood to wander, a named market, a named viewpoint, a named park — each with a one-line description, formatted exactly like every other activity slot.
+NEVER output "Free time" (or "Free time — explore [neighborhood] at your own pace", or any generic placeholder) as a morning or evening slot entry, and never as an afternoon slot on a FAST-pace day. Every such slot must name a specific place in that city — a named neighbourhood to wander, a named market, a named viewpoint, a named park — each with a one-line description, formatted exactly like every other activity slot. The ONLY exception is the RELAXED-pace afternoon slot, which uses the exact free-afternoon line specified in PACE STRUCTURE above.
+
+SLOT–VENUE FIT — assign every venue only to a slot where it is actually open and at its best:
+- General: never recommend a venue at a time it is not known for.
+- Morning slots: only venues open before noon. Never bars, nightlife venues, honky-tonks, cocktail bars, or evening-only entertainment (dance halls, nightclubs, speakeasies, comedy clubs, late-night music venues) — if a venue's primary hours are after noon, it belongs in the afternoon or evening only.
+- Breakfast field: only venues that open before noon and serve morning food — never dinner-only restaurants, cocktail bars, or evening-only venues. If unsure, pick a well-known café, bakery, or all-day diner in the correct neighborhood.
+- Evening slot: a non-dining experience only — music, live entertainment, a bar for drinks, a scenic walk, a neighbourhood to explore, a cultural venue, a rooftop. Never a restaurant, café, or dining experience: the DINNER field already captures where the customer eats, and the evening slot is what they do before or after dinner. If the best evening option is a meal, put it in the DINNER field and choose a non-dining evening experience.
+- Animal experiences: schedule only when the animals are active and visible. Giant panda bases (Chengdu Research Base and similar) → morning only (pandas are active 8am–noon, asleep in the afternoon). Wildlife reserves and safari parks → the reserve's recommended viewing windows (typically dawn or dusk). Never place a morning-active animal experience in the afternoon or evening.
+
+NIGHTTIME-ONLY EXPERIENCES:
+Some experiences only work after dark and must only be placed in the EVENING slot.
+- Bioluminescence tours (lagoons, bays, beaches where water glows at night): EVENING only. These are physically invisible in daylight — never assign to MORNING or AFTERNOON.
+- Stargazing tours, astronomy nights, observatory visits: EVENING only.
+- Firefly watching: EVENING only.
+- Night markets that operate exclusively after sunset: EVENING only.
+If the activity description or name contains the words "night", "nocturnal", "after dark", "glows at night", or "bioluminescence", it must be in the EVENING slot.
 
 STEP 14.5 — NO REPETITION RULE (applies across the ENTIRE trip)
-Every activity, attraction, and restaurant must be unique across all days. Never schedule the same place, sight, or restaurant more than once, even across different days in the same city. This applies to morning, afternoon, and evening slots equally.
+Every activity, attraction, and restaurant must be unique across all days. Never schedule the same place, sight, or restaurant more than once, even across different days in the same city — not just consecutive days. This applies to morning, afternoon, and evening slots AND to restaurant_suggestion and breakfast_suggestion equally. It also applies BETWEEN sets: the day-by-day restaurant_suggestion / breakfast_suggestion picks and the separate restaurants array (Food & Drink tab) are disjoint — no venue appears in both — so together they widen the traveler's options rather than repeat.
 - For multi-day stays in one city, treat the city's attractions as a finite set you are distributing across days — once a place is used on one day, it is unavailable for every other day.
 - Before finalizing each day, check it against all previous days and confirm no activity, attraction, or restaurant has already appeared.
 - If a city has more days than distinct marquee attractions, fill remaining slots with neighborhoods, local experiences, day trips, markets, parks, or lesser-known spots rather than repeating a famous site.
@@ -2309,14 +2490,41 @@ STEP 15 — OUTPUT FORMATTING
 - Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
-- Overview: max 3 sentences — cities, trip tone, seasonal highlight. Always written in second person addressing the traveler as "you" and "your" — never "the couple", "the traveler", "the group", or any third person narrative.
+- Overview: max 3 sentences — cities, trip tone, seasonal highlight. (Second-person voice per STEP 16.)
 - Costs: always a range with currency symbol
 - Temperatures: always in Fahrenheit (°F). Never use Celsius.
+
+CURRENCY FORMAT:
+Always use the local currency symbol — never the ISO code or three-letter abbreviation.
+- China: ¥ (not CNY, not RMB). Format: ¥800–¥1,200
+- USA: $ (not USD). Format: $50–$80
+- UK: £ (not GBP). Format: £30–£50
+- Europe: € (not EUR). Format: €40–€60
+Apply this consistently throughout the entire itinerary — in cost estimates, restaurant price guidance, experience fees, and all budget sections.
+
+LONG TRIP DESCRIPTION BREVITY:
+If the total trip is longer than 10 nights, limit every prose description to one sentence maximum (approximately 15–20 words). This applies to: morning, afternoon, and evening slot descriptions; breakfast_suggestion and restaurant_suggestion descriptions; hidden_finds descriptions.
+Do not shorten venue names, tier labels, or booking platform hints — only the prose that follows the venue name.
+Example of correct format for a long trip:
+  "South Congress Ave · SoCo — Austin's most iconic strip of shops, cafés, and street art."
+Example of incorrect (too long) format:
+  "South Congress Ave · SoCo — Austin's most iconic stretch, lined with eclectic boutiques, vintage shops, acclaimed restaurants, food trucks, and the legendary Ann W. Richards Congress Avenue Bridge just to the north."
+
+OUTPUT HYGIENE (CRITICAL) — never let internal text leak into any customer-facing field:
+- No planning notes: never write "UNCERTAIN", "TBD", "cannot confirm", "leave as is", or similar. If you cannot confidently name a specific breakfast restaurant for a day, omit the breakfast field entirely (see TRANSIT DAY BREAKFAST) — never a placeholder.
+- No self-correction or revision markers: never write "wait", "instead", "actually", "correction:", "updated:", "revised:", "I meant", or "scratch that". If you change your mind mid-generation, write only the final choice — never the reasoning or the discarded option.
+- No citation/footnote markers: never write "[1]", "[2]", "[7]", or any bracketed source numbers. State facts plainly, without a source annotation.
 
 STEP 16 — ACCURACY
 Only use what was submitted. Never reference or invent details not provided. Never invent property names, venue names, or transport services you cannot reasonably verify exist.
 Never assume or infer the traveler's nationality — not from their name, their departure city, or any other detail — and never state or imply that this is a domestic trip or that the traveler is a citizen of the destination country. For visa_requirements and entry_requirements in practical_info, give generic, passport-agnostic advice: state that entry requirements vary by passport, name the most common visa-free nationalities for this destination if well-known (e.g. US/Canada, UK, EU, Australia), cover visa-on-arrival availability, e-visa options, and processing time, and always tell the traveler to verify their own passport's specific requirements before travel.
-Always address the traveler directly as "you" throughout the entire output — never refer to them by name or in third person.
+Always address the traveler directly as "you" and "your" throughout the entire output — never by name, and never in third person ("the couple", "the traveler", "the group", or any third-person narrative).
+
+TEMPORAL ACCURACY — before assigning any venue or event, verify it actually operates on that date; if unsure, do not assign it. Check both:
+- Day of week: venues that run only on certain days must fall on a day they are open. Common pitfalls: farmers markets (often Saturday/Sunday only — check the specific market), weekend-only brunch spots, weekly events (trivia nights, open mics, pop-ups). When a description references day type ("quiet on weekday afternoons," "busy on weekend mornings," "closed Mondays"), confirm it matches the real weekday for that date — e.g. never call a Saturday visit "quiet on a weekday." Monday closures: for a wine tasting, boutique, or tasting-room activity that falls on a Monday in a Monday-closure region (Hill Country wineries, wine country, small European-style towns), add a note in the activity description — "Note: Call ahead — some tasting rooms in this area close on Mondays." — do not rely on Practical Info alone.
+  DAY-OF-WEEK IN VENUE NAMES (CRITICAL): If a venue or event name contains a day of the week — for example "Sunday Market", "Monday Night Jazz", "Wednesday Farmers Market", "Friday Street Food Night" — that day is a hard scheduling constraint. The venue must only be placed on the matching day of the week. No exceptions. Before assigning any venue whose name contains a day of the week, confirm that the calendar date in the itinerary matches that day. Example: "Tlacolula Sunday Market" → only assign on a Sunday. If no Sunday falls within that city's stay, do not assign this venue.
+- Time of year: seasonal venues/events must run during the travel dates. Examples: summer festivals, outdoor summer dances, winter-only attractions, holiday markets, harvest events, seasonal park programs. Common pitfall: outdoor summer events (Memorial Day through Labor Day) placed on autumn, winter, or spring dates.
+
 Treat mustSee and extraNotes as hard instructions, not suggestions. Apply them before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
 Cross-country airports: if arrival and departure airports are in different countries, note this in the overview and clarify which country the itinerary covers. Never plan activities or cities outside the submitted country.
 
@@ -2339,7 +2547,7 @@ OUTPUT — return exactly this JSON:
       "afternoon": "string — Activity name — one line description. Max 20 words.",
       "evening": "string — Activity name — one line description. Max 20 words.",
       "breakfast_suggestion": "string — Breakfast: Restaurant or cafe name | neighborhood | one line why it fits today",
-      "restaurant_suggestion": "string — Meal type (Lunch/Dinner): Restaurant name | neighborhood | one line why it fits today",
+      "restaurant_suggestion": "string — Meal type (Lunch/Dinner): Restaurant name | neighborhood | one line why it fits today. On the FINAL departure day only (returning home), set this to exactly: N/A. On a mid-trip transit day, this is a real dinner near the arrival city.",
       "estimated_daily_cost": "string — range with currency"
     }
   ],
@@ -2413,7 +2621,7 @@ OUTPUT — return exactly this JSON:
       "date": "string",
       "est_cost": "string",
       "booking_tip": "string — one sentence, why booking ahead matters for this item",
-      "booking_link": "string — official booking URL or empty string"
+      "booking_link": "string — always an empty string; never a URL (see NO URLS rule)"
     }
   ],
   "practical_info": {
@@ -2446,7 +2654,7 @@ AI recommendation: ${d.aiCityRecommendation}
 Anchor cities: ${anchorCities}
 Travel party: ${d.travelParty || ''}
 Group size: ${d.groupSize || 'not specified'}
-Pace: ${d.paceOfTravel || ''}
+Pace: ${d.paceOfTravel || ''} (packed = Fast pace, relaxed = Relaxed pace — apply the Fast/Relaxed pace rules throughout)
 Travel style: ${travelStyle}
 Accommodation style: ${accommodationStyle}
 Interests weighted: ${interests}
@@ -2473,12 +2681,17 @@ Cities requested: ${citiesRequested}
 
 For EACH city provide:
 - city_teaser: ONE evocative sentence on what makes this city special on this trip (sensory, specific, not logistical).
-- activities: 5–8 specific, real, named things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
-- restaurants: 5–8 specific, real, named venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words). Never use the destination city or country name as the restaurant name (e.g. "Chengdu Restaurant" in Chengdu is not acceptable — use the venue's actual name).
-- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title — MUST include the actual venue, place, or site name (e.g. "Hope and Sesame Speakeasy Bar", "Pixian Doubanjiang Museum"). Evocative language is welcome but the real name must be present so the traveler can find it. Max 8 words, description (max 25 words), city. None of these may duplicate a venue, bar, or place already listed in this city's activities or restaurants — cross-check before including.
+- activities: 5–8 specific things to do, best-first. Each: name, description (max 25 words, why it suits this traveler), spot_tier (Iconic · Local Pick · Hidden Gem).
+- restaurants: 5–8 specific venues across meal types. Each: name, venue_type, cuisine_category, price_range, known_for (max 8 words), neighborhood, why (max 10 words). Never use the destination city or country name as the restaurant name (e.g. "Chengdu Restaurant" in Chengdu is not acceptable — use the venue's actual name).
+- hidden_finds: 2–3 genuinely non-obvious places most visitors miss. Each: emoji, title, description (max 25 words), city.
+  HIDDEN FIND TITLES: The title of every hidden find must be the real, specific name of an actual venue, experience, or place — not a descriptive phrase or thematic label.
+    WRONG: "Pinot Poured With Local Pride" / "A Hidden Garden at Dusk" / "Craft Beer Off the Beaten Path"
+    RIGHT: "Eyrie Vineyards Tasting Room" / "Fredericksburg Herb Farm" / "Occidental Brewing"
+    If you cannot name a specific real venue, do not include it as a hidden find.
+  HIDDEN FINDS — DEDUPLICATION (CRITICAL): Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this city's list — every activity and every restaurant. If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions. Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
-${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only, NOT day-by-day routing.` : ''}
+${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only.` : ''}
 ${flags.wantAccommodations ? `\nACCOMMODATIONS: Provide exactly 3 hotel picks per city (never fewer than 3), matched to the traveler's accommodation style and budget.` : ''}
 
 TRAVELER PREFERENCES:
@@ -2496,11 +2709,13 @@ Extra notes: ${d.extraNotes || ''}
 
 Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
 
+OUTPUT HYGIENE: Never let internal text leak into any output field — no citation or footnote markers ("[1]", "[7]", or any bracketed numbers), no self-correction or revision language ("note:", "instead", "actually", "revised:"), and no internal planning notes ("UNCERTAIN", "TBD", "cannot confirm"). Write only the final answer.
+
 VISA & ENTRY: Never assume or infer the traveler's nationality, and never state or imply that this is a domestic trip or that the traveler is a citizen of the destination country. For visa_requirements and entry_requirements, give generic, passport-agnostic advice: state that entry requirements vary by passport, name the most common visa-free nationalities for this destination if well-known (e.g. US/Canada, UK, EU, Australia), cover visa-on-arrival availability, e-visa options, and processing time, and always tell the traveler to verify their own passport's specific requirements before travel.
 
 OUTPUT — return exactly this JSON:
 {
-  "overview": "string — max 3 sentences, second person",
+  "overview": "string — max 3 sentences",
   "cities": [
     {
       "city": "string",
@@ -2521,7 +2736,7 @@ OUTPUT — return exactly this JSON:
   ],` : ''}${flags.wantTransportation ? `
   "getting_around": { "overview": "string — 2–3 sentences", "tips": ["string", "string"] },` : ''}
   "book_before_you_go": [
-    { "item_name": "string", "city": "string", "date": "string", "est_cost": "string", "booking_priority": "Book now · 4–6 weeks ahead · On arrival", "booking_tip": "string — one sentence", "booking_link": "string — official URL or empty string" }
+    { "item_name": "string", "city": "string", "date": "string", "est_cost": "string", "booking_priority": "Book now · 4–6 weeks ahead · On arrival", "booking_tip": "string — one sentence, name the booking platform in plain text only, never a URL", "booking_link": "string — always an empty string; never include a URL" }
   ],
   "practical_info": {
     "weather_summary": "string", "visa_requirements": "string", "entry_requirements": "string",
@@ -2541,7 +2756,8 @@ function buildPrompt(d, flags) {
     const r = ['BOOK BEFORE YOU GO FILTER:'];
     if (!flags.wantAccommodations) r.push('- Do NOT include hotel/accommodation booking items.');
     if (!flags.wantTransportation)  r.push('- Do NOT include transport booking tips (rail passes, inter-city flights, transfers).');
-    r.push('- ALWAYS include when relevant: visa/entry requirements, activity/attraction reservations that sell out or need timed entry, and travel insurance.');
+    r.push('- ALWAYS include when relevant: visa/entry requirements, and activity/attraction reservations that sell out or need timed entry.');
+    r.push('- Do NOT include travel insurance — it is a generic logistics reminder, not specific to this itinerary.');
     return r.join('\n');
   };
   if (flags.wantDayByDay) {
@@ -3009,6 +3225,59 @@ async function enrichItineraryWithPlaces(env, itinerary) {
   return itinerary;
 }
 
+// ── Currency normalization ───────────────────────────────────────────────────
+// Perplexity-sourced cost strings sometimes come back with ISO codes
+// ("CNY 600–900", "USD 50–80") instead of the local symbol the prompt asks for.
+// Normalize any such string before it's stored on the itinerary. No-op for
+// non-strings and for strings that already use symbols.
+function normalizeCurrencyString(costStr) {
+  if (!costStr || typeof costStr !== 'string') return costStr;
+  // Replace ISO codes with symbols
+  return costStr
+    .replace(/\bCNY\s*/g, '¥')
+    .replace(/\bRMB\s*/g, '¥')
+    .replace(/\bUSD\s*/g, '$')
+    .replace(/\bGBP\s*/g, '£')
+    .replace(/\bEUR\s*/g, '€')
+    .replace(/\bAUD\s*/g, 'A$')
+    .replace(/\bCAD\s*/g, 'C$')
+    .replace(/\bJPY\s*/g, '¥')
+    .replace(/\bKRW\s*/g, '₩')
+    .replace(/\bTHB\s*/g, '฿')
+    .replace(/\bINR\s*/g, '₹')
+    .replace(/\bMXN\s*/g, '$');
+}
+
+// ── Meal venue dedup (guards Perplexity restaurant replacements) ──────────────
+// Perplexity restaurant swaps bypass the MEAL VENUE UNIQUENESS prompt rule, so a
+// replacement can silently re-introduce a venue already used elsewhere. Build the
+// set of meal venues currently in the itinerary, then test each candidate against it.
+function buildMealVenueSet(days) {
+  const venues = new Set();
+  for (const day of days) {
+    for (const field of ['restaurant_suggestion', 'breakfast_suggestion', 'lunch_suggestion']) {
+      const meal = day[field];
+      if (!meal) continue;
+      const name = (typeof meal === 'string' ? meal : (meal.name || meal.venue || '')).toLowerCase().trim();
+      if (name) venues.add(name);
+    }
+  }
+  return venues;
+}
+
+function mealVenueAlreadyUsed(candidateName, existingVenues) {
+  const name = candidateName.toLowerCase().trim();
+  // Exact match
+  if (existingVenues.has(name)) return true;
+  // Fuzzy: if candidate shares a distinctive long word with an existing venue
+  const candidateWords = name.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 5);
+  for (const existing of existingVenues) {
+    const existingWords = existing.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 5);
+    if (candidateWords.some(w => existingWords.includes(w))) return true;
+  }
+  return false;
+}
+
 // ── Perplexity post-generation verification ──────────────────────────────────
 // Verifies restaurants, accommodations, and hidden finds via Perplexity
 // web-check. Replaces closed venues and low-quality/stale gems in place —
@@ -3081,7 +3350,7 @@ async function verifyAndEnrichWithPerplexity(env, itinerary, formData) {
   const activityName = (s) => stripTier(s).split('—')[0].split(' - ')[0].trim();
   const existingActivities = [];
   for (const day of days) {
-    for (const slot of [day.morning, day.afternoon, day.evening]) {
+    for (const slot of [day.morning, day.afternoon, day.evening, day.breakfast_suggestion, day.restaurant_suggestion]) {
       const name = activityName(slot);
       if (name) existingActivities.push(name);
     }
@@ -3149,6 +3418,11 @@ Real places only. Web-search before answering. No hedging.
   // 3. Parse the structured response and apply changes
   const lines = rawResult.split('\n').map(l => l.trim()).filter(Boolean);
 
+  // Meal venues already in the itinerary — guards restaurant replacements from
+  // re-introducing a duplicate. Accepted replacements are added back to the set so
+  // two Perplexity swaps can't both introduce the same venue.
+  const mealVenueSet = buildMealVenueSet(days);
+
   // Gems flagged for replacement in Phase 1; descriptions written by Claude in Phase 2.
   const gemReplacements = [];
 
@@ -3163,13 +3437,21 @@ Real places only. Web-search before answering. No hedging.
       if (!entry) continue;
 
       if (status === 'CLOSED' && parts[2] && parts[2] !== '(no replacement needed)') {
+        // Skip a replacement that would re-introduce a venue already in the itinerary
+        // (Perplexity swaps bypass the MEAL VENUE UNIQUENESS prompt rule).
+        if (mealVenueAlreadyUsed(parts[2], mealVenueSet)) {
+          console.warn('[MEAL DEDUP] Skipped Perplexity replacement — venue already in itinerary:', parts[2]);
+          continue;
+        }
         // Rebuild the field string preserving original format prefix (Dinner:/Breakfast:)
         const original = entry.day[entry.field] || '';
         const prefixMatch = original.match(/^(Dinner|Lunch|Breakfast)\s*:/i);
         const prefix = prefixMatch ? prefixMatch[0] + ' ' : '';
         const neighbourhood = parts[3] || '';
-        const why = parts[4] || '';
+        const why = normalizeCurrencyString(parts[4] || '');
         entry.day[entry.field] = `${prefix}${parts[2]}${neighbourhood ? ' | ' + neighbourhood : ''}${why ? ' — ' + why : ''}`;
+        // Register the accepted replacement so later swaps can't duplicate it.
+        mealVenueSet.add(parts[2].toLowerCase().trim());
         console.log(`Perplexity: replaced closed ${entry.name} → ${parts[2]} (${entry.city})`);
       }
       continue;
@@ -3186,7 +3468,7 @@ Real places only. Web-search before answering. No hedging.
         const oldName = accom.name;
         accom.name = parts[2];
         if (parts[3]) accom.recommended_type = parts[3];
-        if (parts[4]) accom.estimated_cost_per_night = parts[4];
+        if (parts[4]) accom.estimated_cost_per_night = normalizeCurrencyString(parts[4]);
         if (parts[5]) accom.why = parts[5];
         console.log(`Perplexity: replaced closed accommodation ${oldName} → ${accom.name} (${accom.city})`);
       }
@@ -3285,6 +3567,113 @@ ${venueListText}`;
 
 // Runs in the queue consumer after a confirmed payment: pull form data from KV,
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
+// True when two strings share significant words (>3 chars, excluding stop words).
+// Catches duplicates the substring check misses when a venue is named differently in
+// each place (e.g. "Frio Cave Bat Flight" vs "Concan Bat Flight at Frio Cave"). A single
+// long shared word (>7 chars) also matches — long words are almost always venue-specific
+// (e.g. "Elsewhere Bar Galveston" vs "Elsewhere Bar on the Seawall").
+function significantWordsOverlap(str1, str2) {
+  const stopWords = new Set(['the', 'a', 'an', 'at', 'in', 'of', 'for', 'and', 'or', 'to', 'on', 'by', 'with', 'near', 'from']);
+  const words = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
+  const set2 = new Set(words(str2));
+  const shared = words(str1).filter(w => set2.has(w));
+  // 2+ shared significant words always matches
+  if (shared.length >= 2) return true;
+  // 1 shared word matches if that word is long (>7 chars) — distinctive enough to identify the same venue
+  if (shared.length === 1 && shared[0].length > 7) return true;
+  return false;
+}
+
+// ── Hidden finds hard dedup ───────────────────────────────────────────────
+// Removes any hidden find whose title matches a venue already used in the
+// day-by-day plan (morning, afternoon, evening, breakfast, dinner). Matches on
+// substring containment OR 2+ shared significant words.
+// Runs after Claude generation, before Perplexity verification.
+function deduplicateHiddenFinds(itinerary) {
+  const days = Array.isArray(itinerary.days) ? itinerary.days : [];
+
+  // Collect all day-by-day venue name fragments (lowercase, stripped of tier labels)
+  const stripTier = (s) => (s || '').replace(/^\s*\[[^\]]*\]\s*/, '').toLowerCase();
+  const nameFragment = (s) => stripTier(s).split('—')[0].split(' - ')[0].split('·')[0].trim();
+
+  const activityNames = new Set();
+  for (const day of days) {
+    for (const slot of [day.morning, day.afternoon, day.evening, day.breakfast_suggestion, day.restaurant_suggestion]) {
+      const frag = nameFragment(slot);
+      if (frag && frag.length > 3) activityNames.add(frag);
+    }
+  }
+
+  // Also cross-check against the restaurants[] array — hidden finds must not duplicate
+  // any venue already listed there (Breakfast, Cafe, Bakery, Lunch, Dinner, etc.)
+  const restaurants = Array.isArray(itinerary.restaurants) ? itinerary.restaurants : [];
+  for (const r of restaurants) {
+    const frag = (r.name || '').toLowerCase().trim();
+    if (frag && frag.length > 3) activityNames.add(frag);
+  }
+
+  if (!Array.isArray(itinerary.hidden_finds) || !activityNames.size) return;
+
+  const before = itinerary.hidden_finds.length;
+  itinerary.hidden_finds = itinerary.hidden_finds.filter(gem => {
+    if (!gem || !gem.title) return true;
+    const gemName = gem.title.toLowerCase().trim();
+    for (const activity of activityNames) {
+      // Match if either contains the other (partial name matches) OR the two share
+      // 2+ significant words (catches differently-worded names for the same venue).
+      if (gemName.includes(activity) || activity.includes(gemName) || significantWordsOverlap(gemName, activity)) {
+        console.log(`[dedup] Removed hidden find "${gem.title}" — matches day-by-day activity or restaurants list`);
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const removed = before - itinerary.hidden_finds.length;
+  if (removed > 0) console.log(`[dedup] Removed ${removed} duplicate hidden find(s)`);
+}
+
+// ── Post-generation tier-badge validation ────────────────────────────────────
+// The prompt requires every non-N/A morning/afternoon/evening slot to begin with
+// a tier badge ([Iconic]/[Local Pick]/[Hidden Gem]), but the model occasionally
+// drops them. This scans the generated days and returns the slots missing a badge
+// so we can log visibility. Non-blocking — never throws, never mutates.
+function validateTierBadges(days) {
+  const badgePrefixes = ['[Iconic]', '[Local Pick]', '[Hidden Gem]'];
+  const missing = [];
+
+  for (const day of days) {
+    // Skip transit days (N/A slots) and final departure days
+    for (const slot of ['morning', 'afternoon', 'evening']) {
+      const content = day[slot];
+      if (!content) continue;
+      // Skip N/A slots
+      if (typeof content === 'string' && content.trim().toUpperCase().startsWith('N/A')) continue;
+      if (typeof content === 'object' && content.description &&
+          content.description.trim().toUpperCase().startsWith('N/A')) continue;
+      // Skip relaxed-pace free afternoon slots — intentional per PACE STRUCTURE, no badge required
+      if (typeof content === 'string' && content.trim().toLowerCase().startsWith('free afternoon')) continue;
+      if (typeof content === 'object' && content.description &&
+          content.description.trim().toLowerCase().startsWith('free afternoon')) continue;
+
+      // Check for badge prefix
+      const text = typeof content === 'string' ? content :
+                   (content.description || content.name || '');
+      const hasBadge = badgePrefixes.some(b => text.includes(b));
+
+      if (!hasBadge && text.length > 5) {
+        missing.push({ date: day.date, slot });
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    console.warn('[BADGE VALIDATION] Missing tier badges:', JSON.stringify(missing));
+  }
+
+  return missing;
+}
+
 async function fulfillOrder(env, session) {
   try {
     // Idempotency guard — a retry (or duplicate queue delivery) must not double-deliver.
@@ -3335,6 +3724,20 @@ async function fulfillOrder(env, session) {
       await sendFailureAlert(env, session, itinerary.message);
       return; // stop — do not render or POST a broken itinerary to n8n
     } else {
+      // Hard dedup — remove hidden finds that duplicate day-by-day activities
+      deduplicateHiddenFinds(itinerary);
+
+      // Visibility only — flag activity slots the model left without a tier badge.
+      // Non-blocking: we log and still ship so the traveler always gets an itinerary.
+      if (Array.isArray(itinerary.days) && itinerary.days.length) {
+        const missingBadges = validateTierBadges(itinerary.days);
+        const totalSlots = itinerary.days.length * 3;
+        if (totalSlots > 0 && missingBadges.length / totalSlots > 0.15) {
+          const pct = Math.round((missingBadges.length / totalSlots) * 100);
+          console.warn(`[BADGE VALIDATION] ${missingBadges.length}/${totalSlots} activity slots (${pct}%) missing tier badges — session ${session.id}`);
+        }
+      }
+
       // ── Post-gen Perplexity verification ────────────────────────────────────
       // Web-checks Claude's restaurant, accommodation, and hidden gem picks,
       // replacing closed venues and low-quality/stale gems in place (count
