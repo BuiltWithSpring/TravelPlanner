@@ -903,12 +903,15 @@ function escName(s) {
   return esc(cleaned);
 }
 
-function parseBadge(text) {
+function parseBadge(text, tier) {
   // Treat "N/A" (e.g. a departure/transit-day slot) as empty so the slot renders nothing.
   if (/^n\s*\/?\s*a\.?$/i.test(String(text || '').trim())) return { cls: '', label: '', body: '' };
+  const map = { 'Iconic': ['badge-iconic','Iconic'], 'Local Pick': ['badge-local','Local Pick'], 'Hidden Gem': ['badge-hidden','Hidden Gem'] };
+  // New system: tier comes from a separate _tier field — use it directly if valid.
+  if (tier && map[tier]) return { cls: map[tier][0], label: map[tier][1], body: esc(text) };
+  // Legacy fallback: parse [Iconic]/[Local Pick]/[Hidden Gem] prefix from the string itself.
   const m = String(text || '').match(/^\[(Iconic|Local Pick|Hidden Gem)\]\s*/);
   if (!m) return { cls: '', label: '', body: esc(text) };
-  const map = { 'Iconic': ['badge-iconic','Iconic'], 'Local Pick': ['badge-local','Local Pick'], 'Hidden Gem': ['badge-hidden','Hidden Gem'] };
   return { cls: map[m[1]][0], label: map[m[1]][1], body: esc(text.slice(m[0].length)) };
 }
 
@@ -1076,9 +1079,9 @@ function renderItinerary(formData, itinerary) {
     const dateRange = `${formatDateLong(groupStart)} – ${formatDateLong(checkoutDate)}`;
 
     const daysHtml = group.days.map(day => {
-      const morning = parseBadge(day.morning);
-      const afternoon = parseBadge(day.afternoon);
-      const evening = parseBadge(day.evening);
+      const morning = parseBadge(day.morning, day.morning_tier);
+      const afternoon = parseBadge(day.afternoon, day.afternoon_tier);
+      const evening = parseBadge(day.evening, day.evening_tier);
       const bk = parseRestLine(day.breakfast_suggestion);
       const dinner = parseRestLine(day.restaurant_suggestion);
 
@@ -2426,18 +2429,19 @@ Rules:
 - Every trip must include at least 3 Local Pick entries across the day-by-day.
 - Do not label everything as Hidden Gem — use sparingly and only when truly justified.
 - Tier must reflect objective popularity, not subjective preference.
-- For day-by-day entries, prefix the activity string with the tier in square brackets — "[Iconic] " · "[Local Pick] " · "[Hidden Gem] ". Example morning: "[Local Pick] Yanaka Cemetery Walk — a quiet neighborhood necropolis turned local strolling ground, lined with cats and old craft shops."
+- For day-by-day entries, output the tier in the SEPARATE \`morning_tier\`, \`afternoon_tier\`, or \`evening_tier\` field — NOT as a prefix in the activity description string. The tier field must be exactly one of: \`Iconic\`, \`Local Pick\`, or \`Hidden Gem\` (no brackets, no extra text). Examples:
+  morning: "Yanaka Cemetery Walk — quiet neighborhood necropolis turned local strolling ground, lined with cats and craft shops."
+  morning_tier: "Local Pick"
+  afternoon: "Nishiki Market — five-block covered arcade of pickles, tofu, and Kyoto street snacks."
+  afternoon_tier: "Iconic"
 - For city_guide entries, add spot_tier as a separate field (see JSON schema below).
-- CRITICAL FINAL CHECK: before outputting, scan every morning, afternoon, and evening field across ALL days and confirm each begins with one of the three tier prefixes; add any that is missing. No days skipped. EXCEPTIONS (no prefix): the RELAXED-pace afternoon free-time slot (see PACE STRUCTURE), and any slot set to N/A on a departure/transit day (see DEPARTURE DAY STRUCTURE).
-- This applies to ALL slot types without exception — named venues, markets, ruins, archaeological sites, bars, mezcalerias, cantinas, distilleries, craft workshops, pottery studios, outdoor activities, hikes, cycling routes, river experiences, nature walks, viewpoints, and cultural performances. Every MORNING, AFTERNOON, and EVENING slot description must begin with [Iconic], [Local Pick], or [Hidden Gem] regardless of whether the experience is at a named establishment, an open-air market, a ruin, or a nature-based activity.
-  ✓ Correct: [Iconic] Mercado de Abastos — vast indigenous market where Zapotec vendors sell mole pastes and wildflowers
-  ✓ Correct: [Iconic] Monte Alban — ancient Zapotec hilltop city with sweeping valley panoramas
-  ✓ Correct: [Local Pick] Mezcaleria In Situ — curated library of over 40 small-batch mezcales
-  ✓ Correct: [Local Pick] Cycle the Li River Valley Loop through karst countryside
-  ✗ Wrong: Mercado de Abastos — vast indigenous market where Zapotec vendors sell mole pastes
-  ✗ Wrong: Monte Alban — ancient Zapotec hilltop city with sweeping valley panoramas
-  ✗ Wrong: Cycle the Li River Valley Loop through karst countryside
-- Pay special attention to the FIRST FULL DAY in each new city — this is the most common location for missed badges. After every transit day, confirm the following day's slots all carry badges.
+- CRITICAL FINAL CHECK: before outputting, verify every non-N/A, non-"Free afternoon" morning/afternoon/evening slot has a corresponding \`_tier\` field set to exactly \`Iconic\`, \`Local Pick\`, or \`Hidden Gem\`. A missing or blank \`_tier\` field is an error — populate it before outputting. No days skipped.
+- This applies to ALL slot types without exception — named venues, markets, ruins, archaeological sites, bars, mezcalerias, cantinas, distilleries, craft workshops, pottery studios, outdoor activities, hikes, cycling routes, river experiences, nature walks, viewpoints, and cultural performances.
+  ✓ Correct: morning: "Mercado de Abastos — vast indigenous market", morning_tier: "Iconic"
+  ✓ Correct: afternoon: "Mezcaleria In Situ — curated library of 40+ small-batch mezcales", afternoon_tier: "Local Pick"
+  ✗ Wrong: morning: "[Iconic] Mercado de Abastos — vast indigenous market" (tier embedded in string — put it in morning_tier instead)
+  ✗ Wrong: morning: "Mercado de Abastos — vast indigenous market", morning_tier: "" (blank tier — must be populated)
+- Pay special attention to the FIRST FULL DAY in each new city — this is the most common location for missed tier fields. After every transit day, confirm the following day's slots all carry \`_tier\` fields.
 
 STEP 13.6 — HIDDEN FINDS
 Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
@@ -2597,9 +2601,12 @@ OUTPUT — return exactly this JSON:
       "date": "YYYY-MM-DD",
       "city": "string",
       "neighborhood_focus": "string",
-      "morning": "string — Activity name — one line description. Max 20 words.",
-      "afternoon": "string — Activity name — one line description. Max 20 words.",
-      "evening": "string — Activity name — one line description. Max 20 words.",
+      "morning": "string — Activity name — one line description. Max 20 words. No tier prefix in this string.",
+      "morning_tier": "Iconic | Local Pick | Hidden Gem — required unless morning is N/A or Free afternoon",
+      "afternoon": "string — Activity name — one line description. Max 20 words. No tier prefix in this string.",
+      "afternoon_tier": "Iconic | Local Pick | Hidden Gem — required unless afternoon is N/A or Free afternoon",
+      "evening": "string — Activity name — one line description. Max 20 words. No tier prefix in this string.",
+      "evening_tier": "Iconic | Local Pick | Hidden Gem — required unless evening is N/A",
       "breakfast_suggestion": "string — Breakfast: Restaurant or cafe name | neighborhood | one line why it fits today",
       "restaurant_suggestion": "string — Meal type (Lunch/Dinner): Restaurant name | neighborhood | one line why it fits today. On the FINAL departure day only (returning home), set this to exactly: N/A. On a mid-trip transit day, this is a real dinner near the arrival city.",
       "estimated_daily_cost": "string — range with currency"
@@ -3696,11 +3703,11 @@ function deduplicateHiddenFinds(itinerary) {
 // drops them. This scans the generated days and returns the slots missing a badge
 // so we can log visibility. Non-blocking — never throws, never mutates.
 function validateTierBadges(days) {
+  const validTiers = new Set(['Iconic', 'Local Pick', 'Hidden Gem']);
   const badgePrefixes = ['[Iconic]', '[Local Pick]', '[Hidden Gem]'];
   const missing = [];
 
   for (const day of days) {
-    // Skip transit days (N/A slots) and final departure days
     for (const slot of ['morning', 'afternoon', 'evening']) {
       const content = day[slot];
       if (!content) continue;
@@ -3713,12 +3720,15 @@ function validateTierBadges(days) {
       if (typeof content === 'object' && content.description &&
           content.description.trim().toLowerCase().startsWith('free afternoon')) continue;
 
-      // Check for badge prefix
       const text = typeof content === 'string' ? content :
                    (content.description || content.name || '');
-      const hasBadge = badgePrefixes.some(b => text.includes(b));
+      if (text.length <= 5) continue;
 
-      if (!hasBadge && text.length > 5) {
+      // New system: check the separate _tier field. Legacy fallback: check string prefix.
+      const tierField = day[`${slot}_tier`];
+      const hasTier = validTiers.has(tierField) || badgePrefixes.some(b => text.includes(b));
+
+      if (!hasTier) {
         missing.push({ date: day.date, slot });
       }
     }
