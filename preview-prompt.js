@@ -51,6 +51,7 @@ Rules:
 - If the most exciting destination is more than 90 min away, place it second-to-last. Use the airport city or an airport-adjacent town as the final stop.
 - The final pre-departure night near the airport is expected to be a transitional, lighter day. That is fine and expected.
 - The final airport-adjacent city should appear as its own city card in the plan with its own nights allocation — do not hide it.
+- ROAD TRIP OVERRIDE: If the trip structure is road_trip, the "no backtracking" rule does NOT apply to the final night. Returning to the departure airport city for the last night is required and expected on round-trips, even if it means retracing part of the route. The loop must close.
 ` : '';
 
     return `You are an expert travel planner. Generate a quick trip preview only.
@@ -82,7 +83,7 @@ Calculate total trip days from arrival to departure date.
 
 STEP 3 — TRIP STRUCTURE
 Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
-- road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking.
+- road_trip → cities along efficient driving corridor, driveable in 2–5 hour legs, no backtracking. EXCEPTION: on round-trips (same arrival and departure airport), returning to the departure airport city for the final night IS required and overrides the no-backtracking rule — see ROUND-TRIP ROUTING above.
 - train → cities along logical rail corridor, major train stations only, no car/bus connections.
 - flying → each city fully independent, selected by interest profile not geography.
 - Not provided → MANDATORY: evaluate every leg using actual train and flight times. Under 3 hours by train → always recommend train. 3–5 hours → recommend whichever is faster door-to-door. Over 5 hours or no rail → flying. Never recommend flying where high-speed rail is under 4 hours. China: always check HSR first. Europe: always check Eurostar/TGV/ICE/Frecciarossa first. Japan: always recommend Shinkansen for legs under 4 hours.
