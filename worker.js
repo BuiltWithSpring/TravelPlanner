@@ -2130,6 +2130,7 @@ Calculate total trip days from arrival to departure.
 - Too many cities → keep best subset, explain removals. Too few → add complementary cities.
 - Every city must have why_recommended max 25 words: "[City] is [known for] — chosen for your [interest or preference]." Never generic or logistical.
 - Every city must also have city_teaser: ONE evocative sentence (~15 words) on what makes this city special on this trip — sensory and specific, never logistical. Example: "Ancient canal town where silk weaving and garden culture meet."
+CITY TEASER VOICE: Always write from the perspective of arriving and discovering — never from a departure perspective. Forbidden phrases: "one last night", "before dawn takes you home", "wrapping up", "final night in", "before heading home", "ends the journey". These belong in the overview only, never in a city_teaser. On round-trips where the same city appears as both the opening and closing stop, write the teaser as if the traveler is arriving for the first time.
 
 STEP 2B — TRIP STRUCTURE
 Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
@@ -2271,7 +2272,7 @@ Cluster morning, afternoon, evening in same or adjacent neighborhoods. Plan full
 - Full travel day / mid-trip transit day → dinner IS a real, specific restaurant near the ARRIVAL city accommodation (their first dinner in the new city); the activities are one afternoon slot and one evening slot at the arrival city (see DEPARTURE DAY STRUCTURE below).
 - Restaurant suggestion should always be geographically logical for that day's context.
 - Restaurant suggestion must be a specific real venue (uniqueness vs the restaurants array and across days is enforced in STEP 14.5).
-- BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array. The ONLY exception is a transit day where no real breakfast venue can be confidently named — see TRANSIT DAY BREAKFAST below, which permits omitting the field rather than writing a placeholder.
+- BREAKFAST IS MANDATORY EVERY DAY: in addition to restaurant_suggestion, every day must include a separate breakfast_suggestion — a specific, real, well-regarded breakfast spot or cafe near that day's accommodation or first activity. Format it exactly like restaurant_suggestion (Breakfast: Name | neighborhood | one line why it fits today). It must not duplicate any venue used in restaurant_suggestion or in the restaurants array. Transit days are always exempt — never include breakfast_suggestion on transit days (see TRANSIT DAY BREAKFAST below).
 - BREAKFAST PLACEMENT: the breakfast spot must be geographically close to where that day's morning activity takes place — or near the hotel if it is an early-departure day. Never recommend a breakfast spot in a different neighbourhood that forces the traveler to backtrack before the morning activity. For example: if the morning activity is in West Vancouver, put breakfast near West Vancouver or the West End — never in Mount Pleasant or Gastown.
 
 MEAL VENUE UNIQUENESS (CRITICAL):
@@ -2287,9 +2288,7 @@ Before finalizing each meal recommendation, verify this venue has not already be
 LODGE DINING EXCEPTION (narrow): For a multi-night stay at a remote lodge or eco-resort where there is genuinely no alternative breakfast option within a 30-minute drive (e.g., a jungle lodge in Rincón de la Vieja, a national park ecolodge), using the lodge's own dining room for breakfast on consecutive mornings of that stay is acceptable. This exception applies to BREAKFAST ONLY, not dinner, and only when no walk-in alternative is realistically accessible.
 
 TRANSIT DAY BREAKFAST:
-On any day the traveler is in transit — checking out and driving or flying to the next city — the breakfast, if named, MUST be in the city they are waking up in (the departure city), near the departure hotel or transit hub. They cannot eat at a restaurant they haven't reached yet. Example: Day 4 morning = "Drive from Austin to Fredericksburg" → breakfast is an Austin spot, not a Fredericksburg one.
-Either name a specific, real café/bakery/breakfast spot there, OR omit the breakfast field entirely for that day.
-Never write "Explore [neighbourhood] for breakfast", "Grab breakfast near [area]", or any area-based placeholder — it renders identically to a named venue and misleads customers. A transit-day breakfast must be a real named venue or nothing at all.
+On transit days, omit the breakfast_suggestion field entirely. Do not name any breakfast venue. The morning slot is N/A (checkout and travel), so listing a breakfast venue would be inaccurate — the traveler has no time for a sit-down meal. The first meal of a transit day is dinner in the arrival city.
 
 DEPARTURE DAY STRUCTURE (CRITICAL):
 All departures are scheduled in the morning. Apply this structure on every departure day:
@@ -2299,8 +2298,8 @@ TRANSIT DAYS (moving from one city to the next mid-trip):
 - AFTERNOON slot: ONE light activity at the ARRIVAL city — choose something easy and low-effort for arrival day (a neighborhood walk, a scenic viewpoint, a stroll through a local market, a lakeside path). Assign a tier badge.
 - EVENING slot: ONE activity at the ARRIVAL city. Assign a tier badge.
 
-BREAKFAST: recommend a departure-city breakfast venue as usual.
-DINNER: recommend an arrival-city dinner venue as usual.
+BREAKFAST: omit — the traveler is in transit. Do NOT include a breakfast_suggestion on transit days. The morning is consumed by checkout and travel.
+DINNER: recommend an arrival-city dinner venue as usual — this is the traveler's first meal in the new city.
 
 PACING NOTE: This transit day structure applies to ALL pacing modes including fast-paced itineraries. The MORNING=N/A note must appear as an explicit slot in the day-by-day output on every transit day, regardless of pace.
 
@@ -3713,7 +3712,7 @@ Real places only. Web-search before answering. No hedging.
       ).join('\n');
 
       const gemWriterPrompt = `You are a hidden gems travel writer. Write discovery cards for the following venues. Each card needs:
-- Title: 4–6 evocative words (not the venue name verbatim)
+- Title: the real, specific name of the venue — exactly as it is known locally (required). Never a descriptive phrase or thematic label. If the venue is "Hoppy Street Asakusa", the title must be "Hoppy Street Asakusa" or the venue's known local name — never "Showa-Era Drinking Lane Lives On" or any invented evocative phrase.
 - Description: 2 sentences, max 35 words total. Capture WHY this is a genuine hidden find — the detail a local would know.
 
 The customer stays in each accommodation city as a homebase. Venue lines are one of two formats:
@@ -3753,29 +3752,60 @@ ${venueListText}`;
   }
 }
 
-// Runs in the queue consumer after a confirmed payment: pull form data from KV,
-// generate the itinerary directly via Claude, then hand the parsed JSON to Make.
-// True when two strings share significant words (>3 chars, excluding stop words).
-// Catches duplicates the substring check misses when a venue is named differently in
-// each place (e.g. "Frio Cave Bat Flight" vs "Concan Bat Flight at Frio Cave"). A single
-// long shared word (>7 chars) also matches — long words are almost always venue-specific
-// (e.g. "Elsewhere Bar Galveston" vs "Elsewhere Bar on the Seawall").
-function significantWordsOverlap(str1, str2) {
-  const stopWords = new Set(['the', 'a', 'an', 'at', 'in', 'of', 'for', 'and', 'or', 'to', 'on', 'by', 'with', 'near', 'from']);
-  const words = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
-  const set2 = new Set(words(str2));
-  const shared = words(str1).filter(w => set2.has(w));
-  // 2+ shared significant words always matches
-  if (shared.length >= 2) return true;
-  // 1 shared word matches if that word is long (>7 chars) — distinctive enough to identify the same venue
-  if (shared.length === 1 && shared[0].length > 7) return true;
-  return false;
+// ── Book Before You Go validator ──────────────────────────────────────────────
+// STEP 12 requires every activity/restaurant in book_before_you_go to already
+// appear in the day-by-day plan. Logistics items (rail passes, IC cards,
+// accommodation, flights, visas) are exempt. Everything else is removed if it
+// cannot be found in the days array. Non-blocking — never throws.
+function validateBookBeforeYouGo(itinerary) {
+  if (!Array.isArray(itinerary.book_before_you_go) || !itinerary.book_before_you_go.length) return;
+  if (!Array.isArray(itinerary.days) || !itinerary.days.length) return;
+
+  // Keywords that identify logistics items — always keep these.
+  const LOGISTICS_RE = /rail pass|jr pass|jrpass|suica|pasmo|ic card|oyster|navigo|visa|entry|passport|flight|airport|insurance|accommodation|hotel|ryokan|hostel|check.?in/i;
+
+  // Build a searchable string from all day-by-day content
+  const dayContent = itinerary.days.flatMap(day => [
+    day.morning, day.afternoon, day.evening,
+    day.breakfast_suggestion, day.restaurant_suggestion
+  ]).filter(Boolean).join(' ').toLowerCase();
+
+  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
+  const before = itinerary.book_before_you_go.length;
+  itinerary.book_before_you_go = itinerary.book_before_you_go.filter(entry => {
+    const name = entry.item_name || '';
+
+    // Always keep logistics items
+    if (LOGISTICS_RE.test(name) || LOGISTICS_RE.test(entry.booking_tip || '')) return true;
+
+    // Always keep accommodation entries — match against accommodations array
+    const accommodations = Array.isArray(itinerary.accommodations) ? itinerary.accommodations : [];
+    if (accommodations.some(a => a.name && normalize(a.name).includes(normalize(name).split(' ')[0]))) return true;
+
+    // For activities and restaurants: must appear in day-by-day content
+    const normalName = normalize(name);
+    // Extract key words (>3 chars) from the item name for matching
+    const keyWords = normalName.split(/\s+/).filter(w => w.length > 3);
+    if (!keyWords.length) return true; // can't validate — keep
+
+    // Keep if any significant key word from the item name appears in day content
+    const found = keyWords.some(w => dayContent.includes(w));
+    if (!found) {
+      console.log(`[bbyg-validate] Removed "${name}" — not found in day-by-day plan`);
+    }
+    return found;
+  });
+
+  const removed = before - itinerary.book_before_you_go.length;
+  if (removed > 0) console.log(`[bbyg-validate] Removed ${removed} Book Before You Go item(s) not in day-by-day`);
 }
 
 // ── Hidden finds hard dedup ───────────────────────────────────────────────
-// Removes any hidden find whose title matches a venue already used in the
-// day-by-day plan (morning, afternoon, evening, breakfast, dinner). Matches on
-// substring containment OR 2+ shared significant words.
+// Backstop: removes any hidden find whose title is an exact substring match of
+// a venue already used in the day-by-day plan or restaurants array.
+// generateHiddenFinds already applies semantic dedup via its exclusion list,
+// so this only catches exact duplicates that slipped through.
 // Runs after Claude generation, before Perplexity verification.
 function deduplicateHiddenFinds(itinerary) {
   const days = Array.isArray(itinerary.days) ? itinerary.days : [];
@@ -3807,10 +3837,11 @@ function deduplicateHiddenFinds(itinerary) {
     if (!gem || !gem.title) return true;
     const gemName = gem.title.toLowerCase().trim();
     for (const activity of activityNames) {
-      // Match if either contains the other (partial name matches) OR the two share
-      // 2+ significant words (catches differently-worded names for the same venue).
-      if (gemName.includes(activity) || activity.includes(gemName) || significantWordsOverlap(gemName, activity)) {
-        console.log(`[dedup] Removed hidden find "${gem.title}" — matches day-by-day activity or restaurants list`);
+      // Exact substring containment only — generateHiddenFinds already handles semantic dedup.
+      // Word-overlap matching caused false positives (e.g. "Arashiyama" matching a different
+      // Arashiyama venue, "Nakamura" matching a different city's Nakamura venue).
+      if (gemName.includes(activity) || activity.includes(gemName)) {
+        console.log(`[dedup] Removed hidden find "${gem.title}" — exact match with day-by-day activity or restaurants list`);
         return false;
       }
     }
@@ -3865,6 +3896,8 @@ function validateTierBadges(days) {
   return missing;
 }
 
+// Runs in the queue consumer after a confirmed payment: pull form data from KV,
+// generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
   try {
     // Idempotency guard — a retry (or duplicate queue delivery) must not double-deliver.
@@ -3917,6 +3950,9 @@ async function fulfillOrder(env, session) {
     } else {
       // Hard dedup — remove hidden finds that duplicate day-by-day activities
       deduplicateHiddenFinds(itinerary);
+
+      // Strip Book Before You Go entries not present in the day-by-day plan (STEP 12 backstop)
+      validateBookBeforeYouGo(itinerary);
 
       // Visibility only — flag activity slots the model left without a tier badge.
       // Non-blocking: we log and still ship so the traveler always gets an itinerary.
