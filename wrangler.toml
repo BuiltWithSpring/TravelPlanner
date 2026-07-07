@@ -18,6 +18,7 @@ queue = "itinerary-queue"
 max_batch_size = 1
 max_batch_timeout = 5
 max_retries = 3
+message_timeout = 900
 
 [[kv_namespaces]]
 binding = "PREVIEW_STORE"
