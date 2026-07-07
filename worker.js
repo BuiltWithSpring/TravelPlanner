@@ -1015,8 +1015,12 @@ function renderItinerary(formData, itinerary) {
   const cityAccomGroups = [];
   for (const a of accommodations) {
     if (!a || !a.city) continue;
-    let g = cityAccomGroups.find(x => x.city === a.city);
-    if (!g) { g = { city: a.city, hotels: [] }; cityAccomGroups.push(g); }
+    // Group by city + check-in date so that two stays in the same city (e.g. a round-trip
+    // return) each get their own city card. Two hotels with the same city + check-in are
+    // Option 1 / Option 2 for the same stay and stay grouped together.
+    const stayKey = `${a.city}::${(a.checkin || '').substring(0, 10)}`;
+    let g = cityAccomGroups.find(x => x.stayKey === stayKey);
+    if (!g) { g = { stayKey, city: a.city, hotels: [] }; cityAccomGroups.push(g); }
     g.hotels.push(a);
   }
   const teaserByCity = {};
