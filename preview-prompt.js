@@ -51,7 +51,7 @@ Rules:
 - If the most exciting destination is more than 90 min away, place it second-to-last. Use the airport city or an airport-adjacent town as the final stop.
 - The final pre-departure night near the airport is expected to be a transitional, lighter day. That is fine and expected.
 - The final airport-adjacent city should appear as its own city card in the plan with its own nights allocation — do not hide it.
-- ROAD TRIP OVERRIDE: If the trip structure is road_trip, the "no backtracking" rule does NOT apply to the final night. Returning to the departure airport city for the last night is required and expected on round-trips, even if it means retracing part of the route. The loop must close.
+- ROAD TRIP OVERRIDE (takes precedence over all rules above for road_trip trips): If the trip structure is road_trip, the final night MUST be in the DEPARTURE CITY ITSELF — the actual named city of ${d.departureAirport}. For example: GIG = Rio de Janeiro, GRU = São Paulo, CDG = Paris, LAX = Los Angeles. Do NOT substitute a rural area, mountain town, small village, or any "airport-adjacent" alternative — major hub airports are typically far from rural areas, so proximity claims for rural destinations are unreliable. The ~90-min and "airport-adjacent town" options above do NOT apply to road trips. Return to the exact departure city. The loop must close at the origin.
 ` : '';
 
     return `You are an expert travel planner. Generate a quick trip preview only.
