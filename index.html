@@ -737,20 +737,16 @@
         <label class="fl">Transport preference <span class="req">*</span></label>
         <div class="cc-grid g2" id="tripStructureGrid">
           <div class="mc" onclick="pickTripStructure(this,&#39;ai&#39;)" data-value="ai" id="ts-ai">
-            <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">AI optimises for me</span></div>
-            <div class="mc-sub">Best mix of train, flight, and car per leg</div>
+            <div class="mc-top"><span class="mc-icon">✨</span><span class="mc-title">Let AI decide</span></div>
+            <div class="mc-sub">AI picks the best route for each leg</div>
           </div>
           <div class="mc" onclick="pickTripStructure(this,&#39;road_trip&#39;)" data-value="road_trip" id="ts-road">
-            <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Road trip</span></div>
+            <div class="mc-top"><span class="mc-icon">🚗</span><span class="mc-title">Self-drive road trip</span></div>
             <div class="mc-sub">Drive between cities, stop along the way</div>
           </div>
-          <div class="mc" onclick="pickTripStructure(this,&#39;train&#39;)" data-value="train" id="ts-train">
-            <div class="mc-top"><span class="mc-icon">🚆</span><span class="mc-title">Train</span></div>
-            <div class="mc-sub">Rail corridors between cities</div>
-          </div>
-          <div class="mc" onclick="pickTripStructure(this,&#39;flying&#39;)" data-value="flying" id="ts-fly">
-            <div class="mc-top"><span class="mc-icon">✈️</span><span class="mc-title">Fly</span></div>
-            <div class="mc-sub">Fly between cities independently</div>
+          <div class="mc" onclick="pickTripStructure(this,&#39;no_car&#39;)" data-value="no_car" id="ts-nocar">
+            <div class="mc-top"><span class="mc-icon">🚆✈️</span><span class="mc-title">No car</span></div>
+            <div class="mc-sub">Trains, flights, and transfers — no driving</div>
           </div>
         </div>
         <div class="error-msg" id="err-transport">Please select a transport preference</div>
@@ -1233,40 +1229,20 @@
   }
   let tripStructure = null; // no default — a deliberate selection is required
   function pickTripStructure(el, val) {
-    const aiBtn   = document.getElementById('ts-ai');
-    const roadBtn = document.getElementById('ts-road');
-    const trainBtn= document.getElementById('ts-train');
-    const flyBtn  = document.getElementById('ts-fly');
+    const allBtns = document.querySelectorAll('#tripStructureGrid .mc');
 
-    if (val === 'ai') {
-      // AI selected — deselect everything else
-      [aiBtn, roadBtn, trainBtn, flyBtn].forEach(b => b.classList.remove('on'));
-      aiBtn.classList.add('on');
-      tripStructure = 'ai';
-      return;
+    // Toggle off if already selected
+    const wasOn = el.classList.contains('on');
+    allBtns.forEach(b => b.classList.remove('on'));
+
+    if (!wasOn) {
+      el.classList.add('on');
+      if (val === 'ai')       tripStructure = 'ai';
+      else if (val === 'road_trip') tripStructure = 'road_trip';
+      else if (val === 'no_car')    tripStructure = 'train, flying';
+    } else {
+      tripStructure = null; // deselected — leave empty
     }
-
-    if (val === 'road_trip') {
-      // Road trip is mutually exclusive — deselect train, fly, ai
-      const wasOn = roadBtn.classList.contains('on');
-      [aiBtn, roadBtn, trainBtn, flyBtn].forEach(b => b.classList.remove('on'));
-      if (!wasOn) { roadBtn.classList.add('on'); tripStructure = 'road_trip'; }
-      else { tripStructure = null; } // deselected — leave empty (no AI fallback)
-      return;
-    }
-
-    // Train or Fly — multi-select, deselect AI and road trip
-    aiBtn.classList.remove('on');
-    roadBtn.classList.remove('on');
-    el.classList.toggle('on');
-
-    const trainOn = trainBtn.classList.contains('on');
-    const flyOn   = flyBtn.classList.contains('on');
-
-    if (trainOn && flyOn)   tripStructure = 'train, flying';
-    else if (trainOn)       tripStructure = 'train';
-    else if (flyOn)         tripStructure = 'flying';
-    else { tripStructure = null; } // nothing selected — leave empty
   }
   let selectedPaceEl = null;
   function pickPace(el) {
