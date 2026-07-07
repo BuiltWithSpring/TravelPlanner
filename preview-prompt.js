@@ -35,8 +35,27 @@ ${perplexityResearch}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ` : '';
 
+    // Round-trip detection — mirrors worker.js ITINERARY_PROMPT. When arrival and
+    // departure airports resolve to the same hub, the city plan must loop back so the
+    // FINAL city sits at/near that airport. Injected here so the approved city plan is
+    // already airport-closed before it ever reaches itinerary generation downstream.
+    const normAirport = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isRoundTrip = d.arrivalAirport && d.departureAirport
+      && normAirport(d.arrivalAirport) === normAirport(d.departureAirport);
+    const roundTripCityPlanDirective = isRoundTrip ? `
+ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d.departureAirport}):
+This trip departs from the same airport it arrived into. The city route MUST form a loop. The LAST city in the plan (where the traveler spends their final night before departure) must be the airport city itself or another city within ~90 minutes ground transport of ${d.departureAirport}.
+
+Rules:
+- Never place a city more than 90 min from ${d.departureAirport} as the final city in the plan.
+- If the most exciting destination is more than 90 min away, place it second-to-last. Use the airport city or an airport-adjacent town as the final stop.
+- The final pre-departure night near the airport is expected to be a transitional, lighter day. That is fine and expected.
+- The final airport-adjacent city should appear as its own city card in the plan with its own nights allocation — do not hide it.
+` : '';
+
     return `You are an expert travel planner. Generate a quick trip preview only.
 Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
+${roundTripCityPlanDirective}
 
 STEP 1 — NIGHT ALLOCATION
 Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.

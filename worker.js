@@ -2041,7 +2041,24 @@ const ITINERARY_PROMPT = (d, perplexityResearch = null) => {
   const tripTier = tripNights >= 11 ? 'LONG (11–14 nights)'
     : tripNights >= 8 ? 'MEDIUM (8–10 nights)'
     : 'STANDARD (≤7 nights)';
+  // Round-trip detection: when arrival and departure airports resolve to the same hub,
+  // the city route MUST loop back and end at (or within ~90 min of) that airport. Without
+  // this, the model optimises geographic flow, ends on the far side of the country, and
+  // appends an unaccounted "head to [airport]" line on the last day (e.g. ending a LIR
+  // round-trip in San José). Compared in code so it doesn't rely on the model matching codes.
+  const normAirport = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const isRoundTrip = !!d.arrivalAirport && !!d.departureAirport
+    && normAirport(d.arrivalAirport) === normAirport(d.departureAirport);
+  const roundTripDirective = isRoundTrip ? `
+ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d.departureAirport}):
+This is a round-trip booking that departs from the SAME airport it arrived into. The city route MUST form a loop that ends with the traveler's FINAL NIGHT in a city within ~90 minutes ground transport of ${d.departureAirport}. This is a HARD CITY-SELECTION CONSTRAINT on where the last night is spent — NOT merely a disclosure or transport-costing rule.
+- HARD RULE — LAST NIGHT LOCATION: The LAST city of the route (where the final night is spent) must itself be the airport city or another city within ~90 min of ${d.departureAirport}. Plan the city order as a loop from the start so the trip naturally arrives back near the airport for the final night. Never treat a distant city that happens to have its own airport (e.g. San José when the booking departs from Liberia/LIR) as the departure city — the actual departure airport is ${d.departureAirport}, and the FINAL NIGHT must be near IT.
+- DO NOT compress the return journey into departure-day morning as a substitute for relocating the final night. A costed, well-disclosed "leave at 5am and drive 3–4 hours to the airport" is NOT compliant — a long departure-day dash does not satisfy this rule. The traveler must already BE near the airport when they wake on departure day, not racing across the country to reach it.
+- IF THE BEST FINAL DESTINATION IS FAR FROM THE AIRPORT: When the single strongest final-stop city (e.g. Manuel Antonio, ~3.5–4 hrs from Liberia/LIR) is more than 90 min from ${d.departureAirport}, spend the SECOND-TO-LAST night there, then move so the LAST night is at a city near the airport (the airport city itself, or another airport-adjacent town). It is acceptable and expected for the final full day to be shorter and transitional — a scenic drive back plus a relaxed last evening near the airport — in order to make this happen. Relocating the final night is REQUIRED, not optional.
+- APPROVED CITY PLAN OVERRIDE: If the APPROVED CITY PLAN below sets a final city that is more than 90 min from the departure airport, this round-trip routing rule takes priority over the approved plan for the final night only. Add a transitional last stop at the airport city (or another city within ~90 min of the airport) as the new final city — keeping all other approved cities and nights intact. A brief, transitional evening at the airport city is expected and acceptable. The approved city plan governs city order and nights for all stops except the final night location, which this rule overrides when needed.
+` : '';
   return `You are an expert travel planner. Generate a personalized travel itinerary following every step below in order.
+${roundTripDirective}
 
 ──────────────────────────────────────────────
 APPROVED CITY PLAN — USE EXACTLY AS IS:
@@ -2228,7 +2245,7 @@ Named venues only: spa, thermal bath, hammam, massage centre, wellness retreat.
 STEP 9 — TRANSPORT
 Resolve airports first: interpret city names, airport names, or IATA codes. Use correct IATA code and full name throughout. Note ambiguity in overview.
 First transport entry → arrival airport to first accommodation.
-Last transport entry → final city to departure airport.
+Last transport entry → final city to departure airport. This must be a real, accurately costed leg with the correct mode and realistic duration — never a throwaway "head to the airport" line. If the final city is NOT the departure-airport city, the transfer back to the airport (whether a domestic flight, train, or private car) must be fully accounted for with its true mode, duration, and cost — and if it exceeds ~90 minutes, flag it in the overview so the traveler is not surprised by an unbudgeted departure-day journey.
 
 Match to trip structure:
 - road_trip → rental car. Include fuel and toll estimates.
@@ -2259,7 +2276,11 @@ No restaurant, cafe, or food venue may appear more than once in the entire itine
 - Across all days, including consecutive nights in the same city
 - Across different cities (do not repeat a chain or franchise across cities)
 
+SAME-CITY CONSECUTIVE DAYS (most common failure): If a traveler spends 2+ nights in the same city, each day needs a DIFFERENT breakfast and dinner venue. Day 1 in Liberia and Day 2 in Liberia must use different cafés for breakfast — even if Day 2 is a transit/departure morning. A city always has more than one good breakfast option.
+
 Before finalizing each meal recommendation, verify this venue has not already been recommended on any earlier day. If the same venue would appear twice, replace one instance with a different venue.
+
+LODGE DINING EXCEPTION (narrow): For a multi-night stay at a remote lodge or eco-resort where there is genuinely no alternative breakfast option within a 30-minute drive (e.g., a jungle lodge in Rincón de la Vieja, a national park ecolodge), using the lodge's own dining room for breakfast on consecutive mornings of that stay is acceptable. This exception applies to BREAKFAST ONLY, not dinner, and only when no walk-in alternative is realistically accessible.
 
 TRANSIT DAY BREAKFAST:
 On any day the traveler is in transit — checking out and driving or flying to the next city — the breakfast, if named, MUST be in the city they are waking up in (the departure city), near the departure hotel or transit hub. They cannot eat at a restaurant they haven't reached yet. Example: Day 4 morning = "Drive from Austin to Fredericksburg" → breakfast is an Austin spot, not a Fredericksburg one.
@@ -2380,6 +2401,7 @@ Category to type mapping:
 
 Quality filter: widely visited, highly regarded, or iconic only.
 SEASONAL EVENT ACCURACY (CRITICAL): When including a seasonal event or festival as a city guide activity (e.g. Day of the Dead, cherry blossom, carnival, Songkran), only describe the traveler as experiencing it if the trip dates overlap with the actual event window, or the trip ends within 7 days of the event start. If the trip ends more than 7 days before the event begins: you MAY mention the event as future context ("Oaxaca's Day of the Dead (Nov 1–2) is one of Mexico's most extraordinary festivals — consider timing a future visit") but you MUST NOT imply the traveler will see preparations, atmosphere, or early decorations during their actual visit dates. Do not include the event as an activity recommendation in the city guide. Apply the same rule to the Practical Info section — do not claim the traveler's dates overlap with seasonal atmosphere unless the dates are genuinely close.
+RECURRING EVENT ACCURACY: The same rule applies to recurring events that happen on a fixed calendar date — monthly flea markets, weekly craft markets, shrine fair days, regular night markets. If the specific occurrence date falls outside the trip dates, do not recommend the event as something the traveler can attend. Example: Toji Temple Flea Market (Kyoto, every 21st) — if the trip is Oct 1–9, the Oct 21 market is not attendable; either omit it or reframe it as future context: "The Toji Flea Market on the 21st is a Kyoto institution — if your dates align, it's unmissable." Apply this check to the city guide AND hidden finds.
 
 Each entry must include:
 - type: from the type list above
@@ -2419,7 +2441,12 @@ Rules:
 STEP 13.6 — HIDDEN FINDS
 Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
 - 1–2 cities → 3 Hidden Finds PER CITY
-- 3+ cities → 2 Hidden Finds PER CITY
+- 3–4 cities → 2 Hidden Finds PER CITY
+- 5+ cities → 1 Hidden Find PER CITY
+
+HARD CAP: Never generate more than 8 hidden finds total, regardless of city count.
+
+QUALITY OVER QUANTITY: A smaller number of genuinely surprising, specific, well-described hidden finds is far better than padding the list with borderline entries to hit a count. Only include a hidden find if it truly passes the "wouldn't have found this on my own" test.
 These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
 Each entry: emoji, title, description (max 25 words — why it's special and not obvious), city.
 
@@ -2502,8 +2529,23 @@ STEP 15 — OUTPUT FORMATTING
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
 - Overview: max 3 sentences — cities, trip tone, seasonal highlight. (Second-person voice per STEP 16.)
+
+OVERVIEW ACCURACY (CRITICAL): The overview must accurately describe ONLY the cities, routing, and experiences that actually exist in this itinerary's day-by-day plan and approved city list.
+
+Specific prohibitions:
+- Never describe a final-night city or "return to [city]" arrangement that is not in the approved city plan. If the approved plan ends in Kyoto with no Tokyo return, do not write "returning to Tokyo for the final night." Write "ending in Kyoto before the morning Shinkansen to HND."
+- Never describe the traveler visiting a city or neighborhood not in the itinerary.
+- Never describe activities or experiences that don't appear anywhere in the day-by-day.
+- If the trip is a round-trip but the approved city plan does not include a return night near the airport, describe the actual final city and the departure logistics honestly.
+
+The overview is a summary of what was actually built — not of what the ideal itinerary would have looked like.
 - Costs: always a range with currency symbol
 - Temperatures: always in Fahrenheit (°F). Never use Celsius.
+
+DAILY BUDGET CONSISTENCY (CRITICAL): estimated_daily_cost is not an independent guess — it must actually cover that day's specific named picks. Before writing it, add up the realistic real-world cost of the day's actual recommendations: the accommodation for that night, the named dinner restaurant in restaurant_suggestion, breakfast, and any paid morning/afternoon/evening activities. The range you output must be able to pay for all of them for the stated travel party.
+- The LOW end of estimated_daily_cost must never be lower than the realistic per-person (or per-party, matching how you present the range) cost of that day's own named dinner restaurant alone. If the day's dinner is a high-end or globally acclaimed restaurant (e.g. Narisawa in Tokyo realistically ¥30,000–¥50,000+ per person), the daily budget must reflect that — never show a daily total lower than the dinner it recommends.
+- If a single named venue makes the day unusually expensive, let the daily total rise to match it rather than quoting a comfortable-looking range that the day's own picks would blow past.
+- Sanity-check every day before finalizing: if the named dinner or a marquee activity costs more than the daily budget's low end, raise the budget until it genuinely covers the picks.
 
 CURRENCY FORMAT:
 Always use the local currency symbol — never the ISO code or three-letter abbreviation.
@@ -2702,6 +2744,9 @@ For EACH city provide:
   HIDDEN FINDS — DEDUPLICATION (CRITICAL): Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this city's list — every activity and every restaurant. If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions. Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it. NAME VARIATIONS: Treat names as matching even when one includes a category prefix or uses different spacing/formatting. Strip the following prefixes before comparing: Cerveceria, Mezcalería, Mezcaleria, Café, Cafe, Bar, Cantina, Pulquería, Pulqueria, Taquería, Taqueria, Restaurante, Restaurant, Cocina. Example: "Cerveceria Tierra Adentro" and "TierrAdentro" — strip "Cerveceria" and normalize spacing → both reduce to "tierra adentro" → same venue → exclude from hidden finds.
 
 Weight everything by the traveler's interests and cuisine preferences. Exclude any interest at 0%. Address the traveler as "you".
+
+SEASONAL EVENT ACCURACY (CRITICAL): When including a seasonal event or festival as a recommendation (e.g. Day of the Dead, cherry blossom, carnival, Songkran), only describe the traveler as experiencing it if the trip dates overlap with the actual event window, or the trip ends within 7 days of the event start. If the trip ends more than 7 days before the event begins: you MAY mention the event as future context ("Oaxaca's Day of the Dead (Nov 1–2) is one of Mexico's most extraordinary festivals — consider timing a future visit") but you MUST NOT imply the traveler will see preparations, atmosphere, or early decorations during their actual visit dates. Do not include the event as an activity or hidden find. Apply the same rule to any practical/seasonal notes — do not claim the traveler's dates overlap with seasonal atmosphere unless the dates are genuinely close.
+RECURRING EVENT ACCURACY: The same rule applies to recurring events that happen on a fixed calendar date — monthly flea markets, weekly craft markets, shrine fair days, regular night markets. If the specific occurrence date falls outside the trip dates, do not recommend the event as something the traveler can attend. Example: Toji Temple Flea Market (Kyoto, every 21st) — if the trip is Oct 1–9, the Oct 21 market is not attendable; either omit it or reframe it as future context: "The Toji Flea Market on the 21st is a Kyoto institution — if your dates align, it's unmissable." Apply this check to the activities AND hidden finds.
 ${flags.wantTransportation ? `\nGETTING AROUND: Provide a general "Getting Around ${d.country || 'the destination'}" guide — transport options, tips, and how to move between the main areas. General guidance only.` : ''}
 ${flags.wantAccommodations ? `\nACCOMMODATIONS: Provide exactly 3 hotel picks per city (never fewer than 3), matched to the traveler's accommodation style and budget.` : ''}
 
