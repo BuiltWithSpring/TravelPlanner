@@ -2443,40 +2443,6 @@ Rules:
   ✗ Wrong: morning: "Mercado de Abastos — vast indigenous market", morning_tier: "" (blank tier — must be populated)
 - Pay special attention to the FIRST FULL DAY in each new city — this is the most common location for missed tier fields. After every transit day, confirm the following day's slots all carry \`_tier\` fields.
 
-STEP 13.6 — HIDDEN FINDS
-Select the most surprising, non-obvious experiences or places, scaled by the number of cities in the itinerary:
-- 1–2 cities → 3 Hidden Finds PER CITY
-- 3–4 cities → 2 Hidden Finds PER CITY
-- 5+ cities → 1 Hidden Find PER CITY
-
-HARD CAP: Never generate more than 8 hidden finds total, regardless of city count.
-
-QUALITY OVER QUANTITY: A smaller number of genuinely surprising, specific, well-described hidden finds is far better than padding the list with borderline entries to hit a count. Only include a hidden find if it truly passes the "wouldn't have found this on my own" test.
-These are the "I wouldn't have found this on my own" moments — things that make the itinerary feel genuinely researched rather than AI-generated. Draw from Hidden Gem and strong Local Pick entries.
-Each entry: emoji, title, description (max 25 words — why it's special and not obvious), city.
-
-HIDDEN FIND TITLES:
-The title of every hidden find must be the real, specific name of an actual venue, experience, or place — not a descriptive phrase or thematic label.
-WRONG: "Pinot Poured With Local Pride" / "A Hidden Garden at Dusk" / "Craft Beer Off the Beaten Path"
-RIGHT: "Eyrie Vineyards Tasting Room" / "Fredericksburg Herb Farm" / "Occidental Brewing"
-If you cannot name a specific real venue, do not include it as a hidden find. Max 8 words.
-
-HIDDEN FINDS — DEDUPLICATION (CRITICAL):
-Before finalizing ANY hidden find, cross-check its venue name against EVERY other part of this itinerary:
-- All morning activities (every day)
-- All afternoon activities (every day)
-- All evening activities (every day)
-- All breakfast restaurant picks (every day)
-- All dinner restaurant picks (every day)
-- All entries in the restaurants array (EVERY city, EVERY venue type — Breakfast, Cafe, Bakery, Lunch, Dinner, Street Food, Dessert)
-
-If a venue appears ANYWHERE in the above, it MUST NOT appear in hidden finds. No exceptions.
-This means a venue cannot be both a Hidden Find AND a restaurants entry. If Expendio de Maiz Sin Nombre is in the restaurants array as a Dinner, it cannot also be a Hidden Find. Choose one placement only — restaurants array OR hidden finds, never both.
-
-Apply this check to every single hidden find before including it. If you are unsure whether two entries refer to the same venue, treat them as duplicates and exclude it. NAME VARIATIONS: Treat names as matching even when one includes a category prefix or uses different spacing/formatting. Strip the following prefixes before comparing: Cerveceria, Mezcalería, Mezcaleria, Café, Cafe, Bar, Cantina, Pulquería, Pulqueria, Taquería, Taqueria, Restaurante, Restaurant, Cocina. Example: "Cerveceria Tierra Adentro" and "TierrAdentro" — strip "Cerveceria" and normalize spacing → both reduce to "tierra adentro" → same venue → exclude from hidden finds.
-Draw instead from the city_guide Hidden Gem / Local Pick entries or genuinely new places not already anywhere in the output.
-These appear as a standalone section in the PDF — make them count.
-
 STEP 14 — ACTIVITY FRAMING
 (Covers how to fill and word each day's activity slots: pace structure, slot–venue fit, and field formatting.)
 CULTURAL RESTRICTION WARNINGS: For any venue or experience with a strictly enforced rule that would surprise or create risk for a foreign visitor, include the key restriction in the activity description — woven into the description itself, not as a footnote. Required warnings for known high-risk venues: San Juan Chamula church (Chiapas) — "Photography is strictly forbidden inside — phones and cameras have been confiscated and confrontations occur." Any active mosque (non-tourist context) — include dress code note. Example for San Juan Chamula: ✓ "[Iconic] San Juan Chamula — a Tzotzil Maya village church where Catholic saints and pre-Hispanic shamanic rituals fuse; unlike anywhere on earth. Photography strictly forbidden inside — leave your camera at the entrance." ✗ "[Iconic] San Juan Chamula — a Tzotzil Maya village church where Catholic saints and pre-Hispanic shamanic rituals fuse inside a candle-and-pine-needle-covered church."
@@ -2663,15 +2629,6 @@ OUTPUT — return exactly this JSON:
           "neighborhood": "string"
         }
       ]
-    }
-  ],
-  "hidden_finds": [
-    // Variable length — 1–2 cities: 3/city, 3–4 cities: 2/city, 5+ cities: 1/city, hard cap 8.
-    {
-      "emoji": "string — single relevant emoji",
-      "title": "string — max 8 words",
-      "description": "string — max 25 words, why it's special and non-obvious",
-      "city": "string"
     }
   ],
   "book_before_you_go": [
@@ -3133,6 +3090,93 @@ Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedg
   }
 }
 
+// ── Hidden Finds post-generation call ────────────────────────────────────────
+// Called after the main itinerary validates. Builds a complete exclusion list
+// from the main itinerary (all day-by-day activities, meals, and restaurants)
+// then makes a separate, lightweight Claude call to generate hidden_finds.
+// Fails gracefully — if this call errors, itinerary.hidden_finds is set to [].
+async function generateHiddenFinds(env, itinerary, d) {
+  try {
+    const cities = (d.approvedCities || []).map(c => c.city || c.name || '').filter(Boolean);
+    const cityCount = cities.length || 1;
+
+    // Build exclusion list: all named venues already in the itinerary
+    const usedVenues = new Set();
+    const addVenue = (str) => {
+      if (!str || typeof str !== 'string') return;
+      // Strip meal-type prefix: "Dinner: Venue Name | ..." → "Venue Name"
+      let s = str.replace(/^(breakfast|lunch|dinner|brunch):\s*/i, '');
+      // Take only the venue name (before | or —)
+      s = s.split(/[|—–]/, 1)[0].trim();
+      // Strip tier prefix if present (legacy format)
+      s = s.replace(/^\[(Iconic|Local Pick|Hidden Gem)\]\s*/i, '').trim();
+      if (s.length > 2) usedVenues.add(s.toLowerCase());
+    };
+
+    for (const day of (itinerary.days || [])) {
+      addVenue(day.morning);
+      addVenue(day.afternoon);
+      addVenue(day.evening);
+      addVenue(day.breakfast_suggestion);
+      addVenue(day.restaurant_suggestion);
+    }
+    for (const r of (itinerary.restaurants || [])) {
+      if (r.name) usedVenues.add(r.name.toLowerCase());
+    }
+
+    const exclusionList = [...usedVenues].map(v => `- ${v}`).join('\n');
+
+    // Scaling: 1–2 cities → 3/city, 3–4 cities → 2/city, 5+ → 1/city, hard cap 8
+    const perCity = cityCount >= 5 ? 1 : cityCount >= 3 ? 2 : 3;
+    const targetCount = Math.min(cityCount * perCity, 8);
+
+    const citySequence = cities.length
+      ? cities.join(' → ')
+      : (d.country || 'the destination');
+
+    const prompt = `You are an expert travel planner. Generate exactly ${targetCount} hidden finds for a trip to ${d.country || 'the destination'}.
+
+Cities visited: ${citySequence}
+Trip dates: ${d.arrivalDate || ''} to ${d.departureDate || ''}
+Travel party: ${d.travelParty || ''}
+Interests: ${JSON.stringify(d.interests || {})}
+
+EXCLUDED VENUES — these are already used elsewhere in this itinerary. Never include any of them as a hidden find, even under a slightly different name:
+${exclusionList || '(none)'}
+
+Rules:
+- Every title must be the real, specific name of an actual venue, experience, or place — not a descriptive phrase or thematic label.
+  WRONG: "Pinot Poured With Local Pride" / "A Hidden Garden at Dusk" / "Craft Beer Off the Beaten Path"
+  RIGHT: "Eyrie Vineyards Tasting Room" / "Fredericksburg Herb Farm" / "Occidental Brewing"
+- Each entry must pass the "wouldn't have found this on my own" test — genuinely non-obvious, specific, surprising.
+- Cross-check every title against the EXCLUDED VENUES list above before including it.
+- Distribute finds across the cities — don't cluster all finds in one city.
+- Max title length: 8 words.
+- Description: max 25 words, why it's special and non-obvious.
+- Target count: exactly ${targetCount} (hard cap 8 total).
+
+Return ONLY a valid JSON array, starting with [ and ending with ]. No markdown, no code fences, no explanation. Example format:
+[
+  {"emoji": "🍵", "title": "Ippodo Tea Kyoto", "description": "300-year-old tea merchant where staff brew samples and explain grades — tourists walk past, tea lovers stay an hour.", "city": "Kyoto"},
+  {"emoji": "🏺", "title": "Kaikado Kyoto", "description": "Six-generation tin canister workshop open to browsers — their signature cylindrical tea caddies are still hand-spun on-site.", "city": "Kyoto"}
+]`;
+
+    const raw = await callClaude(env, prompt, 4000, 60000);
+    if (!raw) return [];
+
+    // Parse JSON array from response
+    const cleaned = raw.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    const match = cleaned.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const finds = JSON.parse(match[0]);
+    if (!Array.isArray(finds)) return [];
+    return finds.slice(0, 8); // enforce hard cap
+  } catch (err) {
+    console.error('[generateHiddenFinds] failed (continuing without hidden finds):', err.message);
+    return [];
+  }
+}
+
 // Generate, parse, validate, and (once) retry the full itinerary.
 // Always resolves — returns the itinerary object or a clean error object.
 // NOTE: Perplexity is no longer used pre-generation. It runs post-generation
@@ -3166,6 +3210,11 @@ async function generateItinerary(env, d) {
       if (daysEmpty || overviewEmpty) {
         console.error('[DEBUG] hasRequiredKeys passed but content is empty — days:', parsed.days?.length, '| overview length:', (parsed.overview || '').length, '| raw response length:', rawText?.length, '| first 500 chars of raw:', rawText?.substring(0, 500));
       }
+      // Generate hidden finds in a separate focused call so they get their own
+      // token budget and have the full exclusion list as context.
+      if (mode === 'schedule') {
+        parsed.hidden_finds = await generateHiddenFinds(env, parsed, d);
+      }
       return finalize(parsed);
     }
     console.error('Itinerary attempt 1 failed (parse or missing keys). Raw response:', rawText);
@@ -3180,7 +3229,12 @@ async function generateItinerary(env, d) {
     // Attempt 2 — retry once with strict JSON instruction appended
     rawText = await callClaude(env, basePrompt + JSON_RETRY_INSTRUCTION, maxTokens, timeoutMs);
     parsed = parseClaudeResponse(rawText);
-    if (hasRequiredKeys(parsed, mode)) return finalize(parsed);
+    if (hasRequiredKeys(parsed, mode)) {
+      if (mode === 'schedule') {
+        parsed.hidden_finds = await generateHiddenFinds(env, parsed, d);
+      }
+      return finalize(parsed);
+    }
     console.error('Itinerary retry failed (parse or missing keys). Raw response:', rawText);
 
     return { error: true, message: 'Itinerary generation failed — please try again.' };
