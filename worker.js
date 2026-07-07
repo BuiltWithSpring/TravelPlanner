@@ -2023,6 +2023,7 @@ const JSON_RETRY_INSTRUCTION = '\n\nIMPORTANT: Return only valid JSON. No markdo
 const ITINERARY_PROMPT = (d, perplexityResearch = null) => {
   const t = d.teaserDay || {};
   const approvedCities = JSON.stringify(d.approvedCities || []);
+  const hasApprovedCities = Array.isArray(d.approvedCities) && d.approvedCities.length > 0;
   const citiesRequested = JSON.stringify(d.citiesToVisit || []);
   const anchorCities = JSON.stringify(d.anchorCities || []);
   const accommodationStyle = JSON.stringify(d.accommodationStyle || []);
@@ -2086,7 +2087,7 @@ Match each "### [City]" section below to that city's day-by-day and restaurants 
 ${perplexityResearch}
 ──────────────────────────────────────────────
 ` : ''}
-STEP 1 — CITY DURATION FRAMEWORK
+${!hasApprovedCities ? `STEP 1 — CITY DURATION FRAMEWORK
 NOTE: If approved cities are provided above, skip night allocation — use approved nights exactly.
 Only apply this step if no approved city plan exists.
 
@@ -2105,7 +2106,7 @@ Travel day deductions:
 - City losing full day to travel → add 1 night.
 - Travel days → activity placement follows DEPARTURE DAY STRUCTURE (STEP 10): no departing-city activities; a mid-trip transit day has one afternoon activity and one evening activity at the arrival city. Flag travel days clearly.
 
-STEP 2 — CITY SELECTION
+` : ''}STEP 2 — CITY SELECTION
 NOTE: If approved cities are provided above, skip city selection entirely — proceed to Step 3.
 Only apply this step if no approved city plan exists.
 
@@ -2658,7 +2659,7 @@ OUTPUT — return exactly this JSON:
     }
   ],
   "hidden_finds": [
-    // Variable length — NOT a fixed 5. Count = (cities ≤ 2 ? 3 : 2) × number of cities.
+    // Variable length — 1–2 cities: 3/city, 3–4 cities: 2/city, 5+ cities: 1/city, hard cap 8.
     {
       "emoji": "string — single relevant emoji",
       "title": "string — max 8 words",
