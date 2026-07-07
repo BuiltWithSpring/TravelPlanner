@@ -2490,6 +2490,24 @@ Some experiences only work after dark and must only be placed in the EVENING slo
 - Night markets that operate exclusively after sunset: EVENING only.
 If the activity description or name contains the words "night", "nocturnal", "after dark", "glows at night", or "bioluminescence", it must be in the EVENING slot.
 
+SUNRISE ATTRACTIONS — MORNING ONLY:
+Some attractions exist specifically to watch the sunrise and lose their entire value at any other time of day. These must only be placed in the MORNING slot.
+- Any attraction whose name contains "sunrise", "dawn", or "ilchulbong", or whose primary identity is watching the sunrise from a crater rim, hilltop, or peak: MORNING only.
+- Example failure: Seongsan Ilchulbong (Jeju's Sunrise Peak) placed in the AFTERNOON — completely wrong. The site's entire purpose is the sunrise from the crater; an afternoon visit has no distinguishing value.
+Never place a sunrise attraction in the AFTERNOON or EVENING slot.
+
+SUNSET ATTRACTIONS — EVENING ONLY:
+Attractions specifically famous for watching the sunset must be placed in the EVENING slot.
+- Named sunset viewpoints, clifftop walks, or ocean-view spots whose primary draw is the sunset: EVENING only.
+Never place a sunset attraction in the MORNING or AFTERNOON slot.
+
+DAILY GEOGRAPHIC FEASIBILITY:
+Before finalising any day, verify all three slots are physically achievable in a single day given real travel times and activity durations.
+- If the morning activity takes 3+ hours (a full mountain hike, a half-day tour), the afternoon activity must be within 60 minutes of where the morning activity ends — not on the opposite side of the destination.
+- If two major activities are 90+ minutes apart from each other, they cannot both be "full" activities on the same day.
+- Example failure: Hallasan Eorimok hike (3–4 hrs, central-west Jeju) MORNING + Seongsan Ilchulbong (90-min drive east) AFTERNOON + Udo Island sunset ferry EVENING — the last Seongsan ferry departs ~17:30; after a full morning hike and a cross-island drive, this is physically impossible.
+- When a full hike or major site anchors the morning, the afternoon and evening activities must be geographically near that same area, or the day must be redesigned to fit what is actually achievable.
+
 STEP 14.5 — NO REPETITION RULE (applies across the ENTIRE trip)
 Every activity, attraction, and restaurant must be unique across all days. Never schedule the same place, sight, or restaurant more than once, even across different days in the same city — not just consecutive days. This applies to morning, afternoon, and evening slots AND to restaurant_suggestion and breakfast_suggestion equally. It also applies BETWEEN sets: the day-by-day restaurant_suggestion / breakfast_suggestion picks and the separate restaurants array (Food & Drink tab) are disjoint — no venue appears in both — so together they widen the traveler's options rather than repeat.
 - For multi-day stays in one city, treat the city's attractions as a finite set you are distributing across days — once a place is used on one day, it is unavailable for every other day.
@@ -2500,6 +2518,8 @@ Every activity, attraction, and restaurant must be unique across all days. Never
 STEP 15 — OUTPUT FORMATTING
 - Activities: clean sentence, max 20 words, no pipes
 - Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
+- NAMED TRAIL ACCURACY: Never claim a specific named trail reaches a summit, crater, or viewpoint that it does not. Describe only what that trail actually delivers. Example failure: Hallasan Eorimok Trail described as "crater hike" and "climb South Korea's highest peak" — Eorimok ends at Witseoreum shelter, not the crater. Only Gwaneumsa and Seongpanak trails reach Baeknodam crater. When naming a trail, describe its actual scenery and endpoint rather than the mountain's overall summit.
+- NO MARKDOWN IN ANY TEXT FIELD: Never use markdown formatting inside any string value — no **bold**, no _italic_, no ##headers, no backticks. All text fields must be clean plain text. Example failure: a dinner description rendered entirely in bold because the model wrapped it in **text** — this is forbidden in all fields including morning, afternoon, evening, restaurant_suggestion, breakfast_suggestion, city_teaser, and every other string field.
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
 - Costs: always a range with currency symbol
@@ -3219,7 +3239,7 @@ Rules:
 - Description: max 25 words, why it's special and non-obvious.
 - Target count: exactly ${targetCount} (hard cap 8 total).
 
-Return ONLY a valid JSON array, starting with [ and ending with ]. No markdown, no code fences, no explanation. Example format:
+Return ONLY a valid JSON array, starting with [ and ending with ]. No markdown, no code fences, no explanation. All string field values must be clean plain text — no **bold**, no _italic_, no ##headers. Example format:
 [
   {"emoji": "🍵", "title": "Ippodo Tea Kyoto", "description": "300-year-old tea merchant where staff brew samples and explain grades — tourists walk past, tea lovers stay an hour.", "city": "Kyoto"},
   {"emoji": "🏺", "title": "Kaikado Kyoto", "description": "Six-generation tin canister workshop open to browsers — their signature cylindrical tea caddies are still hand-spun on-site.", "city": "Kyoto"}
