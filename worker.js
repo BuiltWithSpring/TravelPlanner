@@ -2499,17 +2499,6 @@ STEP 15 — OUTPUT FORMATTING
 - Do not include foreign language characters or non-Latin script in any venue names, titles, or parenthetical translations. English names only.
 - Transport booking_tip: one sentence only
 - Practical info: max 4 sentences per field, most critical first. Plain prose, no bullet symbols.
-- Overview: max 3 sentences — cities, trip tone, seasonal highlight. (Second-person voice per STEP 16.)
-
-OVERVIEW ACCURACY (CRITICAL): The overview must accurately describe ONLY the cities, routing, and experiences that actually exist in this itinerary's day-by-day plan and approved city list.
-
-Specific prohibitions:
-- Never describe a final-night city or "return to [city]" arrangement that is not in the approved city plan. If the approved plan ends in Kyoto with no Tokyo return, do not write "returning to Tokyo for the final night." Write "ending in Kyoto before the morning Shinkansen to HND."
-- Never describe the traveler visiting a city or neighborhood not in the itinerary.
-- Never describe activities or experiences that don't appear anywhere in the day-by-day.
-- If the trip is a round-trip but the approved city plan does not include a return night near the airport, describe the actual final city and the departure logistics honestly.
-
-The overview is a summary of what was actually built — not of what the ideal itinerary would have looked like.
 - Costs: always a range with currency symbol
 - Temperatures: always in Fahrenheit (°F). Never use Celsius.
 
@@ -2554,7 +2543,6 @@ Cross-country airports: if arrival and departure airports are in different count
 
 OUTPUT — return exactly this JSON:
 {
-  "overview": "string — max 3 sentences",
   "recommended_cities": [
     {
       "city": "string",
@@ -2818,10 +2806,11 @@ function parseClaudeResponse(rawText) {
 // Validate the parsed object has every required top-level key.
 function hasRequiredKeys(obj, mode = 'schedule') {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  // overview is generated in a separate post-call (generateOverview) so not required here.
   // accommodations/transport are conditional (section-select), so not required.
   const req = mode === 'recs'
-    ? ['overview', 'cities', 'book_before_you_go', 'practical_info']
-    : ['overview', 'days', 'restaurants', 'city_guide', 'book_before_you_go', 'practical_info'];
+    ? ['cities', 'book_before_you_go', 'practical_info']
+    : ['days', 'restaurants', 'city_guide', 'book_before_you_go', 'practical_info'];
   return req.every(k => k in obj);
 }
 
@@ -3090,6 +3079,78 @@ Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedg
   }
 }
 
+// ── Overview post-generation call ─────────────────────────────────────────────
+// Called after the main itinerary validates. Receives only the actual city
+// sequence, transport, and dates — structurally prevents hallucinating routing
+// or cities not in the plan. Fails gracefully — falls back to a generic overview.
+async function generateOverview(env, itinerary, d) {
+  try {
+    // Build city sequence from approved cities (most reliable) or from days
+    const approvedCities = d.approvedCities || [];
+    let cityLines;
+    if (approvedCities.length > 0) {
+      cityLines = approvedCities.map(c => `- ${c.city || c.name}: ${c.nights} night${c.nights === 1 ? '' : 's'}`).join('\n');
+    } else {
+      // Fall back to deriving from days array
+      const seen = new Map();
+      for (const day of (itinerary.days || [])) {
+        if (day.city && !seen.has(day.city)) seen.set(day.city, 0);
+        if (day.city) seen.set(day.city, (seen.get(day.city) || 0) + 1);
+      }
+      cityLines = [...seen.entries()].map(([city, nights]) => `- ${city}: ${nights} night${nights === 1 ? '' : 's'}`).join('\n');
+    }
+
+    // Build transport summary (key inter-city modes only)
+    const transports = (itinerary.transport || []).slice(1, -1) // skip airport transfers
+      .map(t => `${t.from} → ${t.to}: ${t.recommended_mode}`)
+      .join(', ');
+
+    // Round-trip detection
+    const normAirport = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isRoundTrip = d.arrivalAirport && d.departureAirport
+      && normAirport(d.arrivalAirport) === normAirport(d.departureAirport);
+    const finalCity = approvedCities.length > 0
+      ? (approvedCities[approvedCities.length - 1].city || approvedCities[approvedCities.length - 1].name)
+      : '';
+
+    const prompt = `You are an expert travel writer. Write a 3-sentence trip overview for the itinerary below.
+
+Destination: ${d.country || 'the destination'}
+Dates: ${d.arrivalDate || ''} to ${d.departureDate || ''}
+Travel party: ${d.travelParty || ''}
+Travel style: ${d.travelStyle || d.budgetTier || ''}
+Pace: ${d.paceOfTravel || ''}
+Key interests: ${Object.entries(d.interests || {}).filter(([,v]) => Number(v) >= 11).map(([k]) => k).join(', ') || 'varied'}
+
+CITY SEQUENCE (the actual itinerary — describe ONLY these cities and nights):
+${cityLines}
+
+Inter-city transport: ${transports || 'varied'}
+Departure airport: ${d.departureAirport || ''}
+${isRoundTrip ? `Round-trip: YES — the trip departs from the same airport it arrived into. The actual final city is ${finalCity}. Do NOT write "returning to" any city that is not in the city sequence above.` : 'One-way or multi-destination trip.'}
+
+Rules:
+- Write in second person ("you", "your") — address the traveler directly.
+- Describe ONLY the cities and routing listed above. Never mention a city not in the list.
+- Never write "returning to [city]" unless that city appears as the LAST item in the city sequence above.
+- 3 sentences max: (1) cities + overall trip tone, (2) routing logic or highlight experiences, (3) seasonal or timing note if relevant.
+- Do not start with "You'll" — vary the opening.
+- No markdown, no code fences. Return the 3-sentence overview as plain text only.`;
+
+    const raw = await callClaude(env, prompt, 500, 30000);
+    if (!raw) {
+      const cityNames = (d.approvedCities || []).map(c => c.city || c.name).filter(Boolean).join(', ');
+      return cityNames ? `A personalized ${d.country || 'travel'} itinerary: ${cityNames}.` : '';
+    }
+    // Strip any accidental markdown or quotes
+    return raw.trim().replace(/^["']|["']$/g, '').trim();
+  } catch (err) {
+    console.error('[generateOverview] failed (continuing without overview):', err.message);
+    const cityNames = (d.approvedCities || []).map(c => c.city || c.name).filter(Boolean).join(', ');
+    return cityNames ? `A personalized ${d.country || 'travel'} itinerary: ${cityNames}.` : '';
+  }
+}
+
 // ── Hidden Finds post-generation call ────────────────────────────────────────
 // Called after the main itinerary validates. Builds a complete exclusion list
 // from the main itinerary (all day-by-day activities, meals, and restaurants)
@@ -3204,16 +3265,20 @@ async function generateItinerary(env, d) {
     let rawText = await callClaude(env, basePrompt, maxTokens, timeoutMs);
     let parsed = parseClaudeResponse(rawText);
     if (hasRequiredKeys(parsed, mode)) {
-      // Debug: warn if content looks suspiciously empty
+      // Debug: warn if days are empty (overview is now post-generated so skip that check)
       const daysEmpty = mode === 'schedule' && Array.isArray(parsed.days) && parsed.days.length === 0;
-      const overviewEmpty = !parsed.overview || parsed.overview.trim() === '';
-      if (daysEmpty || overviewEmpty) {
-        console.error('[DEBUG] hasRequiredKeys passed but content is empty — days:', parsed.days?.length, '| overview length:', (parsed.overview || '').length, '| raw response length:', rawText?.length, '| first 500 chars of raw:', rawText?.substring(0, 500));
+      if (daysEmpty) {
+        console.error('[DEBUG] hasRequiredKeys passed but days array is empty — raw response length:', rawText?.length, '| first 500 chars of raw:', rawText?.substring(0, 500));
       }
-      // Generate hidden finds in a separate focused call so they get their own
-      // token budget and have the full exclusion list as context.
+      // Run post-generation calls in parallel: overview (accuracy-guaranteed) + hidden finds
+      // (full exclusion list, own token budget). Both fail gracefully.
       if (mode === 'schedule') {
-        parsed.hidden_finds = await generateHiddenFinds(env, parsed, d);
+        const [overview, hiddenFinds] = await Promise.all([
+          generateOverview(env, parsed, d),
+          generateHiddenFinds(env, parsed, d)
+        ]);
+        parsed.overview = overview;
+        parsed.hidden_finds = hiddenFinds;
       }
       return finalize(parsed);
     }
@@ -3231,7 +3296,12 @@ async function generateItinerary(env, d) {
     parsed = parseClaudeResponse(rawText);
     if (hasRequiredKeys(parsed, mode)) {
       if (mode === 'schedule') {
-        parsed.hidden_finds = await generateHiddenFinds(env, parsed, d);
+        const [overview, hiddenFinds] = await Promise.all([
+          generateOverview(env, parsed, d),
+          generateHiddenFinds(env, parsed, d)
+        ]);
+        parsed.overview = overview;
+        parsed.hidden_finds = hiddenFinds;
       }
       return finalize(parsed);
     }
