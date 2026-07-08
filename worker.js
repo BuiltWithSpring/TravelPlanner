@@ -459,10 +459,23 @@ export default {
           { expirationTtl: 60 * 60 * 24 * 7 } // 7 days
         );
 
+        // Two-tier pricing, decided SERVER-SIDE from the traveler's sections so the
+        // client can't request full generation at the guide price. Day-by-Day
+        // included → full itinerary (STRIPE_PRICE_ID, $29). Excluded → city-guide
+        // edition (STRIPE_PRICE_ID_GUIDE, $19). Falls back to the full price with a
+        // loud log if the guide price isn't configured yet.
+        const selSections = Array.isArray(formData.selectedSections) ? formData.selectedSections : [];
+        const isFullTier = selSections.length === 0 || selSections.includes('day_by_day');
+        let checkoutPriceId = env.STRIPE_PRICE_ID;
+        if (!isFullTier) {
+          if (env.STRIPE_PRICE_ID_GUIDE) checkoutPriceId = env.STRIPE_PRICE_ID_GUIDE;
+          else console.error('[checkout] STRIPE_PRICE_ID_GUIDE not set — charging full price for a guide-tier order. Set the secret: npx wrangler secret put STRIPE_PRICE_ID_GUIDE');
+        }
+
         // Only pass safe, short fields to Stripe metadata for reference
         const params = new URLSearchParams({
           'mode': 'payment',
-          'line_items[0][price]': env.STRIPE_PRICE_ID,
+          'line_items[0][price]': checkoutPriceId,
           'line_items[0][quantity]': '1',
           'allow_promotion_codes': 'true',
           'success_url': `https://travel.builtwithspring.com/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -478,6 +491,7 @@ export default {
           'metadata[arrivalDate]': formData.arrivalDate || '',
           'metadata[departureDate]': formData.departureDate || '',
           'metadata[travelParty]': formData.travelParty || '',
+          'metadata[tier]': isFullTier ? 'full' : 'guide',
         });
 
         const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -2317,6 +2331,8 @@ Match to trip structure:
 
 Every booking_tip is one sentence including booking window. Never label a road shuttle as Train. Flag cities with multiple airports.
 
+FLIGHT FREQUENCY ACCURACY (CRITICAL): Never invent a flight time-of-day or airline. Only name an airline on a leg if you are confident it actually operates that route. Secondary and regional routes (e.g. Chiang Mai→Luang Prabang) often run only a FEW days per week with a single departure time — if the research above (or your knowledge) does not confirm a daily schedule, do NOT write "morning flight" or plan around a specific departure time. Instead: describe the leg as "flight — limited schedule, verify days and times before booking", say the same in the booking_tip, and keep that arrival day's plan light and flexible (no timed activities that depend on a morning arrival). A traveler who books hotels around a flight that doesn't exist that day is the worst possible failure.
+
 GUILIN → YANGSHUO ROUTING: When the itinerary includes a Guilin-to-Yangshuo leg, the Li River cruise (Guilin → Yangshuo, ~4.5 hours, morning departure) IS the recommended transfer — list it as the transport mode for this leg. On the travel day, schedule the cruise as the morning activity slot. Do NOT schedule the Li River cruise as a standalone day activity on any day the traveler is already staying in Yangshuo — it cannot be done in reverse and cannot be repeated.
 
 STEP 10 — GEOGRAPHIC CLUSTERING
@@ -2485,6 +2501,7 @@ Rules:
 - Every trip must include at least 3 Local Pick entries across the day-by-day.
 - Do not label everything as Hidden Gem — use sparingly and only when truly justified.
 - Tier must reflect objective popularity, not subjective preference.
+- FAME CHECK: never badge an internationally famous venue as Hidden Gem — anything on World's 50 Best lists, Michelin flagships, or major skyline attractions (e.g. Atlas Bar or LeVeL33 in Singapore) is Iconic, no matter how atmospheric it feels. If a first-page Google search for the city's best bars/restaurants would surface it, it is not a Hidden Gem.
 - For day-by-day entries, output the tier in the SEPARATE \`morning_tier\`, \`afternoon_tier\`, or \`evening_tier\` field — NOT as a prefix in the activity description string. The tier field must be exactly one of: \`Iconic\`, \`Local Pick\`, or \`Hidden Gem\` (no brackets, no extra text). Examples:
   morning: "Yanaka Cemetery Walk — quiet neighborhood necropolis turned local strolling ground, lined with cats and craft shops."
   morning_tier: "Local Pick"
@@ -3139,11 +3156,13 @@ ${d.country} trip: ${cityList.join(' → ')}. Dates: ${d.arrivalDate} to ${d.dep
 Party: ${groupSize}.
 
 TRANSPORT — for each leg, best option with time and cost:
-${cityPairs.length ? cityPairs.map(l => `- ${l}: drive time OR train, cost estimate, booking tip`).join('\n') : `- Internal travel within ${d.country}`}
+${cityPairs.length ? cityPairs.map(l => `- ${l}: drive time OR train OR flight; if flight, state WHICH airlines actually operate the route, how many flights per week, and typical departure times; cost estimate, booking tip`).join('\n') : `- Internal travel within ${d.country}`}
+
+FLIGHT FREQUENCY — explicitly call out any leg served by fewer than one flight per day (state days of week and departure time if known).
 
 SEASONAL NOTES — any closures, festivals, or crowd warnings for these exact dates.
 
-Headings: "## TRANSPORT", "## SEASONAL NOTES". Specific times and costs. No hedging.
+Headings: "## TRANSPORT", "## FLIGHT FREQUENCY", "## SEASONAL NOTES". Specific times and costs. No hedging.
 `.trim();
 
   try {
@@ -3988,6 +4007,77 @@ function validateTierBadges(days) {
   return missing;
 }
 
+// ── DAY-OF-WEEK VENUE VALIDATOR ─────────────────────────────────────────────
+// STEP 16 backstop: a venue whose NAME contains a weekday ("Sunday Market",
+// "Saturday Walking Street") is a hard scheduling constraint. If it lands on a
+// different weekday, the traveler gets sent to a market that isn't running.
+// Activity slots are REPLACED with a safe free-slot line; meal suggestions are
+// logged only (removing a meal would leave a visible gap in the render).
+const DOW_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+function validateDayOfWeekVenues(days) {
+  const notes = [];
+  if (!Array.isArray(days)) return notes;
+  const dowRe = /\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i;
+  days.forEach(day => {
+    const t = Date.parse(day && day.date);
+    if (isNaN(t)) return;
+    const actualDow = new Date(t).getUTCDay(); // YYYY-MM-DD parses as UTC midnight
+    ['morning', 'afternoon', 'evening'].forEach(slot => {
+      const text = day[slot];
+      if (typeof text !== 'string') return;
+      const m = text.match(dowRe);
+      if (!m) return;
+      const namedDow = DOW_NAMES.indexOf(m[1].toLowerCase());
+      if (namedDow === actualDow) return;
+      notes.push(`${day.date} is a ${DOW_NAMES[actualDow]} but ${slot} names ${m[1]}: "${text.substring(0, 70)}" — slot replaced`);
+      day[slot] = slot === 'evening'
+        ? 'Evening at leisure — explore the neighbourhood\'s night scene at your own pace.'
+        : 'Free ' + slot + ' — rest, explore at your own pace, or revisit somewhere you loved.';
+      delete day[slot + '_tier']; // free slots carry no tier badge
+    });
+    ['restaurant_suggestion', 'breakfast_suggestion'].forEach(meal => {
+      const text = day[meal];
+      if (typeof text !== 'string') return;
+      const m = text.match(dowRe);
+      if (m && DOW_NAMES.indexOf(m[1].toLowerCase()) !== actualDow) {
+        notes.push(`${day.date} (${DOW_NAMES[actualDow]}) ${meal} names ${m[1]} — left in place, review: "${text.substring(0, 70)}"`);
+      }
+    });
+  });
+  return notes;
+}
+
+// ── DAILY BUDGET SANITY CHECK (log-only) ────────────────────────────────────
+// The prompt's DAILY BUDGET CONSISTENCY rule is judgment-based and occasionally
+// ignored. This is the codeable slice: a day's budget low end that can't even
+// cover that city's own accommodation nightly low end is provably understated.
+// Visibility only — we log and ship; mutating customer-facing prices in code
+// risks making them wrong in the other direction.
+function parseCostLow(str) {
+  if (typeof str !== 'string') return null;
+  const m = str.replace(/,/g, '').match(/(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : null;
+}
+function validateDailyBudgets(itinerary) {
+  const notes = [];
+  const days = Array.isArray(itinerary && itinerary.days) ? itinerary.days : [];
+  const accoms = Array.isArray(itinerary && itinerary.accommodations) ? itinerary.accommodations : [];
+  if (!days.length || !accoms.length) return notes;
+  const hotelLowByCity = {};
+  accoms.forEach(a => {
+    const low = parseCostLow(a.estimated_cost_per_night);
+    if (a.city && low != null) hotelLowByCity[String(a.city).toLowerCase()] = low;
+  });
+  days.forEach(day => {
+    const dayLow = parseCostLow(day.estimated_daily_cost);
+    const hotelLow = hotelLowByCity[String(day.city || '').toLowerCase()];
+    if (dayLow != null && hotelLow != null && dayLow < hotelLow) {
+      notes.push(`${day.date} (${day.city}): daily cost low ${dayLow} < accommodation nightly low ${hotelLow} — budget understated`);
+    }
+  });
+  return notes;
+}
+
 // ── CITY PLAN VALIDATOR ─────────────────────────────────────────────────────
 // Inline copy of city-plan-validator.js (browser runs the same logic after every
 // preview parse). KEEP THE TWO IN SYNC. Deterministic enforcement of the
@@ -4226,6 +4316,14 @@ async function fulfillOrder(env, session) {
       // Strip Book Before You Go entries not present in the day-by-day plan (STEP 12 backstop)
       validateBookBeforeYouGo(itinerary);
 
+      // Weekday-named venues on wrong dates → replace slot + log (STEP 16 backstop)
+      const dowNotes = validateDayOfWeekVenues(itinerary.days);
+      if (dowNotes.length) console.warn('[DOW VALIDATION] ' + dowNotes.join(' | '));
+
+      // Daily budget vs own accommodation — visibility only
+      const budgetNotes = validateDailyBudgets(itinerary);
+      if (budgetNotes.length) console.warn('[BUDGET VALIDATION] ' + budgetNotes.join(' | '));
+
       // Visibility only — flag activity slots the model left without a tier badge.
       // Non-blocking: we log and still ship so the traveler always gets an itinerary.
       if (Array.isArray(itinerary.days) && itinerary.days.length) {
@@ -4248,6 +4346,10 @@ async function fulfillOrder(env, session) {
         } catch (pErr) {
           console.error('Perplexity verification failed (continuing):', pErr && pErr.message);
         }
+      } else {
+        // Loud and unmissable in `wrangler tail`: with verification off, closed
+        // venues, stale locations, and invented hidden finds ship unchecked.
+        console.warn('[VERIFY] USE_PERPLEXITY is OFF — venue verification and hidden-finds fact-checking were SKIPPED for session', session.id);
       }
 
       // Enrich day-by-day venues with Google Places (v1) before sending. Isolated

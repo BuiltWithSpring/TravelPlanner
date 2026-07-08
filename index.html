@@ -555,41 +555,22 @@
       </span>
       BuiltWithSpring
     </div>
-    <div class="topbar-price">Free preview · <strong>$29</strong> full itinerary</div>
+    <div class="topbar-price" id="topbarPrice">Free preview · <strong>$29</strong> full itinerary</div>
   </div>
 
   <div id="card">
     <div class="pbar">
       <div class="pseg on" id="p1"></div>
-      <div class="pseg on" id="p2"></div>
-      <div class="pseg on" id="p3"></div>
-      <div class="pseg on" id="p4"></div>
+      <div class="pseg" id="p2"></div>
+      <div class="pseg" id="p3"></div>
+      <div class="pseg" id="p4"></div>
     </div>
 
     <!-- ── STEP 1: You ──────────────────────────────── -->
     <div class="step on" id="step1">
       <div class="step-eyebrow">Step 1 of 4</div>
-      <div class="step-title">Let's start with you</div>
-      <div class="step-sub">Quick basics so we can send you your itinerary.</div>
-
-      <div class="r2">
-        <div class="fg">
-          <label class="fl">First name <span class="req">*</span></label>
-          <input class="inp" type="text" id="firstName" placeholder="First name">
-          <div class="error-msg" id="err-firstName">Please enter your first name</div>
-        </div>
-        <div class="fg">
-          <label class="fl">Last name <span class="req">*</span></label>
-          <input class="inp" type="text" id="lastName" placeholder="Last name">
-          <div class="error-msg" id="err-lastName">Please enter your last name</div>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label class="fl">Email <span class="req">*</span></label>
-        <input class="inp" type="email" id="email" placeholder="We&#39;ll send your itinerary here">
-        <div class="error-msg" id="err-email">Please enter a valid email</div>
-      </div>
+      <div class="step-title">Who's going?</div>
+      <div class="step-sub">Your travel party and what your itinerary should include.</div>
 
       <div class="fg">
         <label class="fl">Who's travelling? <span class="req">*</span></label>
@@ -597,9 +578,10 @@
           <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">🧍</span><div class="ct">Solo</div></div>
           <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👫</span><div class="ct">Couple</div></div>
           <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">🎉</span><div class="ct">Friends</div></div>
-          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family + kids</div></div>
-          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👦‍👦</span><div class="ct">Family</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👧</span><div class="ct">Family (kids)</div></div>
+          <div class="cc" onclick="pick(&#39;pg&#39;,this,true)"><span class="ci">👨‍👩‍👦‍👦</span><div class="ct">Family (adults)</div></div>
         </div>
+        <div class="hint">Family (kids) tunes every recommendation to be kid-friendly — venues, pacing, and food.</div>
         <div class="error-msg" id="err-party">Please select your travel party</div>
       </div>
 
@@ -616,7 +598,7 @@
           <label class="chk"><input type="checkbox" id="sec-transportation" checked onchange="onSectionsChange()"> Transportation</label>
           <label class="chk chk-locked"><input type="checkbox" id="sec-food" checked disabled> Food &amp; Activity Recs <span class="chk-note">Always included</span></label>
         </div>
-        <div class="hint">Choose what your itinerary includes. Food &amp; activity recommendations are always included.</div>
+        <div class="hint" id="sectionsPriceHint">Day-by-Day is the full experience — <strong>$29</strong>. Skip it for the lighter city-guide edition — <strong>$19</strong>. Food &amp; activity recs always included.</div>
       </div>
 
       <div class="brow"><button class="bnx" onclick="goStep(2)">Continue →</button></div>
@@ -671,6 +653,7 @@
           <div class="error-msg" id="err-depDate">Please select departure date</div>
           <div class="error-msg" id="err-depDate-before" style="display:none;">Must be after arrival date</div>
           <div class="error-msg" id="err-depDate-toolong" style="display:none;">Spring plans trips up to 14 nights — for longer trips, split by region for best results</div>
+          <div class="hint" id="nightsCount" style="display:none;color:var(--accent2);font-weight:600;"></div>
         </div>
       </div>
 
@@ -838,6 +821,25 @@
         <div class="char-count" id="extraNotesCount">0 / 600</div>
       </div>
 
+      <hr class="hdiv">
+
+      <!-- Contact details — asked LAST, after the traveler is invested, not first. -->
+      <div class="fg">
+        <label class="fl">Where do we send your preview? <span class="req">*</span></label>
+        <div class="r2" style="margin-bottom:10px;">
+          <div>
+            <input class="inp" type="text" id="firstName" placeholder="First name">
+            <div class="error-msg" id="err-firstName">Please enter your first name</div>
+          </div>
+          <div>
+            <input class="inp" type="text" id="lastName" placeholder="Last name">
+            <div class="error-msg" id="err-lastName">Please enter your last name</div>
+          </div>
+        </div>
+        <input class="inp" type="email" id="email" placeholder="Email — your itinerary lands here">
+        <div class="error-msg" id="err-email">Please enter a valid email</div>
+      </div>
+
       <div class="brow">
         <button class="bbk" onclick="go(3)">← Back</button>
         <button class="bnx" onclick="submitForm()">✨ Generate my preview</button>
@@ -907,7 +909,7 @@
         </div>
 
         <!-- Primary CTA -->
-        <button class="bnx" onclick="confirmAndGenerate()" style="width:100%;font-size:1.1rem;padding:18px 24px;margin-bottom:0.5rem;">Get Full Itinerary — $29</button>
+        <button class="bnx" id="ctaMain" onclick="confirmAndGenerate()" style="width:100%;font-size:1.1rem;padding:18px 24px;margin-bottom:0.5rem;">Get Full Itinerary — $29</button>
         <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:0.75rem;">Secure checkout via Stripe · delivered to your inbox</div>
 
         <!-- Collapsible feedback -->
@@ -952,7 +954,7 @@
 
       <!-- Sticky mobile CTA -->
       <div class="sticky-cta" id="stickyCta">
-        <button class="bnx" onclick="confirmAndGenerate()">Get Full Itinerary — $29</button>
+        <button class="bnx" id="ctaSticky" onclick="confirmAndGenerate()">Get Full Itinerary — $29</button>
       </div>
 
       <!-- Error -->
@@ -1093,7 +1095,25 @@
     return out;
   }
   // Reactively show/hide Step 2 fields based on the Step 1 section choices.
+  // ── TWO-TIER PRICING ───────────────────────────────
+  // Day-by-Day is the price hinge: with it = full itinerary ($29), without it =
+  // city-guide edition ($19). The worker picks the matching Stripe price
+  // server-side from selectedSections — these constants only drive the UI.
+  const PRICE_FULL = 29, PRICE_GUIDE = 19;
+  function updatePriceUI() {
+    const day = document.getElementById('sec-day_by_day').checked;
+    const price = day ? PRICE_FULL : PRICE_GUIDE;
+    const label = day ? 'Get Full Itinerary — $' + price : 'Get City Guide — $' + price;
+    const main = document.getElementById('ctaMain'); if (main) main.textContent = label;
+    const sticky = document.getElementById('ctaSticky'); if (sticky) sticky.textContent = label;
+    const top = document.getElementById('topbarPrice');
+    if (top) top.innerHTML = day
+      ? 'Free preview · <strong>$' + PRICE_FULL + '</strong> full itinerary'
+      : 'Free preview · <strong>$' + PRICE_GUIDE + '</strong> city guide';
+  }
+
   function onSectionsChange() {
+    updatePriceUI();
     const day = document.getElementById('sec-day_by_day').checked;
     const acc = document.getElementById('sec-accommodations').checked;
     const trn = document.getElementById('sec-transportation').checked;
@@ -1138,6 +1158,7 @@
     else document.getElementById('err-depDate-before').style.display='none';
     document.getElementById('err-arrDate').classList.remove('on');
     document.getElementById('err-arrDate-past').style.display='none';
+    updateNightsCount();
   }
   function onDepDateChange() {
     const arrVal = document.getElementById('arrDate').value;
@@ -1158,17 +1179,36 @@
       }
     }
     document.getElementById('err-depDate').classList.remove('on');
+    updateNightsCount();
   }
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('arrDate').min = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('arrDate').min = today;
+    // Departure min must also start at today — the hardcoded HTML fallback was a
+    // stale test date that blocked early departures when users picked this field first.
+    document.getElementById('depDate').min = today;
+    // Sync price labels with restored checkbox state (browsers restore form state on back-nav).
+    updatePriceUI();
   });
+
+  // Live nights counter — the whole product allocates by nights, so show the
+  // number as soon as both dates are in (prevents nights-vs-days confusion).
+  function updateNightsCount() {
+    const el = document.getElementById('nightsCount');
+    if (!el) return;
+    const a = document.getElementById('arrDate').value, b = document.getElementById('depDate').value;
+    if (a && b && b > a) {
+      const n = Math.round((new Date(b) - new Date(a)) / 86400000);
+      el.textContent = '✓ ' + n + '-night trip';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
 
   // ── VALIDATION ─────────────────────────────────────
   function validateStep1() {
     clearErrors(); let ok = true;
-    if (!document.getElementById('firstName').value.trim()) { showError('err-firstName','firstName'); ok=false; }
-    if (!document.getElementById('lastName').value.trim()) { showError('err-lastName','lastName'); ok=false; }
-    if (!document.getElementById('email').value.trim()) { showError('err-email','email'); ok=false; }
     if (!document.querySelector('#pg .cc.on')) { showError('err-party',null); ok=false; }
     if (!ok) window.scrollTo({top:0,behavior:'smooth'});
     return ok;
@@ -1218,6 +1258,11 @@
     clearErrors(); let ok = true;
     const anyInterest = Array.from(document.querySelectorAll('.islider')).some(s => parseInt(s.value) > 0);
     if (!anyInterest) { showError('err-interests',null); ok=false; }
+    // Contact details live at the end of step 4 now (value-first form ordering).
+    if (!document.getElementById('firstName').value.trim()) { showError('err-firstName','firstName'); ok=false; }
+    if (!document.getElementById('lastName').value.trim()) { showError('err-lastName','lastName'); ok=false; }
+    const email = document.getElementById('email').value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('err-email','email'); ok=false; }
     if (!ok) window.scrollTo({top:0,behavior:'smooth'});
     return ok;
   }
@@ -1250,7 +1295,7 @@
     el.classList.add('on');
     if (isParty) {
       const t = el.querySelector('.ct').textContent;
-      document.getElementById('gsw').classList.toggle('hidden', !(t==='Friends'||t==='Family + kids'||t==='Family'));
+      document.getElementById('gsw').classList.toggle('hidden', !(t==='Friends'||t.indexOf('Family')===0));
     }
   }
   let tripStructure = null; // no default — a deliberate selection is required
@@ -1317,7 +1362,12 @@
       citiesToVisit: currentMode==='know' ? tags : [],
       aiCityRecommendation: currentMode==='ai',
       anchorCities: currentMode==='ai' ? anchorTags : [],
-      travelParty: getSelected('pg'),
+      // Expand the short card labels into unambiguous phrases for the prompts —
+      // "Family with young kids" reliably triggers the kid-friendly venue rules.
+      travelParty: (function(){ const t = getSelected('pg');
+        if (t === 'Family (kids)') return 'Family with young kids';
+        if (t === 'Family (adults)') return 'Family — adults only';
+        return t; })(),
       groupSize: document.getElementById('groupSize').value || null,
       email: document.getElementById('email').value,
       paceOfTravel: getPace(),
