@@ -2123,7 +2123,7 @@ const ITINERARY_PROMPT = (d, perplexityResearch = null) => {
   const roundTripDirective = isRoundTrip ? `
 ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d.departureAirport}):
 This is a round-trip booking that departs from the SAME airport it arrived into. The city route MUST form a loop that ends with the traveler's FINAL NIGHT in a city within ~90 minutes ground transport of ${d.departureAirport}. This is a HARD CITY-SELECTION CONSTRAINT on where the last night is spent — NOT merely a disclosure or transport-costing rule.
-- HARD RULE — FIRST NIGHT LOCATION: The FIRST city of the route must be the arrival airport city itself, with at least 1 night, so the traveler lands and settles before the loop begins. On multi-city round trips the airport city appears TWICE in the route — as the opening stop and as the closing stop.
+- HARD RULE — FIRST NIGHT LOCATION: The FIRST city of the route must be the arrival airport city itself, with at least 1 night, so the traveler lands and settles before the loop begins. On multi-city round trips the airport city appears TWICE in the route — as the opening stop and as the closing stop. EXCEPTION: if the traveler's mustSee/extraNotes say they don't want to stay there on arrival, honor the notes — they outrank this rule.
 - GATEWAY NIGHTS: if the airport city is itself a world-class or must-visit destination (e.g. Singapore, Tokyo, Paris, Rome, Bangkok, Istanbul), its COMBINED nights across the opening + closing stays must meet the recommended total for its size classification adjusted for pace — a Large airport city at fast pace needs 3 combined nights (e.g. 2 opening + 1 closing), never 1+1. Fund this by trimming mid-route cities. Only airport cities with little tourist value stay at the 1-night minimum per stay.
 - HARD RULE — LAST NIGHT LOCATION: The LAST city of the route (where the final night is spent) must itself be the airport city or another city within ~90 min of ${d.departureAirport}. Plan the city order as a loop from the start so the trip naturally arrives back near the airport for the final night. Never treat a distant city that happens to have its own airport (e.g. San José when the booking departs from Liberia/LIR) as the departure city — the actual departure airport is ${d.departureAirport}, and the FINAL NIGHT must be near IT.
 - DO NOT compress the return journey into departure-day morning as a substitute for relocating the final night. A costed, well-disclosed "leave at 5am and drive 3–4 hours to the airport" is NOT compliant — a long departure-day dash does not satisfy this rule. The traveler must already BE near the airport when they wake on departure day, not racing across the country to reach it.
@@ -2191,8 +2191,8 @@ Calculate total trip days from arrival to departure.
 - MEXICO STATE-LEVEL EXCLUSIONS: Mexico is Level 2 overall but specific states carry Level 3/4. Never recommend these as overnight destinations: Guerrero state (including Acapulco), Sinaloa state (including Culiacán and Mazatlán areas outside designated tourist hotel zones), Tamaulipas state, Zacatecas state, Colima state, Michoacán state interior (excluding Morelia, which may be included with a caution note). If the traveler explicitly requests one of these in mustSee or extraNotes, add a note in the overview: "We've routed around [location] due to current travel advisories; please check the latest US State Department guidance before traveling." Suggest a safe alternative in the same region where possible.
 - ADVISORY ACCURACY: Advisory levels change. The lists above reflect July 2026 data. If there is any reason to believe a destination's status may have changed, note in the overview that the traveler should verify current advisories at travel.state.gov before booking.
 - Always consider arrival and departure airport cities as candidates. Include them for flying trips unless the traveler chose different cities or the airport has no tourist value.
-- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it. They need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: target the band average, Fast pace → lean 1 night below (never below the band minimum), Relaxed pace → lean 1 night above. Never drop the arrival city unless the traveler explicitly names a different starting city or says "skip [city]" in mustSee or extraNotes.
-- DEPARTURE CITY RULE: Always include the departure airport city for at least 1 night unless the traveler explicitly says to skip it. Never route a traveler out of any city they have not spent at least one night in — they need accommodation, time to reach the airport, and a buffer for their flight. If the departure city is a world-class or must-visit destination → allocate nights based on typical visitor recommendations adjusted for their pace, same as arrival city logic above. Adjust other city night allocations to fit both arrival and departure city requirements.
+- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler's mustSee/extraNotes indicate they don't want to stay there (any clear phrasing counts — "skip Hong Kong", "no overnight in HK", "go straight to Guilin" — exact wording irrelevant; honor the intent fully and route them onward on arrival day). Otherwise they need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: target the band average, Fast pace → lean 1 night below (never below the band minimum), Relaxed pace → lean 1 night above. Never drop the arrival city unless the traveler explicitly names a different starting city or their notes say not to stay there.
+- DEPARTURE CITY RULE: Always include the departure airport city for at least 1 night unless the traveler's notes indicate they don't want to stay there (same any-clear-phrasing standard as the arrival rule). Never route a traveler out of any city they have not spent at least one night in — they need accommodation, time to reach the airport, and a buffer for their flight. If the traveler opted out, honor it and flag the departure-day transfer implications in the overview. If the departure city is a world-class or must-visit destination → allocate nights based on typical visitor recommendations adjusted for their pace, same as arrival city logic above. Adjust other city night allocations to fit both arrival and departure city requirements.
 - Cities listed, AI false → respect list. Adjust count if needed. Explain changes in overview.
 - AI true, anchors provided → anchors are fixed. Fill remaining days with best-fit cities.
 - AI true, no cities → select from scratch weighted by interests, travel party, travel style, weather, routing.
@@ -2631,7 +2631,7 @@ TEMPORAL ACCURACY — before assigning any venue or event, verify it actually op
   DAY-OF-WEEK IN VENUE NAMES (CRITICAL): If a venue or event name contains a day of the week — for example "Sunday Market", "Monday Night Jazz", "Wednesday Farmers Market", "Friday Street Food Night" — that day is a hard scheduling constraint. The venue must only be placed on the matching day of the week. No exceptions. Before assigning any venue whose name contains a day of the week, confirm that the calendar date in the itinerary matches that day. Example: "Tlacolula Sunday Market" → only assign on a Sunday. If no Sunday falls within that city's stay, do not assign this venue.
 - Time of year: seasonal venues/events must run during the travel dates. Examples: summer festivals, outdoor summer dances, winter-only attractions, holiday markets, harvest events, seasonal park programs. Common pitfall: outdoor summer events (Memorial Day through Labor Day) placed on autumn, winter, or spring dates.
 
-Treat mustSee and extraNotes as hard instructions, not suggestions. Apply them before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
+Treat mustSee and extraNotes as hard instructions, not suggestions. They are the traveler's direct voice and override EVERY rule in this prompt — arrival/departure city rules, night allocation, city selection, routing — with ONE exception: the SAFETY EXCLUSIONS in Step 2 can never be overridden by notes. Apply the notes before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
 Cross-country airports: if arrival and departure airports are in different countries, note this in the overview and clarify which country the itinerary covers. Never plan activities or cities outside the submitted country.
 
 OUTPUT — return exactly this JSON:
@@ -4104,10 +4104,35 @@ function cpvCityMatch(a, b) {
   return na === nb || na.indexOf(nb) === 0 || nb.indexOf(na) === 0;
 }
 
+// Traveler notes outrank the arrival/departure defaults. REPAIR SUPPRESSOR, not
+// decision-maker: the model builds the plan from the notes; this only stops us
+// re-inserting a city the traveler plausibly opted out of ("skip Hong Kong",
+// "no overnight in HK", "straight to Guilin"). False positives are safe — we
+// just defer to the model. City refs: full name, initials ("hong kong" → "hk"),
+// and the city-specific airport code. Opt-out + ref must share a sentence.
+const CPV_INITIALS_STOPLIST = ['no', 'to', 'in', 'on', 'at', 'so', 'do', 'be', 'me', 'my', 'we', 'us', 'an', 'as', 'by', 'of', 'or', 'up', 'if', 'it', 'la', 'st', 'de'];
+const cpvEscRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const CPV_OPT_OUT_RE = /\b(skip|pass(ing)? through|transit only|layover only|no stop(s)?|straight to|directly to)\b|\b(no|not|don'?t|do not|avoid|without|zero)\b[^.;!?\n]{0,40}\b(overnight(s)?|stay(ing|s)?|night(s)?|sleep(ing)?|stop(ping)?)\b/;
+
 function cpvTravelerSkips(cityName, fd) {
-  if (!cityName) return false;
-  const text = ((fd.mustSee || '') + ' ' + (fd.extraNotes || '')).toLowerCase();
-  return /skip/.test(text) && text.indexOf(String(cityName).toLowerCase()) !== -1;
+  const text = ((fd.mustSee || '') + '. ' + (fd.extraNotes || '')).toLowerCase();
+  if (!cityName || !text.trim()) return false;
+  const name = String(cityName).toLowerCase().trim();
+  const words = name.split(/\s+/).filter(Boolean);
+  const refs = [name];
+  if (words.length > 1) {
+    const initials = words.map(w => w[0]).join('');
+    if (initials.length >= 2 && CPV_INITIALS_STOPLIST.indexOf(initials) === -1) refs.push(initials);
+  }
+  if (cpvCityMatch(cityName, fd.arrivalCityName) && typeof fd.arrivalAirport === 'string' && fd.arrivalAirport.trim().length === 3) {
+    refs.push(fd.arrivalAirport.trim().toLowerCase());
+  }
+  if (cpvCityMatch(cityName, fd.departureCityName) && typeof fd.departureAirport === 'string' && fd.departureAirport.trim().length === 3) {
+    refs.push(fd.departureAirport.trim().toLowerCase());
+  }
+  return text.split(/[.;!?\n]+/).some(sentence =>
+    CPV_OPT_OUT_RE.test(sentence) && refs.some(r => r.length >= 2 && new RegExp('\\b' + cpvEscRe(r) + '\\b').test(sentence))
+  );
 }
 
 function validateAndRepairCityPlan(cities, formData) {

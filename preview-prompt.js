@@ -47,7 +47,7 @@ ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d
 This trip departs from the same airport it arrived into. The city route MUST form a loop. The LAST city in the plan (where the traveler spends their final night before departure) must be the airport city itself or another city within ~90 minutes ground transport of ${d.departureAirport}.
 
 Rules:
-- The trip must also OPEN in the arrival airport city: the FIRST city in the plan must be the airport city itself with at least 1 night. On multi-city round trips, list the airport city TWICE — once as the opening stop and once as the closing stop (each with its own nights).
+- The trip must also OPEN in the arrival airport city: the FIRST city in the plan must be the airport city itself with at least 1 night. On multi-city round trips, list the airport city TWICE — once as the opening stop and once as the closing stop (each with its own nights). EXCEPTION: if the traveler's mustSee/extraNotes say they don't want to stay there on arrival, honor the notes — they outrank this rule.
 - GATEWAY NIGHTS (round trips): if the airport city is itself a world-class or must-visit destination (e.g. Singapore, Tokyo, Paris, Rome, Bangkok, Istanbul), its COMBINED nights across the opening + closing stays must meet the recommended total for its size classification adjusted for pace (Step 2) — a Large airport city at fast pace needs 3 combined nights (e.g. 2 opening + 1 closing), never 1+1. Fund this by trimming or dropping mid-route cities, per the Step 2 rules. Only airport cities with little tourist value stay at the 1-night minimum per stay.
 - Never place a city more than 90 min from ${d.departureAirport} as the final city in the plan.
 - If the most exciting destination is more than 90 min away, place it second-to-last. Use the airport city or an airport-adjacent town as the final stop.
@@ -64,8 +64,8 @@ STEP 1 — CITY SELECTION
 Calculate total trip days from arrival to departure date. Select cities FIRST, then allocate nights in Step 2.
 - All cities must be within the submitted country unless traveler explicitly listed others.
 - Always consider arrival and departure airport cities as candidates.
-- ARRIVAL CITY RULE (outranks every other selection rule): The arrival airport city${d.arrivalCityName ? ` — ${d.arrivalCityName} —` : ''} MUST appear in the city list with at least 1 night, no exceptions. Omitting it is a prompt violation. The only override is the traveler explicitly writing to skip it in mustSee or extraNotes.
-- DEPARTURE CITY RULE (outranks every other selection rule): The departure airport city${d.departureCityName ? ` — ${d.departureCityName} —` : ''} MUST appear in the city list with at least 1 night, no exceptions. Never route a traveler home from a city they haven't slept in. Same explicit-skip override only.
+- ARRIVAL CITY RULE (outranks every other selection rule EXCEPT traveler notes): The arrival airport city${d.arrivalCityName ? ` — ${d.arrivalCityName} —` : ''} MUST appear in the city list with at least 1 night. Omitting it is a prompt violation. THE ONE OVERRIDE: any clear instruction in mustSee or extraNotes that the traveler does not want to stay there — "skip Hong Kong", "no overnight in HK", "don't want to stay in HK", "go straight to Guilin" all count, exact wording irrelevant. When the traveler opts out, honor it fully: route them onward on arrival day and do not allocate the city any nights.
+- DEPARTURE CITY RULE (outranks every other selection rule EXCEPT traveler notes): The departure airport city${d.departureCityName ? ` — ${d.departureCityName} —` : ''} MUST appear in the city list with at least 1 night. Never route a traveler home from a city they haven't slept in. Same traveler-notes override as above — if they opted out, honor it and note the airport transfer implications in the overview.
 - cityPlanningMode "know" → respect listed cities exactly, EXCEPT: if the traveler's list omits the arrival or departure airport city, ADD it anyway with at least 1 night — the two rules above outrank the traveler's list. Adjust count if needed.
 - aiCityRecommendation true + anchorCities → anchors are fixed, fill remaining with best-fit.
 - aiCityRecommendation true + no cities → select from scratch weighted by interests, budget, travel dates, routing.
@@ -129,10 +129,10 @@ Select 2–3 genuinely non-tourist finds relevant to this trip. Must be specific
 ${researchBlock}
 VISA: visa_badge is a short generic visa reminder — do NOT assume the traveler's nationality or whether they need a visa. Always use a neutral format like "🛂 Visa may be required — check requirements for your passport before travel". Never say "no visa required" or reference a specific passport type.
 TONE: Always second person. Never traveler's name or "the couple/group/traveler".
-HARD INSTRUCTIONS: mustSee and extraNotes override all defaults. Never ignore them.
+HARD INSTRUCTIONS: mustSee and extraNotes are the traveler's direct voice. They override EVERY rule in this prompt — arrival/departure city rules, night allocation, city selection, routing. If a note conflicts with any rule above, the note wins. Never ignore them.
 
 FINAL CHECK — verify before outputting, fix any violation silently:
-1. ${d.arrivalCityName ? `The arrival city (${d.arrivalCityName})` : 'The arrival airport city'} appears in cities with at least 1 night${d.departureCityName && d.arrivalCityName !== d.departureCityName ? `, and the departure city (${d.departureCityName}) appears with at least 1 night` : ''} — unless the traveler explicitly said to skip it.
+1. ${d.arrivalCityName ? `The arrival city (${d.arrivalCityName})` : 'The arrival airport city'} appears in cities with at least 1 night${d.departureCityName && d.arrivalCityName !== d.departureCityName ? `, and the departure city (${d.departureCityName}) appears with at least 1 night` : ''} — unless the traveler's notes say not to stay there, in which case verify you honored the notes instead.
 2. Nights across all cities sum exactly to the total trip nights (departure date minus arrival date).
 3. On round-trips, the final city satisfies ROUND-TRIP ROUTING above, and a world-class airport city's COMBINED nights across its stays meet its size-classification recommendation (GATEWAY NIGHTS) — never 1+1.
 4. A world-class or must-visit arrival or departure city on a one-way trip has its recommended nights for its size and pace — not the bare 1-night minimum.

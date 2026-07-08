@@ -44,12 +44,44 @@
     return Math.round((b - a) / 86400000);
   }
 
-  // The prompt's only sanctioned override: the traveler explicitly wrote to skip a city
-  // in mustSee/extraNotes. Only honored when "skip" and the city name both appear.
+  // Traveler notes outrank the arrival/departure defaults. This is a REPAIR
+  // SUPPRESSOR, not a decision-maker: the model reads the notes with full
+  // comprehension and builds the plan; this check only stops us from "repairing"
+  // a city back IN when the traveler's own notes plausibly asked for it to be
+  // left out. Loose matching is safe here — a false positive just means we defer
+  // to the model's judgment instead of overriding it.
+  //
+  // Catches any clear opt-out phrasing in the same sentence as a reference to the
+  // city: "skip Hong Kong", "no overnight in HK", "don't want to stay in HK",
+  // "go straight to Guilin", "transit only". City references include the full
+  // name, initials of multi-word names ("hong kong" → "hk"), and the matching
+  // airport code.
+  const INITIALS_STOPLIST = ['no', 'to', 'in', 'on', 'at', 'so', 'do', 'be', 'me', 'my', 'we', 'us', 'an', 'as', 'by', 'of', 'or', 'up', 'if', 'it', 'la', 'st', 'de'];
+  const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const OPT_OUT_RE = /\b(skip|pass(ing)? through|transit only|layover only|no stop(s)?|straight to|directly to)\b|\b(no|not|don'?t|do not|avoid|without|zero)\b[^.;!?\n]{0,40}\b(overnight(s)?|stay(ing|s)?|night(s)?|sleep(ing)?|stop(ping)?)\b/;
+
   function travelerSkips(cityName, fd) {
-    if (!cityName) return false;
-    const text = ((fd.mustSee || '') + ' ' + (fd.extraNotes || '')).toLowerCase();
-    return /skip/.test(text) && text.indexOf(String(cityName).toLowerCase()) !== -1;
+    const text = ((fd.mustSee || '') + '. ' + (fd.extraNotes || '')).toLowerCase();
+    if (!cityName || !text.trim()) return false;
+    const name = String(cityName).toLowerCase().trim();
+    const words = name.split(/\s+/).filter(Boolean);
+    const refs = [name];
+    if (words.length > 1) {
+      const initials = words.map(w => w[0]).join('');
+      if (initials.length >= 2 && INITIALS_STOPLIST.indexOf(initials) === -1) refs.push(initials);
+    }
+    // Airport codes are city-specific: only attach the code that maps to THIS city,
+    // so "no overnight in HKG" never suppresses the departure city's repair.
+    if (cityMatch(cityName, fd.arrivalCityName) && typeof fd.arrivalAirport === 'string' && fd.arrivalAirport.trim().length === 3) {
+      refs.push(fd.arrivalAirport.trim().toLowerCase());
+    }
+    if (cityMatch(cityName, fd.departureCityName) && typeof fd.departureAirport === 'string' && fd.departureAirport.trim().length === 3) {
+      refs.push(fd.departureAirport.trim().toLowerCase());
+    }
+    // Opt-out phrase and city reference must share a sentence.
+    return text.split(/[.;!?\n]+/).some(sentence =>
+      OPT_OUT_RE.test(sentence) && refs.some(r => r.length >= 2 && new RegExp('\\b' + escRe(r) + '\\b').test(sentence))
+    );
   }
 
   /**
