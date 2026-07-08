@@ -1,3 +1,8 @@
+// Single source of truth for the preview prompt — shared with index.html and
+// test-perplexity.js. Wrangler bundles this import at deploy (esbuild handles
+// the UMD/CommonJS interop automatically).
+import { PREVIEW_PROMPT } from './preview-prompt.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -55,12 +60,56 @@ export default {
       }
     }
 
-    // ── Route: /preview — Anthropic API proxy ──────────────────
+    // ── Route: /preview — preview generation (closed proxy) ────
+    // Previously forwarded the client-built Anthropic body wholesale, which made
+    // this an open proxy on our API key (any model, any prompt, any max_tokens).
+    // Now: new clients send { formData } and the prompt is built SERVER-SIDE;
+    // legacy cached clients (full body shape) are strictly validated and the
+    // outbound body is rebuilt from scratch — never forwarded as received.
     if (url.pathname === '/preview' && request.method === 'POST') {
       try {
-        // selectedSections is our own field for section-select logic — strip it so it's
-        // never forwarded to Anthropic (unrecognised fields cause a 400).
-        const { selectedSections, ...body } = sanitizeDeep(await request.json());
+        // Per-IP rate limit: 20 previews/hour. KV is eventually consistent, so this
+        // is a deterrent rather than a fortress — pair with a Cloudflare WAF rate
+        // rule on /preview for hard enforcement.
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const rlKey = `rl:${ip}:${new Date().toISOString().slice(0, 13)}`;
+        const rlCount = parseInt(await env.PREVIEW_STORE.get(rlKey) || '0', 10);
+        if (rlCount >= 20) {
+          return corsResponse({ error: 'Too many preview requests — please try again in an hour.' }, 429);
+        }
+        ctx.waitUntil(env.PREVIEW_STORE.put(rlKey, String(rlCount + 1), { expirationTtl: 3600 }));
+
+        const raw = sanitizeDeep(await request.json());
+        let body;
+
+        if (raw && raw.formData && typeof raw.formData === 'object' && !Array.isArray(raw.formData)) {
+          // New shape: { formData } — server-side prompt build.
+          // NOTE: claude-sonnet-4-6 does not support assistant-message prefill —
+          // JSON discipline comes from the system prompt + the forgiving parser.
+          body = {
+            model: 'claude-sonnet-4-6',
+            max_tokens: 8000,
+            temperature: 0.4,
+            system: CLAUDE_SYSTEM_PROMPT,
+            messages: [
+              { role: 'user', content: PREVIEW_PROMPT(raw.formData) }
+            ]
+          };
+        } else {
+          // Legacy shape (cached index.html): exactly one user message, string
+          // content, sane length. Model/max_tokens are pinned server-side.
+          const msgs = raw && Array.isArray(raw.messages) ? raw.messages : [];
+          const content = (msgs.length === 1 && msgs[0] && msgs[0].role === 'user' && typeof msgs[0].content === 'string')
+            ? msgs[0].content : null;
+          if (!content || content.length > 30000) {
+            return corsResponse({ error: 'Invalid preview request.' }, 400);
+          }
+          body = {
+            model: 'claude-sonnet-4-6',
+            max_tokens: 8000,
+            messages: [{ role: 'user', content }]
+          };
+        }
 
         // Same streaming SSE path as the itinerary call — keeps a continuous byte
         // flow so larger previews never trip Cloudflare's outbound idle timeout.
@@ -2060,6 +2109,8 @@ const ITINERARY_PROMPT = (d, perplexityResearch = null) => {
   const roundTripDirective = isRoundTrip ? `
 ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d.departureAirport}):
 This is a round-trip booking that departs from the SAME airport it arrived into. The city route MUST form a loop that ends with the traveler's FINAL NIGHT in a city within ~90 minutes ground transport of ${d.departureAirport}. This is a HARD CITY-SELECTION CONSTRAINT on where the last night is spent — NOT merely a disclosure or transport-costing rule.
+- HARD RULE — FIRST NIGHT LOCATION: The FIRST city of the route must be the arrival airport city itself, with at least 1 night, so the traveler lands and settles before the loop begins. On multi-city round trips the airport city appears TWICE in the route — as the opening stop and as the closing stop.
+- GATEWAY NIGHTS: if the airport city is itself a world-class or must-visit destination (e.g. Singapore, Tokyo, Paris, Rome, Bangkok, Istanbul), its COMBINED nights across the opening + closing stays must meet the recommended total for its size classification adjusted for pace — a Large airport city at fast pace needs 3 combined nights (e.g. 2 opening + 1 closing), never 1+1. Fund this by trimming mid-route cities. Only airport cities with little tourist value stay at the 1-night minimum per stay.
 - HARD RULE — LAST NIGHT LOCATION: The LAST city of the route (where the final night is spent) must itself be the airport city or another city within ~90 min of ${d.departureAirport}. Plan the city order as a loop from the start so the trip naturally arrives back near the airport for the final night. Never treat a distant city that happens to have its own airport (e.g. San José when the booking departs from Liberia/LIR) as the departure city — the actual departure airport is ${d.departureAirport}, and the FINAL NIGHT must be near IT.
 - DO NOT compress the return journey into departure-day morning as a substitute for relocating the final night. A costed, well-disclosed "leave at 5am and drive 3–4 hours to the airport" is NOT compliant — a long departure-day dash does not satisfy this rule. The traveler must already BE near the airport when they wake on departure day, not racing across the country to reach it.
 - IF THE BEST FINAL DESTINATION IS FAR FROM THE AIRPORT: When the single strongest final-stop city (e.g. Manuel Antonio, ~3.5–4 hrs from Liberia/LIR) is more than 90 min from ${d.departureAirport}, spend the SECOND-TO-LAST night there, then move so the LAST night is at a city near the airport (the airport city itself, or another airport-adjacent town). It is acceptable and expected for the final full day to be shorter and transitional — a scenic drive back plus a relaxed last evening near the airport — in order to make this happen. Relocating the final night is REQUIRED, not optional.
@@ -2070,7 +2121,9 @@ ${roundTripDirective}
 
 ──────────────────────────────────────────────
 APPROVED CITY PLAN — USE EXACTLY AS IS:
-The traveler has reviewed and approved this city and nights plan.
+The traveler has reviewed and approved this city and nights plan. It has already
+been validated in code for arrival/departure-city night coverage and total-nights
+accuracy — treat it as ground truth.
 Do not change cities, order, or nights under any circumstances.
 Skip Step 1 night allocation — nights are already set:
 ${approvedCities}
@@ -2102,9 +2155,9 @@ Classify each city before allocating nights:
 - Micro → 0.5–1 night · Small → 1–2 · Medium → 2–3 · Large → 3–5 · Mega → 4–6
 
 Pace rules:
-- Fast pace → minimum nights. Dense schedule, maximize daily activities.
-- Relaxed pace → maximum nights. Lighter schedule, room to breathe.
-- Never compress below minimum. If cities × minimum > total days → remove cities.
+- Target the AVERAGE of each city's band (Large 3–5 → 4 nights). Pace nudges WITHIN the band, never outside it: Fast pace → lean 1 night below the average, dense daily schedule, maximize daily activities. Relaxed pace → lean 1 night above, lighter schedule, room to breathe.
+- Pace is primarily about DAY DENSITY, not city count. Never add a city that only fits at its bare band minimum — every extra city costs roughly half a day in transit and check-in, so a packed trip means fuller days, not more stops.
+- Never compress below the band minimum. If cities × minimum > total days → remove cities.
 - Departure city classified Large or Mega → minimum 2 nights.
 - If departure city differs from arrival city and has significant tourist value → include it regardless of pace or night count. Compress other cities before removing the departure city.
 
@@ -2124,7 +2177,7 @@ Calculate total trip days from arrival to departure.
 - MEXICO STATE-LEVEL EXCLUSIONS: Mexico is Level 2 overall but specific states carry Level 3/4. Never recommend these as overnight destinations: Guerrero state (including Acapulco), Sinaloa state (including Culiacán and Mazatlán areas outside designated tourist hotel zones), Tamaulipas state, Zacatecas state, Colima state, Michoacán state interior (excluding Morelia, which may be included with a caution note). If the traveler explicitly requests one of these in mustSee or extraNotes, add a note in the overview: "We've routed around [location] due to current travel advisories; please check the latest US State Department guidance before traveling." Suggest a safe alternative in the same region where possible.
 - ADVISORY ACCURACY: Advisory levels change. The lists above reflect July 2026 data. If there is any reason to believe a destination's status may have changed, note in the overview that the traveler should verify current advisories at travel.state.gov before booking.
 - Always consider arrival and departure airport cities as candidates. Include them for flying trips unless the traveler chose different cities or the airport has no tourist value.
-- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it. They need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: Fast pace → minimum nights for that city size. Relaxed pace → maximum nights. Never drop the arrival city unless the traveler explicitly names a different starting city or says "skip [city]" in mustSee or extraNotes.
+- ARRIVAL CITY RULE: Always include the arrival airport city for at least 1 night unless the traveler explicitly says to skip it. They need time to land, clear customs, get to accommodation, and decompress. If the arrival city is a world-class or must-visit destination (e.g. Rome, Paris, Tokyo, New York, Bangkok, Istanbul, Barcelona, London, Sydney) → allocate nights based on typical visitor recommendations adjusted for their pace: target the band average, Fast pace → lean 1 night below (never below the band minimum), Relaxed pace → lean 1 night above. Never drop the arrival city unless the traveler explicitly names a different starting city or says "skip [city]" in mustSee or extraNotes.
 - DEPARTURE CITY RULE: Always include the departure airport city for at least 1 night unless the traveler explicitly says to skip it. Never route a traveler out of any city they have not spent at least one night in — they need accommodation, time to reach the airport, and a buffer for their flight. If the departure city is a world-class or must-visit destination → allocate nights based on typical visitor recommendations adjusted for their pace, same as arrival city logic above. Adjust other city night allocations to fit both arrival and departure city requirements.
 - Cities listed, AI false → respect list. Adjust count if needed. Explain changes in overview.
 - AI true, anchors provided → anchors are fixed. Fill remaining days with best-fit cities.
@@ -2670,8 +2723,8 @@ TRAVELER PREFERENCES:
 First name: ${d.firstName || ''}
 Last name: ${d.lastName || ''}
 Country: ${d.country || ''}
-Arrival airport: ${d.arrivalAirport || ''}
-Departure airport: ${d.departureAirport || ''}
+Arrival airport: ${d.arrivalAirport || ''}${d.arrivalCityName ? ` (city: ${d.arrivalCityName})` : ''}
+Departure airport: ${d.departureAirport || ''}${d.departureCityName ? ` (city: ${d.departureCityName})` : ''}
 Arrival date: ${d.arrivalDate || ''}
 Departure date: ${d.departureDate || ''}
 Total trip nights: ${tripNights || 'unknown'} (derived from arrival/departure dates)
@@ -2938,17 +2991,30 @@ async function streamAnthropic(env, body, timeoutMs) {
   }
 }
 
+// Shared system prompt — persona + output contract live here instead of at the
+// top of each (already long) user prompt. Applied to every callClaude call.
+// NOTE: claude-sonnet-4-6 does not support assistant-message prefill ("start the
+// response with {"), so JSON discipline is enforced here + by the forgiving
+// parsers (parseClaudeResponse / parsePreviewJson strip any stray fences).
+const CLAUDE_SYSTEM_PROMPT = 'You are an expert travel planner producing output for an automated pipeline. Follow every instruction in the user message exactly. Output ONLY the requested format — no markdown code fences, no preamble, no commentary before or after your answer. When the user message requests JSON, your response must begin with the opening { or [ of that JSON and end with its closing } or ].';
+
 // Single Claude API call for itinerary generation. Returns the response text,
 // or null on any failure (errors are logged inside streamAnthropic).
 // maxTokens / timeoutMs default to the STANDARD-trip budget; generateItinerary
 // passes larger tier-scaled values for MEDIUM/LONG trips. 64000 is the
 // claude-sonnet-4-6 output ceiling.
-async function callClaude(env, prompt, maxTokens = 32000, timeoutMs = 300000) {
-  const { text } = await streamAnthropic(env, {
+//
+// opts.temperature — defaults to 0.4: this is constraint-heavy structured
+// generation, not open-ended prose. (API default is 1.0.)
+async function callClaude(env, prompt, maxTokens = 32000, timeoutMs = 300000, opts = {}) {
+  const body = {
     model: 'claude-sonnet-4-6',
     max_tokens: maxTokens,
+    temperature: (opts.temperature != null ? opts.temperature : 0.4),
+    system: CLAUDE_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: prompt }]
-  }, timeoutMs);
+  };
+  const { text } = await streamAnthropic(env, body, timeoutMs);
   return text || null;
 }
 
@@ -3160,7 +3226,9 @@ Rules:
 - Do not start with "You'll" — vary the opening.
 - No markdown, no code fences. Return the 3-sentence overview as plain text only.`;
 
-    const raw = await callClaude(env, prompt, 500, 30000);
+    // Plain-prose call — no prefill, and a higher temperature than the structured
+    // calls so the overview doesn't read flat.
+    const raw = await callClaude(env, prompt, 500, 30000, { temperature: 0.7 });
     if (!raw) {
       const cityNames = (d.approvedCities || []).map(c => c.city || c.name).filter(Boolean).join(', ');
       return cityNames ? `A personalized ${d.country || 'travel'} itinerary: ${cityNames}.` : '';
@@ -3920,6 +3988,172 @@ function validateTierBadges(days) {
   return missing;
 }
 
+// ── CITY PLAN VALIDATOR ─────────────────────────────────────────────────────
+// Inline copy of city-plan-validator.js (browser runs the same logic after every
+// preview parse). KEEP THE TWO IN SYNC. Deterministic enforcement of the
+// arrival/departure-city night rules — prompt compliance alone is probabilistic,
+// and in the paid flow the prompt's STEP 1/2 rules are skipped entirely whenever
+// an approved city plan exists. This is the backstop that actually guarantees:
+//   · arrival city present with ≥1 night (inserted as first stop if missing)
+//   · departure city present with ≥1 night on one-way trips (appended if missing)
+//   · nights sum to the trip's total nights
+// POSITION IS ENFORCED: arrival city must be the FIRST stop (moved if mid-route);
+// on one-way trips the departure city must be the FINAL stop. Round trips: the trip
+// must OPEN in the arrival city — if it appears only as the loop-closing final stop,
+// a separate 1-night opening stay is inserted (renderer supports repeat city cards).
+// The loop-closing stop itself belongs to the ROUND-TRIP ROUTING directive
+// (airport-adjacent towns are legitimate there).
+const cpvNorm = (s) => String(s || '')
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]/g, '');
+
+function cpvCityMatch(a, b) {
+  const na = cpvNorm(a), nb = cpvNorm(b);
+  if (!na || !nb) return false;
+  return na === nb || na.indexOf(nb) === 0 || nb.indexOf(na) === 0;
+}
+
+function cpvTravelerSkips(cityName, fd) {
+  if (!cityName) return false;
+  const text = ((fd.mustSee || '') + ' ' + (fd.extraNotes || '')).toLowerCase();
+  return /skip/.test(text) && text.indexOf(String(cityName).toLowerCase()) !== -1;
+}
+
+function validateAndRepairCityPlan(cities, formData) {
+  const notes = [];
+  if (!Array.isArray(cities) || cities.length === 0) {
+    return { changed: false, notes: ['empty or missing cities array — validation skipped'] };
+  }
+  const fd = formData || {};
+  const arrCity = fd.arrivalCityName || null;
+  const depCity = fd.departureCityName || null;
+  const isRoundTrip = !!(arrCity && depCity && cpvCityMatch(arrCity, depCity));
+  let changed = false;
+
+  cities.forEach(c => {
+    const n = Number(c.nights);
+    c.nights = isFinite(n) && n > 0 ? n : 0;
+  });
+
+  const nameOf = (c) => c.city || c.name || '';
+  const findIdx = (name) => {
+    for (let i = 0; i < cities.length; i++) {
+      if (cpvCityMatch(nameOf(cities[i]), name)) return i;
+    }
+    return -1;
+  };
+  const stealNight = (protectedIdxs) => {
+    let idx = -1, best = 1;
+    cities.forEach((c, i) => {
+      if (protectedIdxs.indexOf(i) !== -1) return;
+      if (c.nights > best) { best = c.nights; idx = i; }
+    });
+    if (idx >= 0) { cities[idx].nights -= 1; return true; }
+    return false;
+  };
+
+  if (arrCity && !cpvTravelerSkips(arrCity, fd)) {
+    let ai = findIdx(arrCity);
+    if (ai === -1) {
+      cities.unshift({
+        city: arrCity,
+        nights: 1,
+        why_recommended: 'Your arrival city — a first night to land, clear customs, and settle in before the trip begins.'
+      });
+      stealNight([0]);
+      changed = true;
+      notes.push('inserted missing arrival city "' + arrCity + '" as first stop (1 night)');
+    } else if (ai !== 0) {
+      if (isRoundTrip && ai === cities.length - 1 && cities.length > 1) {
+        // Round trip where the arrival city appears only as the loop-closing
+        // final stop: keep that closer intact and add a separate opening stay
+        // (the renderer supports repeat city cards on round trips).
+        cities.unshift({
+          city: arrCity,
+          nights: 1,
+          why_recommended: 'Your arrival city — a first night to land and settle in before the loop begins.'
+        });
+        stealNight([0, cities.length - 1]);
+        changed = true;
+        notes.push('added opening 1-night stay in round-trip arrival city "' + arrCity + '"');
+      } else {
+        // Mid-route arrival city — move it to the front; relative order of the
+        // other stops is unchanged.
+        const entry = cities.splice(ai, 1)[0];
+        cities.unshift(entry);
+        changed = true;
+        notes.push('moved arrival city "' + arrCity + '" to first stop');
+      }
+    }
+    if (cities[0].nights < 1 && cpvCityMatch(nameOf(cities[0]), arrCity)) {
+      cities[0].nights = 1;
+      stealNight([0]);
+      changed = true;
+      notes.push('raised arrival city "' + arrCity + '" to 1 night');
+    }
+  }
+
+  if (depCity && !isRoundTrip && !cpvTravelerSkips(depCity, fd)) {
+    const di = findIdx(depCity);
+    if (di === -1) {
+      cities.push({
+        city: depCity,
+        nights: 1,
+        why_recommended: 'Your departure city — a final night nearby so the flight home is never a cross-country race.'
+      });
+      stealNight([cities.length - 1]);
+      changed = true;
+      notes.push('appended missing departure city "' + depCity + '" as final stop (1 night)');
+    } else {
+      if (di !== cities.length - 1) {
+        // Mid-route departure city — move it to the end; relative order of the
+        // other stops is unchanged.
+        const entry = cities.splice(di, 1)[0];
+        cities.push(entry);
+        changed = true;
+        notes.push('moved departure city "' + depCity + '" to final stop');
+      }
+      const last = cities.length - 1;
+      if (cities[last].nights < 1 && cpvCityMatch(nameOf(cities[last]), depCity)) {
+        cities[last].nights = 1;
+        stealNight([last]);
+        changed = true;
+        notes.push('raised departure city "' + depCity + '" to 1 night');
+      }
+    }
+  }
+
+  const totalNights = calcNights(fd.arrivalDate, fd.departureDate) || null;
+  const allInts = cities.every(c => c.nights === Math.round(c.nights));
+  if (totalNights && allInts) {
+    let sum = cities.reduce((n, c) => n + c.nights, 0);
+    let guard = 50;
+    const protectedIdxs = [];
+    if (arrCity) { const i = findIdx(arrCity); if (i !== -1) protectedIdxs.push(i); }
+    if (depCity) { const i = findIdx(depCity); if (i !== -1) protectedIdxs.push(i); }
+    while (sum > totalNights && guard-- > 0) {
+      if (!stealNight(protectedIdxs) && !stealNight([])) break;
+      sum -= 1; changed = true;
+    }
+    if (sum < totalNights) {
+      let idx = 0, best = -1;
+      cities.forEach((c, i) => { if (c.nights > best) { best = c.nights; idx = i; } });
+      cities[idx].nights += (totalNights - sum);
+      changed = true;
+    }
+    const finalSum = cities.reduce((n, c) => n + c.nights, 0);
+    if (finalSum !== totalNights) {
+      notes.push('warning: nights sum ' + finalSum + ' still != trip nights ' + totalNights + ' (left for model output)');
+    } else if (changed) {
+      notes.push('rebalanced nights to sum to ' + totalNights);
+    }
+  }
+
+  return { changed, notes };
+}
+// ── END CITY PLAN VALIDATOR ─────────────────────────────────────────────────
+
 // Runs in the queue consumer after a confirmed payment: pull form data from KV,
 // generate the itinerary directly via Claude, then hand the parsed JSON to Make.
 async function fulfillOrder(env, session) {
@@ -3964,6 +4198,20 @@ async function fulfillOrder(env, session) {
       wantAccommodations: selectedSections.includes('accommodations'),
       wantTransportation: selectedSections.includes('transportation'),
     };
+
+    // Server-side backstop: re-validate the approved city plan before spending a
+    // full generation on it. The plan is client-supplied (built at preview time) —
+    // this guarantees arrival/departure night coverage even if the preview-side
+    // check was bypassed, stale, or the order predates the validator. Old orders
+    // without arrivalCityName/departureCityName no-op gracefully.
+    if (Array.isArray(approvedCities) && approvedCities.length) {
+      try {
+        const repair = validateAndRepairCityPlan(approvedCities, formData);
+        if (repair.changed) console.warn('[CITY PLAN] repaired before generation:', repair.notes.join(' · '));
+      } catch (vErr) {
+        console.error('[CITY PLAN] validator error (continuing with plan as-is):', vErr && vErr.message);
+      }
+    }
 
     // Generate the full itinerary directly via Claude (no longer done in Make).
     const itinerary = await generateItinerary(env, { ...formData, approvedCities, teaserDay, selectedSections, flags });

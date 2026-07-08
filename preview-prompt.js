@@ -47,6 +47,8 @@ ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d
 This trip departs from the same airport it arrived into. The city route MUST form a loop. The LAST city in the plan (where the traveler spends their final night before departure) must be the airport city itself or another city within ~90 minutes ground transport of ${d.departureAirport}.
 
 Rules:
+- The trip must also OPEN in the arrival airport city: the FIRST city in the plan must be the airport city itself with at least 1 night. On multi-city round trips, list the airport city TWICE — once as the opening stop and once as the closing stop (each with its own nights).
+- GATEWAY NIGHTS (round trips): if the airport city is itself a world-class or must-visit destination (e.g. Singapore, Tokyo, Paris, Rome, Bangkok, Istanbul), its COMBINED nights across the opening + closing stays must meet the recommended total for its size classification adjusted for pace (Step 2) — a Large airport city at fast pace needs 3 combined nights (e.g. 2 opening + 1 closing), never 1+1. Fund this by trimming or dropping mid-route cities, per the Step 2 rules. Only airport cities with little tourist value stay at the 1-night minimum per stay.
 - Never place a city more than 90 min from ${d.departureAirport} as the final city in the plan.
 - If the most exciting destination is more than 90 min away, place it second-to-last. Use the airport city or an airport-adjacent town as the final stop.
 - The final pre-departure night near the airport is expected to be a transitional, lighter day. That is fine and expected.
@@ -58,28 +60,28 @@ Rules:
 Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
 ${roundTripCityPlanDirective}
 
-STEP 1 — NIGHT ALLOCATION
-Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.
-- Full days (Pack it in) = minimum nights per city, more cities possible.
-- Relaxed days = maximum nights per city, fewer cities, slower pace.
-- HARD CAP: Do not include a city that cannot receive its minimum nights. Remove lowest-priority cities until every remaining city gets its minimum. Never list a city with 0 or 1 night if its size classification requires more — cut the city instead, unless the traveler explicitly requests it in mustSee or extraNotes.
-- If cities × minimum nights > total trip days → remove lowest-priority cities first (not the arrival or departure city).
-- Travel days over 4 hours = full day lost → add 1 night to that city.
-- Departure city classified Large or Mega → MINIMUM 2 nights, non-negotiable. WORKED EXAMPLE: if the trip is 7 nights and 5 cities are requested but enforcing 2 nights for the Large/Mega departure city leaves no room — drop the lowest-priority middle city, not the departure city nights. Never give a Large or Mega departure city only 1 night.
-- Arrival and departure cities always get at least 1 night each — apply rules in Step 2.
-
-STEP 2 — CITY SELECTION
-Calculate total trip days from arrival to departure date.
+STEP 1 — CITY SELECTION
+Calculate total trip days from arrival to departure date. Select cities FIRST, then allocate nights in Step 2.
 - All cities must be within the submitted country unless traveler explicitly listed others.
 - Always consider arrival and departure airport cities as candidates.
-- ARRIVAL CITY RULE: The arrival airport city MUST appear in the city list for at least 1 night, no exceptions. If the model omits the arrival city, that is a prompt violation. The only override is if the traveler explicitly writes to skip it in mustSee or extraNotes.
-- DEPARTURE CITY RULE: The departure airport city MUST appear in the city list for at least 1 night, no exceptions. Never route a traveler home from a city they haven't slept in. The only override is if the traveler explicitly writes to skip it in mustSee or extraNotes.
-- cityPlanningMode "know" → respect listed cities exactly. Adjust count if needed.
+- ARRIVAL CITY RULE (outranks every other selection rule): The arrival airport city${d.arrivalCityName ? ` — ${d.arrivalCityName} —` : ''} MUST appear in the city list with at least 1 night, no exceptions. Omitting it is a prompt violation. The only override is the traveler explicitly writing to skip it in mustSee or extraNotes.
+- DEPARTURE CITY RULE (outranks every other selection rule): The departure airport city${d.departureCityName ? ` — ${d.departureCityName} —` : ''} MUST appear in the city list with at least 1 night, no exceptions. Never route a traveler home from a city they haven't slept in. Same explicit-skip override only.
+- cityPlanningMode "know" → respect listed cities exactly, EXCEPT: if the traveler's list omits the arrival or departure airport city, ADD it anyway with at least 1 night — the two rules above outrank the traveler's list. Adjust count if needed.
 - aiCityRecommendation true + anchorCities → anchors are fixed, fill remaining with best-fit.
 - aiCityRecommendation true + no cities → select from scratch weighted by interests, budget, travel dates, routing.
 - Large countries (USA, Australia, Canada, Brazil, China) + flying + no anchor cities → restrict to cities within the same state or within a 3-hour flight of the arrival airport. Do not mix US regions (e.g. do not combine Texas with Appalachia or the Northeast). Stay geographically coherent.
 - Prefer well-known cities unless Adventure interest exceeds 25%.
 - Verify cities suit exact travel dates — flag festivals or seasonal highlights in overview.
+
+STEP 2 — NIGHT ALLOCATION
+Classify each city: Micro 0.5–1 · Small 1–2 · Medium 2–3 · Large 3–5 · Mega 4–6 nights.
+- Nights MUST sum exactly to the total trip nights (departure date minus arrival date).
+- Target the AVERAGE of each city's band (Large 3–5 → 4 nights). Pace nudges WITHIN the band, never outside it: Full days (Pack it in) → lean 1 night below the average per city; Relaxed days → lean 1 night above.
+- Pace is primarily about DAY DENSITY (see teaser time budget), not city count. City count follows from total trip nights ÷ average nights per city. NEVER add a city that only fits at its bare band minimum — every extra city costs roughly half a day in transit and check-in, so a packed trip means fuller days, not more stops.
+- HARD CAP: Do not include a city that cannot receive its minimum nights. Remove lowest-priority cities until every remaining city gets its minimum. Never list a city with 0 or 1 night if its size classification requires more — cut the city instead, unless the traveler explicitly requests it in mustSee or extraNotes. EXCEPTION: the arrival and departure cities are EXEMPT from this cap — they may take exactly 1 night even when their size classification requires more. Never cut the arrival or departure city to satisfy this cap.
+- If cities × minimum nights > total trip days → remove lowest-priority cities first (never the arrival or departure city).
+- Travel days over 4 hours = full day lost → add 1 night to that city.
+- Departure city classified Large or Mega → MINIMUM 2 nights when trip length allows. WORKED EXAMPLE: if the trip is 7 nights and 5 cities are requested but enforcing 2 nights for the Large/Mega departure city leaves no room — drop the lowest-priority middle city, not the departure city nights. On trips too short even for that, give the departure city 1 night — never 0, never cut it.
 
 STEP 3 — TRIP STRUCTURE
 Single city trips → skip all corridor and routing logic below. If train selected → recommend local train day trips within 60–90 min and city transport tips only. All other structures → default to activity-based day planning.
@@ -129,6 +131,12 @@ VISA: visa_badge is a short generic visa reminder — do NOT assume the traveler
 TONE: Always second person. Never traveler's name or "the couple/group/traveler".
 HARD INSTRUCTIONS: mustSee and extraNotes override all defaults. Never ignore them.
 
+FINAL CHECK — verify before outputting, fix any violation silently:
+1. ${d.arrivalCityName ? `The arrival city (${d.arrivalCityName})` : 'The arrival airport city'} appears in cities with at least 1 night${d.departureCityName && d.arrivalCityName !== d.departureCityName ? `, and the departure city (${d.departureCityName}) appears with at least 1 night` : ''} — unless the traveler explicitly said to skip it.
+2. Nights across all cities sum exactly to the total trip nights (departure date minus arrival date).
+3. On round-trips, the final city satisfies ROUND-TRIP ROUTING above, and a world-class airport city's COMBINED nights across its stays meet its size-classification recommendation (GATEWAY NIGHTS) — never 1+1.
+4. A world-class or must-visit arrival or departure city on a one-way trip has its recommended nights for its size and pace — not the bare 1-night minimum.
+
 Return exactly this JSON:
 {"overview":"max 3 sentences","cities":[{"city":"string","nights":0,"why_recommended":"string"}],"local_picks":[{"emoji":"string","title":"string","description":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"visa_badge":"string"}
 
@@ -136,8 +144,8 @@ TRAVELER:
 First name: ${d.firstName}
 Last name: ${d.lastName}
 Country: ${d.country}
-Arrival airport: ${d.arrivalAirport}
-Departure airport: ${d.departureAirport}
+Arrival airport: ${d.arrivalAirport}${d.arrivalCityName ? ` (city: ${d.arrivalCityName})` : ''}
+Departure airport: ${d.departureAirport}${d.departureCityName ? ` (city: ${d.departureCityName})` : ''}
 Arrival date: ${d.arrivalDate}
 Departure date: ${d.departureDate}
 City planning mode: ${d.cityPlanningMode}

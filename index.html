@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://js.stripe.com https://checkout.stripe.com; connect-src &#39;self&#39; https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://hook.us2.make.com https://countriesnow.space; font-src &#39;self&#39; https://fonts.gstatic.com; style-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com; img-src &#39;self&#39; data: https://images.pexels.com https://source.unsplash.com; frame-src https://js.stripe.com https://checkout.stripe.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com https://fonts.gstatic.com https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout https://js.stripe.com https://checkout.stripe.com; connect-src &#39;self&#39; https://bws-travel-proxy.springlam-co.workers.dev https://bws-travel-proxy.springlam-co.workers.dev/preview https://bws-travel-proxy.springlam-co.workers.dev/create-checkout http://localhost:8787 https://countriesnow.space; font-src &#39;self&#39; https://fonts.gstatic.com; style-src &#39;self&#39; &#39;unsafe-inline&#39; https://fonts.googleapis.com; img-src &#39;self&#39; data: https://images.pexels.com https://source.unsplash.com; frame-src https://js.stripe.com https://checkout.stripe.com;">
   <title>BuiltWithSpring · AI Travel Planner</title>
   <link rel="icon" type="image/svg+xml" href="https://travel.builtwithspring.com/favicon.svg">
   <link rel="apple-touch-icon" href="https://travel.builtwithspring.com/favicon.svg">
@@ -378,9 +378,12 @@
     .teaser-foot { background: #faf9ff; padding: 10px 16px; text-align: center; border-top: 1.5px solid var(--border); font-size: 11.5px; font-weight: 600; color: var(--accent); }
     .incl-row { font-size: 13px; color: var(--ink2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
     .incl-row:last-child { border-bottom: none; }
-    .time-saved { background: var(--accent); border-radius: var(--radius-sm); padding: 18px; text-align: center; margin-bottom: 1.25rem; }
-    .time-saved-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 2.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; }
-    .time-saved-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 4px; }
+    .incl-check { color: var(--accent); font-weight: 700; margin-right: 4px; }
+    /* Demoted to a quiet supporting line — the CTA below is the ONLY solid-purple
+       element at the decision point. A billboard-sized stat outshouted the buy button. */
+    .time-saved { background: var(--accent-light); border-radius: var(--radius-sm); padding: 10px 14px; text-align: center; margin-bottom: 1.25rem; }
+    .time-saved-num { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--accent2); letter-spacing: -0.01em; }
+    .time-saved-sub { font-size: 12.5px; color: var(--ink2); }
     .share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .share-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--accent-mid); background: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: var(--accent2); cursor: pointer; text-decoration: none; display: inline-block; transition: all .15s; }
     .share-btn:hover { background: var(--accent-light); }
@@ -440,7 +443,7 @@
       .teaser-text { font-size: 14px; line-height: 1.6; }
       .teaser-foot { font-size: 12.5px; }
       .incl-row { font-size: 14.5px; }
-      .time-saved-num { font-size: 3rem; }
+      .time-saved-num { font-size: 1.15rem; }
       .time-saved-sub { font-size: 13px; }
     }
 
@@ -481,6 +484,19 @@
     /* ── COLLAPSIBLE FEEDBACK ────────────────────────── */
     .regen-toggle { background: none; border: none; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; display: block; margin-bottom: 6px; }
     .regen-toggle:hover { color: var(--accent2); }
+
+    /* ── PREVIEW DESKTOP LAYOUT ──────────────────────── */
+    /* Mobile: normal single-column flow (unchanged). Desktop ≥900px: the card
+       widens and the checklist/CTA become a sticky right rail, so the buy button
+       stays on screen for the whole scroll and the page loses its skinny-column
+       whitespace. */
+    .prev-grid { display: block; }
+    @media (min-width: 900px) {
+      body.preview-wide #card { max-width: 1080px; }
+      body.preview-wide .topbar { max-width: 1080px; }
+      body.preview-wide .prev-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 2.25rem; align-items: start; }
+      body.preview-wide .prev-rail { position: sticky; top: 24px; }
+    }
 
     /* ── STICKY MOBILE CTA ───────────────────────────── */
     .sticky-cta { display: none; }
@@ -843,6 +859,8 @@
 
       <!-- Content -->
       <div id="previewContent" class="">
+       <div class="prev-grid">
+        <div class="prev-main">
 
         <!-- Overview -->
         <div class="prev-section-label">Trip overview</div>
@@ -852,12 +870,8 @@
         <div class="prev-section-label">🗺️ Your cities</div>
         <div id="previewCities" class="cities-grid"></div>
 
-        <!-- Local finds -->
-        <div class="prev-section-label">💎 Hidden finds</div>
-        <div id="localFinds" class="local-finds"></div>
-        <div id="recsTeaser" class="teaser-foot" style="display:none;margin-bottom:1.25rem;">🔒 Your full city guides are waiting</div>
-
-        <!-- Teaser day (day-by-day only) -->
+        <!-- Teaser day (day-by-day only) — directly after Cities: the two strongest
+             "this is MY trip" moments run back-to-back, then desire builds to the CTA. -->
         <div id="sampleDaySection">
         <div class="prev-section-label">📅 A taste of your itinerary</div>
         <div class="teaser-card" style="margin-bottom:1.25rem;">
@@ -875,28 +889,49 @@
         </div>
         </div>
 
-        <!-- Visa badge -->
-        <div id="visaBadge" class="visa-badge ok"></div>
+        <!-- Local finds -->
+        <div class="prev-section-label">💎 Hidden finds</div>
+        <div id="localFinds" class="local-finds"></div>
+        <div id="recsTeaser" class="teaser-foot" style="display:none;margin-bottom:1.25rem;">🔒 Your full city guides are waiting</div>
+        </div><!-- /prev-main -->
 
+        <!-- Purchase rail — sticky on desktop so the CTA never scrolls away -->
+        <div class="prev-rail">
         <!-- What's included -->
         <div class="prev-section-label">📋 What's included</div>
         <div class="info-box" style="margin-bottom:1.25rem;" id="inclusionsList"></div>
 
-        <!-- Time saved -->
-        <div class="time-saved" style="margin-bottom:1.25rem;">
-          <div class="time-saved-num" id="timeSaved">~10 hours</div>
-          <div class="time-saved-sub">saved vs planning this yourself</div>
+        <!-- Time saved (quiet supporting line above the CTA) -->
+        <div class="time-saved" style="margin-bottom:0.75rem;">
+          <span>⏱</span> <span class="time-saved-num" id="timeSaved">~10 hours</span> <span class="time-saved-sub">of planning, saved</span>
+        </div>
+
+        <!-- Primary CTA -->
+        <button class="bnx" onclick="confirmAndGenerate()" style="width:100%;font-size:1.1rem;padding:18px 24px;margin-bottom:0.5rem;">Get Full Itinerary — $29</button>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:0.75rem;">Secure checkout via Stripe · delivered to your inbox</div>
+
+        <!-- Collapsible feedback -->
+        <div style="margin-bottom:0.5rem;text-align:center;">
+          <button class="regen-toggle" onclick="toggleFeedback()" id="regenToggle">Not quite right? Make a change</button>
+          <div id="feedbackExpanded" class="hidden">
+            <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. Swap Milan for Rome · More days in Tokyo · Remove the beach city…" style="margin-bottom:8px;margin-top:8px;"></textarea>
+            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);width:100%;">Regenerate preview</button>
+          </div>
         </div>
 
         <hr class="hdiv">
+
+        <!-- Visa badge — utility info, lives with the below-the-line extras rather
+             than interrupting the runway to the CTA with a caution signal. -->
+        <div id="visaBadge" class="visa-badge ok"></div>
 
         <!-- Share -->
         <div class="info-box" style="margin-bottom:1.25rem;">
           <div class="prev-section-label" style="margin-bottom:8px;">🔗 Share with your travel crew</div>
           <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">Send this preview to your friends before you buy.</div>
           <div class="share-row">
-            <button class="share-btn" onclick="copyPreviewLink()" id="copyLinkBtn">📋 Copy link</button>
-            <a class="share-btn" id="whatsappShareBtn" href="#" target="_blank">💬 WhatsApp</a>
+            <button class="share-btn" onclick="copyPreviewLink()" id="copyLinkBtn">Copy link</button>
+            <a class="share-btn" id="whatsappShareBtn" href="#" target="_blank">WhatsApp</a>
             <a class="share-btn" id="xShareBtn" href="#" target="_blank">𝕏 Share</a>
           </div>
         </div>
@@ -909,22 +944,7 @@
             <input class="inp email-capture-inp" type="email" id="captureEmail" placeholder="Your email address">
             <button class="email-capture-btn" onclick="savePreview()">Save →</button>
           </div>
-          <div id="captureSuccess" class="capture-success hidden">✅ Saved! Check your inbox shortly.</div>
-        </div>
-
-        <!-- Collapsible feedback -->
-        <div style="margin-bottom:1rem;">
-          <button class="regen-toggle" onclick="toggleFeedback()" id="regenToggle">↺ Not quite right? Make a change</button>
-          <div id="feedbackExpanded" class="hidden">
-            <textarea class="inp" rows="2" id="previewFeedback" placeholder="e.g. Swap Milan for Rome · More days in Tokyo · Remove the beach city…" style="margin-bottom:8px;"></textarea>
-            <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);width:100%;">↺ Regenerate preview</button>
-          </div>
-        </div>
-
-        <!-- CTA row -->
-        <div class="brow">
-          <button class="bbk" onclick="go(4)">← Back</button>
-          <button class="bnx" onclick="confirmAndGenerate()">Get Full Itinerary — $29</button>
+          <div id="captureSuccess" class="capture-success hidden">Saved — check your inbox shortly.</div>
         </div>
       </div>
 
@@ -963,6 +983,7 @@
 
 <script src="./airports.js"></script>
 <script src="./preview-prompt.js"></script>
+<script src="./city-plan-validator.js"></script>
 <script>
   // ── LANDING / FORM TOGGLE ──────────────────────────
   function startPlanning() {
@@ -1280,6 +1301,10 @@
       country: countryTag,
       arrivalAirport: document.getElementById('arrivalAirport').value,
       departureAirport: document.getElementById('departureAirport').value,
+      // Resolved city names (null when the airport is free-typed / unrecognized).
+      // Flow into the preview prompt, the checkout KV payload, and both validators.
+      arrivalCityName: airportCityNameOf(document.getElementById('arrivalAirport').value),
+      departureCityName: airportCityNameOf(document.getElementById('departureAirport').value),
       arrivalDate: document.getElementById('arrDate').value,
       departureDate: document.getElementById('depDate').value,
       cityPlanningMode: currentMode==='ai' ? 'AI recommended' : 'Traveler selected',
@@ -1300,6 +1325,13 @@
       extraNotes: document.getElementById('extraNotes').value
     };
   }
+
+  // ── WORKER API BASE ────────────────────────────────
+  // Automatically targets the local `wrangler dev` worker when this page is
+  // served from localhost (e.g. `python3 -m http.server 8000`), production otherwise.
+  const WORKER_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://localhost:8787'
+    : 'https://bws-travel-proxy.springlam-co.workers.dev';
 
   // ── PREVIEW PROMPT — defined in preview-prompt.js (shared with test server) ──
   let formData = null, approvedPreview = null;
@@ -1343,11 +1375,14 @@
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-      const response = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview', {
+      const response = await fetch(WORKER_BASE + '/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:8000, selectedSections: formData.selectedSections, messages:[{role:'user',content:PREVIEW_PROMPT(formData)}] })
+        // The worker builds the preview prompt server-side from formData (closed
+        // proxy — model, tokens, and prompt are pinned in worker.js). PREVIEW_PROMPT
+        // stays loaded here only for test tooling parity.
+        body: JSON.stringify({ formData })
       });
       clearTimeout(timeoutId); clearInterval(msgInterval);
       if (!response.ok) throw new Error('Worker ' + response.status);
@@ -1363,6 +1398,16 @@
         const parseErr = new Error('Preview parse failed');
         parseErr.kind = 'parse';
         throw parseErr;
+      }
+      // Deterministic guardrail: enforce arrival/departure city ≥1 night and
+      // nights-sum-to-trip-length in code — prompt compliance is probabilistic.
+      // Repairs happen in place before the traveler ever sees the plan.
+      try {
+        const repair = CityPlanValidator.validateAndRepairCityPlan(preview.cities, formData);
+        if (repair.changed) console.warn('[CITY PLAN] repaired before render:', repair.notes.join(' · '));
+        else if (repair.notes.length) console.log('[CITY PLAN] validation notes:', repair.notes.join(' · '));
+      } catch (vErr) {
+        console.error('[CITY PLAN] validator error (rendering unrepaired preview):', vErr.message);
       }
       renderPreview(preview);
     } catch (err) {
@@ -1416,11 +1461,11 @@
       const longUrl = window.location.origin + window.location.pathname + '?preview=' + encoded;
       window._previewShareUrl = longUrl;
       window._previewId = null;
-      fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ preview, formData }) })
+      fetch(WORKER_BASE + '/p/save', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ preview, formData }) })
         .then(r=>r.json()).then(({id})=>{
           if (id) {
             window._previewId = id;
-            const shortUrl = 'https://bws-travel-proxy.springlam-co.workers.dev/p/'+id;
+            const shortUrl = WORKER_BASE + '/p/'+id;
             window._previewShareUrl = shortUrl;
             document.getElementById('whatsappShareBtn').href = 'https://wa.me/?text='+encodeURIComponent('Check out the trip preview I generated with BuiltWithSpring\'s AI Travel Planner 🗺️✨ '+shortUrl);
             document.getElementById('xShareBtn').href = 'https://twitter.com/intent/tweet?text='+encodeURIComponent('Just generated an AI travel preview ✈️')+('&url='+encodeURIComponent(shortUrl));
@@ -1454,7 +1499,7 @@
 
     // Fire all photo fetches in parallel; keep gradient on failure/null
     cities.forEach((c, i) => {
-      fetch('https://bws-travel-proxy.springlam-co.workers.dev/pexels-photo', {
+      fetch(WORKER_BASE + '/pexels-photo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ city: c.city })
       })
       .then(r => r.json())
@@ -1523,15 +1568,17 @@
     // Build the checklist from the traveler's selected sections (sel/hasDay computed above).
     const incl = [];
     incl.push(hasDay
-      ? '✅ '+totalDays+'-day day-by-day itinerary with booking links'
-      : '✅ City-by-city activity & restaurant guide for '+totalCities+' cities');
-    if (hasDay) incl.push('✅ Curated restaurants across '+totalCities+' cities');
-    incl.push('✅ Hidden finds — hidden activities & finds');
-    if (sel.includes('accommodations')) incl.push('✅ Accommodation picks per city');
-    if (sel.includes('transportation')) incl.push('✅ Route-optimised transport — least time, least hassle');
-    incl.push('✅ "Book Before You Go" — what sells out and when');
-    incl.push('✅ Practical info: visa, packing, currency');
-    document.getElementById('inclusionsList').innerHTML = incl.map(i=>'<div class="incl-row">'+i+'</div>').join('');
+      ? totalDays+'-day day-by-day itinerary with booking links'
+      : 'City-by-city activity & restaurant guide for '+totalCities+' cities');
+    if (hasDay) incl.push('Curated restaurants across '+totalCities+' cities');
+    incl.push('Hidden finds — the spots tourists walk past');
+    if (sel.includes('accommodations')) incl.push('Accommodation picks per city');
+    if (sel.includes('transportation')) incl.push('Route-optimised transport — least time, least hassle');
+    incl.push('"Book Before You Go" — what sells out and when');
+    incl.push('Practical info: visa, packing, currency');
+    // Purple ✓ marks keep the checklist inside the brand token system (green emoji
+    // checks were the only off-palette element on the page).
+    document.getElementById('inclusionsList').innerHTML = incl.map(i=>'<div class="incl-row"><span class="incl-check">✓</span> '+i+'</div>').join('');
 
     // Time-saved estimate scales with how many sections were selected (food always counts).
     const sectionCount = sel.length;
@@ -1545,8 +1592,8 @@
 
   function copyPreviewLink() {
     navigator.clipboard.writeText(window._previewShareUrl||window.location.href).then(()=>{
-      const btn=document.getElementById('copyLinkBtn'); btn.textContent='✅ Copied!';
-      setTimeout(()=>btn.textContent='📋 Copy link',2000);
+      const btn=document.getElementById('copyLinkBtn'); btn.textContent='✓ Copied!';
+      setTimeout(()=>btn.textContent='Copy link',2000);
     });
   }
 
@@ -1572,14 +1619,14 @@
       // preview now so we have a key to attach the email to.
       let sessionId = window._previewId;
       if (!sessionId) {
-        const r = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/save', {
+        const r = await fetch(WORKER_BASE + '/p/save', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ preview: approvedPreview })
         });
         sessionId = (await r.json()).id;
         if (sessionId) window._previewId = sessionId;
       }
-      await fetch('https://bws-travel-proxy.springlam-co.workers.dev/preview/save-email', {
+      await fetch(WORKER_BASE + '/preview/save-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, sessionId })
@@ -1600,7 +1647,7 @@
         setTimeout(() => loadSharedPreview(preview), 100);
       } catch(e) {}
     } else if (previewId) {
-      fetch('https://bws-travel-proxy.springlam-co.workers.dev/p/' + previewId + '/data')
+      fetch(WORKER_BASE + '/p/' + previewId + '/data')
         .then(r => r.json())
         .then(({ preview }) => { if (preview) setTimeout(() => loadSharedPreview(preview), 100); })
         .catch(() => {});
@@ -1648,7 +1695,7 @@
     const btn = document.querySelector('.bnx[onclick="confirmAndGenerate()"]');
     const orig = btn.innerHTML; btn.innerHTML='⏳ Setting up checkout…'; btn.disabled=true;
     try {
-      const res = await fetch('https://bws-travel-proxy.springlam-co.workers.dev/create-checkout', {
+      const res = await fetch(WORKER_BASE + '/create-checkout', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ formData, approvedCities:approvedPreview?approvedPreview.cities:[], teaserDay:approvedPreview?approvedPreview.teaser_day:null })
       });
@@ -1836,6 +1883,15 @@
     const code = val.trim().toUpperCase();
     const a = AIRPORTS.find(x => x.code === code);
     return a ? a.co : null;
+  }
+  // Resolve an airport input (IATA code) to its city name — used to inject the
+  // arrival/departure CITY into prompts and to drive the city-plan validator,
+  // so the model never has to guess which city "LIR" is.
+  function airportCityNameOf(val) {
+    if (!val) return null;
+    const code = val.trim().toUpperCase();
+    const a = AIRPORTS.find(x => x.code === code);
+    return a ? a.city : null;
   }
 
   // Arrival vs departure airport. Non-blocking WARNING when they're in different
