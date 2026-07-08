@@ -918,6 +918,8 @@
             <button class="bbk" onclick="regeneratePreview()" id="regenBtn" style="border-color:var(--accent-mid);color:var(--accent2);width:100%;">Regenerate preview</button>
           </div>
         </div>
+        </div><!-- /prev-rail -->
+       </div><!-- /prev-grid -->
 
         <hr class="hdiv">
 
@@ -1236,6 +1238,9 @@
       const s = document.getElementById('step'+i); if (s) s.classList.toggle('on', i===n);
       const p = document.getElementById('p'+i); if (p) p.classList.toggle('on', i<=n);
     }
+    // Preview step (5) widens the card into a two-column desktop layout with a
+    // sticky purchase rail; all other steps use the narrow wizard column.
+    document.body.classList.toggle('preview-wide', n===5);
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
