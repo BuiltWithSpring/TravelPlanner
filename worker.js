@@ -3,6 +3,10 @@
 // the UMD/CommonJS interop automatically).
 import { PREVIEW_PROMPT } from './preview-prompt.js';
 
+// Single source of truth for the model string (added July 22, 2026 — was
+// repeated as a literal in 3 places, config-as-code cleanup).
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -87,7 +91,7 @@ export default {
           // NOTE: claude-sonnet-4-6 does not support assistant-message prefill —
           // JSON discipline comes from the system prompt + the forgiving parser.
           body = {
-            model: 'claude-sonnet-4-6',
+            model: CLAUDE_MODEL,
             max_tokens: 8000,
             temperature: 0.4,
             system: CLAUDE_SYSTEM_PROMPT,
@@ -105,7 +109,7 @@ export default {
             return corsResponse({ error: 'Invalid preview request.' }, 400);
           }
           body = {
-            model: 'claude-sonnet-4-6',
+            model: CLAUDE_MODEL,
             max_tokens: 8000,
             messages: [{ role: 'user', content }]
           };
@@ -1275,7 +1279,7 @@ function renderItinerary(formData, itinerary) {
   ).join('');
 
   // ── Assemble full page ──
-  // Copy the full <style> block verbatim from /Users/springlam/Desktop/TravelPlanner/itinerary-template.html
+  // Copy the full <style> block verbatim from /Users/springlam/Projects/TravelPlanner/itinerary-template.html
   // (Read that file and embed the CSS content between the <style> tags as the CSS variable below)
   const CSS = `
   :root {
@@ -3025,7 +3029,7 @@ const CLAUDE_SYSTEM_PROMPT = 'You are an expert travel planner producing output 
 // generation, not open-ended prose. (API default is 1.0.)
 async function callClaude(env, prompt, maxTokens = 32000, timeoutMs = 300000, opts = {}) {
   const body = {
-    model: 'claude-sonnet-4-6',
+    model: CLAUDE_MODEL,
     max_tokens: maxTokens,
     temperature: (opts.temperature != null ? opts.temperature : 0.4),
     system: CLAUDE_SYSTEM_PROMPT,

@@ -1,0 +1,22 @@
+name: worker-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: node --check on worker.js and root scripts
+        run: |
+          for f in worker.js city-plan-validator.js preview-prompt.js; do
+            echo "Checking $f"
+            node --check "$f"
+          done
