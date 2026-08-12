@@ -175,6 +175,80 @@ tests:
           }
           return { pass: true, score: 1, reason: 'All cities correctly tagged Japan' };
 
+  - description: "3-country AI-picked trip (Japan, South Korea, China) — regression test for the real Xi'an case: arrival HKG/departure PVG, 13 nights, AI picks everything. Asserts no country-backtracking and flags (doesn't fail) mid-route 1-night cities for manual review, mirroring the actual validator."
+    vars:
+      firstName: "Spring"
+      lastName: "Lam"
+      country: "Japan, South Korea & China"
+      countries: ["Japan", "South Korea", "China"]
+      travelParty: "couple"
+      groupSize: "2"
+      budget: "mid"
+      arrivalDate: "2026-10-20"
+      departureDate: "2026-11-02"
+      arrivalAirport: "HKG"
+      departureAirport: "PVG"
+      tripStructure: ""
+      paceOfTravel: "fast"
+      citiesToVisit: []
+      anchorCities: []
+      cityPlanningMode: "ai"
+      aiCityRecommendation: true
+      extraNotes: ""
+      mustSee: ""
+      travelStyle: "explorer"
+      interests:
+        Food & Drink: 4
+        Culture & History: 5
+        Adventure: 2
+        Nature: 2
+        Nightlife: 3
+        Shopping: 1
+    assert:
+      - type: javascript
+        value: |
+          // Mirrors index.html's parsePreviewJson (see comment on the France/Italy test).
+          function extract(o) {
+            let c = String(o || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            try { return JSON.parse(c); } catch (e) {}
+            const m = c.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+            return null;
+          }
+          const data = extract(output);
+          if (!data) return { pass: false, score: 0, reason: 'Could not extract JSON even with forgiving parser: ' + String(output).slice(0, 200) };
+          // Inlined copy of city-plan-validator.js Rule 6 (country contiguity) and
+          // Rule 5 (mid-route 1-night flag) — kept logically identical to the real
+          // validator, duplicated here rather than require()'d since promptfoo's JS
+          // assertion sandbox doesn't reliably resolve relative module paths.
+          // EXCEPTION mirrored from Rule 6: arrival HKG / departure PVG are both
+          // China, so China is structurally forced to open AND close this trip —
+          // that's correct routing, not backtracking, and is excluded from the check.
+          const cities = data.cities || [];
+          const bookendCountry = 'china';
+          const backtrackNotes = [];
+          const seenCountries = new Set();
+          let lastCountry = null;
+          cities.forEach(c => {
+            const cc = (c.country || '').trim();
+            if (!cc) return;
+            const normCc = cc.toLowerCase();
+            if (normCc !== (lastCountry || '').toLowerCase()) {
+              if (seenCountries.has(normCc) && normCc !== bookendCountry) {
+                backtrackNotes.push('country "' + cc + '" reappears at city "' + (c.city || '?') + '" after the plan already moved on');
+              }
+              seenCountries.add(normCc);
+              lastCountry = cc;
+            }
+          });
+          if (backtrackNotes.length) {
+            return { pass: false, score: 0, reason: 'Country backtracking detected: ' + backtrackNotes.join(' | ') };
+          }
+          const shortStayNotes = cities
+            .filter((c, i) => i !== 0 && i !== cities.length - 1 && c.nights === 1)
+            .map(c => c.city || '?');
+          return { pass: true, score: 1, reason: 'No backtracking.' + (shortStayNotes.length ? ' (Manual-review flag, not a failure: 1-night mid-route stop(s): ' + shortStayNotes.join(', ') + ')' : '') };
+
   - description: "5 countries selected, know-mode cities given for only 2 (France, Italy) — tests the country-gap rule: drop unlisted countries, explain why, never invent cities there"
     vars:
       firstName: "Morgan"

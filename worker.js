@@ -4286,6 +4286,55 @@ function validateAndRepairCityPlan(cities, formData) {
     });
   }
 
+  // ── Rule 5: mid-route city at exactly 1 night — heuristic, log only ──
+  // Code has no city-size-classification dataset (Micro/Small/Medium/Large/Mega
+  // live only as prompt text), so this can't tell a legitimately-small 1-night
+  // gateway stop from an under-nighted must-visit city (the Xi'an case — 1 night,
+  // no arrival/departure exemption, and the day-by-day never even fit in its
+  // headline attraction). Flagged for manual review, not auto-changed.
+  if (cities.length >= 3) {
+    const arrIdx = arrCity ? findIdx(arrCity) : -1;
+    const depIdx = depCity ? findIdx(depCity) : -1;
+    cities.forEach((c, i) => {
+      if (i === arrIdx || i === depIdx) return;
+      if (c.nights === 1) {
+        notes.push('heads up: mid-route city "' + nameOf(c) + '" has only 1 night — worth a manual check this isn\'t an under-nighted must-visit stop');
+      }
+    });
+  }
+
+  // ── Rule 6: countries should form contiguous blocks — log only ──
+  // Detects backtracking (a country's cities split apart by a different country
+  // in between), e.g. China → Japan → Korea → China. EXCEPTION: when arrival and
+  // departure airports are in the same country but different cities (e.g. arrive
+  // Hong Kong, depart Shanghai — both China), that country is structurally forced
+  // to open AND close the trip by the arrival/departure-city rules — that's not a
+  // mistake, it's the only sensible routing, so it's excluded from this check.
+  // Can't safely auto-reorder without re-deriving arrival/departure position and
+  // night sums, so this is visibility only, same as Rule 5.
+  if (cpvCountriesArr.length > 1) {
+    const arrCityEntry = arrCity ? cities.find(c => cpvCityMatch(nameOf(c), arrCity)) : null;
+    const depCityEntry = depCity ? cities.find(c => cpvCityMatch(nameOf(c), depCity)) : null;
+    const arrCountry = (arrCityEntry && arrCityEntry.country || '').trim().toLowerCase();
+    const depCountry = (depCityEntry && depCityEntry.country || '').trim().toLowerCase();
+    const bookendCountry = (arrCountry && arrCountry === depCountry) ? arrCountry : null;
+
+    const seenCountries = new Set();
+    let lastCountry = null;
+    cities.forEach(c => {
+      const cc = (c.country || '').trim();
+      if (!cc) return;
+      const normCc = cc.toLowerCase();
+      if (normCc !== (lastCountry || '').toLowerCase()) {
+        if (seenCountries.has(normCc) && normCc !== bookendCountry) {
+          notes.push('warning: country "' + cc + '" reappears at city "' + nameOf(c) + '" after the plan already moved on to another country — likely backtracking, not grouped');
+        }
+        seenCountries.add(normCc);
+        lastCountry = cc;
+      }
+    });
+  }
+
   return { changed, notes };
 }
 // ── END CITY PLAN VALIDATOR ─────────────────────────────────────────────────
