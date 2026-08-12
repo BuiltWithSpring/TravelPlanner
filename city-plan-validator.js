@@ -236,6 +236,23 @@
       }
     }
 
+    // ── Rule 4: every city should belong to one of the submitted countries ──
+    // Log only — unlike Rules 1-3, code has no gazetteer to know the "correct"
+    // replacement city for a hallucinated country, so this can't be safely
+    // auto-repaired. Surfaces in wrangler tail / order notes for manual review.
+    const countriesArr = Array.isArray(fd.countries) && fd.countries.length ? fd.countries
+      : (fd.country ? [fd.country] : []);
+    if (countriesArr.length) {
+      cities.forEach(c => {
+        const cCountry = c.country || null;
+        if (!cCountry) return; // model omitted the field — nothing to check
+        const inList = countriesArr.some(want => cityMatch(cCountry, want));
+        if (!inList) {
+          notes.push('warning: city "' + nameOf(c) + '" has country "' + cCountry + '" not in submitted list (' + countriesArr.join(', ') + ') — verify traveler notes requested it');
+        }
+      });
+    }
+
     return { changed, notes };
   }
 

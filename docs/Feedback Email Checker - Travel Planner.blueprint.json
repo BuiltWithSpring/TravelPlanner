@@ -1,0 +1,1075 @@
+{
+    "name": "Feedback Email Checker - Travel Planner",
+    "flow": [
+        {
+            "id": 1,
+            "module": "google-sheets:filterRows",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 8859797
+            },
+            "mapper": {
+                "from": "drive",
+                "limit": "10",
+                "filter": [
+                    [
+                        {
+                            "a": "K",
+                            "b": "{{now}}",
+                            "o": "date:less"
+                        },
+                        {
+                            "a": "L",
+                            "b": "No",
+                            "o": "text:equal"
+                        }
+                    ]
+                ],
+                "sheetId": "BWS Customer Tracker",
+                "sortOrder": "asc",
+                "spreadsheetId": "1YIyN4y26-WBJTA0FluHeDrFI6rkMmgzA18kU5ijnx6Q",
+                "tableFirstRow": "A1:Z1",
+                "includesHeaders": true,
+                "valueRenderOption": "FORMATTED_VALUE",
+                "dateTimeRenderOption": "FORMATTED_STRING"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "Select from My Drive"
+                        },
+                        "orderBy": {
+                            "mode": "chose"
+                        },
+                        "sheetId": {
+                            "mode": "chose",
+                            "label": "BWS Customer Tracker"
+                        },
+                        "sortOrder": {
+                            "mode": "chose",
+                            "label": "Ascending"
+                        },
+                        "spreadsheetId": {
+                            "mode": "chose",
+                            "label": "BWS Customer Tracker"
+                        },
+                        "tableFirstRow": {
+                            "label": "A-Z"
+                        },
+                        "includesHeaders": {
+                            "mode": "chose",
+                            "label": "Yes"
+                        },
+                        "valueRenderOption": {
+                            "mode": "chose",
+                            "label": "Formatted value"
+                        },
+                        "dateTimeRenderOption": {
+                            "mode": "chose",
+                            "label": "Formatted string"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            },
+                            "label": "Google Sheets  (springlam.co@gmail.com)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "Search Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "valueRenderOption",
+                        "type": "select",
+                        "label": "Value render option",
+                        "validate": {
+                            "enum": [
+                                "FORMATTED_VALUE",
+                                "UNFORMATTED_VALUE",
+                                "FORMULA"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "dateTimeRenderOption",
+                        "type": "select",
+                        "label": "Date and time render option",
+                        "validate": {
+                            "enum": [
+                                "SERIAL_NUMBER",
+                                "FORMATTED_STRING"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "type": "uinteger",
+                        "label": "Limit"
+                    },
+                    {
+                        "name": "spreadsheetId",
+                        "type": "select",
+                        "label": "Spreadsheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "sheetId",
+                        "type": "select",
+                        "label": "Sheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "includesHeaders",
+                        "type": "select",
+                        "label": "Table contains headers",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                true,
+                                false
+                            ]
+                        }
+                    },
+                    {
+                        "name": "tableFirstRow",
+                        "type": "select",
+                        "label": "Column range",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "A1:Z1",
+                                "A1:BZ1",
+                                "A1:CZ1",
+                                "A1:DZ1",
+                                "A1:MZ1",
+                                "A1:ZZ1",
+                                "A1:AZZ1",
+                                "A1:BZZ1",
+                                "A1:CZZ1",
+                                "A1:DZZ1",
+                                "A1:MZZ1",
+                                "A1:ZZZ1"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "filter",
+                        "type": "filter",
+                        "label": "Filter",
+                        "options": "rpc://google-sheets/2/rpcGetFilterKeys?includesHeaders=true"
+                    },
+                    {
+                        "name": "orderBy",
+                        "type": "select",
+                        "label": "Order by"
+                    },
+                    {
+                        "name": "sortOrder",
+                        "type": "select",
+                        "label": "Sort order",
+                        "validate": {
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "__IMTLENGTH__",
+                        "type": "uinteger",
+                        "label": "Total number of bundles"
+                    },
+                    {
+                        "name": "__IMTINDEX__",
+                        "type": "uinteger",
+                        "label": "Bundle order position"
+                    },
+                    {
+                        "name": "__ROW_NUMBER__",
+                        "type": "number",
+                        "label": "Row number"
+                    },
+                    {
+                        "name": "__SPREADSHEET_ID__",
+                        "type": "text",
+                        "label": "Spreadsheet ID"
+                    },
+                    {
+                        "name": "__SHEET__",
+                        "type": "text",
+                        "label": "Sheet"
+                    },
+                    {
+                        "name": "0",
+                        "type": "text",
+                        "label": "Created Date (A)"
+                    },
+                    {
+                        "name": "1",
+                        "type": "text",
+                        "label": "First Name (B)"
+                    },
+                    {
+                        "name": "2",
+                        "type": "text",
+                        "label": "Last Name (C)"
+                    },
+                    {
+                        "name": "3",
+                        "type": "text",
+                        "label": "Email (D)"
+                    },
+                    {
+                        "name": "4",
+                        "type": "text",
+                        "label": "Country (E)"
+                    },
+                    {
+                        "name": "5",
+                        "type": "text",
+                        "label": "Stripe Session ID (F)"
+                    },
+                    {
+                        "name": "6",
+                        "type": "text",
+                        "label": "Amount Paid (G)"
+                    },
+                    {
+                        "name": "7",
+                        "type": "text",
+                        "label": "Sheet Link (H)"
+                    },
+                    {
+                        "name": "8",
+                        "type": "text",
+                        "label": "Delivery Status (I)"
+                    },
+                    {
+                        "name": "9",
+                        "type": "text",
+                        "label": "Delivered At (J)"
+                    },
+                    {
+                        "name": "10",
+                        "type": "text",
+                        "label": "Send Feedback After (K)"
+                    },
+                    {
+                        "name": "11",
+                        "type": "text",
+                        "label": "Feedback Sent (L)"
+                    },
+                    {
+                        "name": "12",
+                        "type": "text",
+                        "label": "Feedback Sent At (M)"
+                    },
+                    {
+                        "name": "13",
+                        "type": "text",
+                        "label": "Star Rating (N)"
+                    },
+                    {
+                        "name": "14",
+                        "type": "text",
+                        "label": "Review Text (O)"
+                    },
+                    {
+                        "name": "15",
+                        "type": "text",
+                        "label": "Recommended (P)"
+                    },
+                    {
+                        "name": "16",
+                        "type": "text",
+                        "label": "(Q)"
+                    },
+                    {
+                        "name": "17",
+                        "type": "text",
+                        "label": "(R)"
+                    },
+                    {
+                        "name": "18",
+                        "type": "text",
+                        "label": "(S)"
+                    },
+                    {
+                        "name": "19",
+                        "type": "text",
+                        "label": "(T)"
+                    },
+                    {
+                        "name": "20",
+                        "type": "text",
+                        "label": "(U)"
+                    },
+                    {
+                        "name": "21",
+                        "type": "text",
+                        "label": "(V)"
+                    },
+                    {
+                        "name": "22",
+                        "type": "text",
+                        "label": "(W)"
+                    },
+                    {
+                        "name": "23",
+                        "type": "text",
+                        "label": "(X)"
+                    },
+                    {
+                        "name": "24",
+                        "type": "text",
+                        "label": "(Y)"
+                    },
+                    {
+                        "name": "25",
+                        "type": "text",
+                        "label": "(Z)"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 4,
+            "module": "resend:sendAnEmail",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 9372016
+            },
+            "filter": {
+                "name": "Has emails to send",
+                "conditions": [
+                    [
+                        {
+                            "a": "{{1.`__IMTLENGTH__`}}",
+                            "b": "0",
+                            "o": "number:greater"
+                        }
+                    ]
+                ]
+            },
+            "mapper": {
+                "to": [
+                    "{{1.`3`}}"
+                ],
+                "from": "BuiltWithSpring <hello@builtwithspring.com>",
+                "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\"/>\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/>\n  <title>How was your itinerary? — BuiltWithSpring</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f7f5ff;font-family:Helvetica,Arial,sans-serif;color:#1a1640;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;\">\n\n  <!-- Preheader -->\n  <div style=\"display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#f7f5ff;mso-hide:all;\">\n    {{1.`1`}}, you've had a day with your {{1.`4`}} itinerary — we'd love your honest take. One tap is all it takes.\n  </div>\n\n  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f7f5ff;\">\n    <tr>\n      <td align=\"center\" style=\"padding:32px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:560px;\">\n\n          <!-- Top accent bar -->\n          <tr>\n            <td style=\"background:#7c3aed;height:5px;font-size:0;line-height:0;border-radius:12px 12px 0 0;\">&nbsp;</td>\n          </tr>\n\n          <!-- Card -->\n          <tr>\n            <td style=\"background:#ffffff;border:1px solid #e4e0f5;border-top:none;border-radius:0 0 12px 12px;\">\n\n              <!-- LOGO -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td align=\"center\" style=\"padding:28px 40px 20px;\">\n                    <img src=\"https://travel.builtwithspring.com/BWSLogo.png\" width=\"44\" height=\"44\" alt=\"BuiltWithSpring\" style=\"display:block;margin:0 auto 8px;border-radius:10px;\"/>\n                    <div style=\"font-size:12px;font-weight:bold;color:#6b5fa0;\">BuiltWithSpring &middot; AI-Powered Travel Planner</div>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- Divider -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:0 40px;\">\n                    <div style=\"border-top:1px solid #e4e0f5;font-size:0;line-height:0;\">&nbsp;</div>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- HERO -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:28px 40px 0;\">\n                    <div style=\"font-size:22px;font-weight:bold;color:#1a1640;line-height:1.3;margin-bottom:12px;\">\n{{1.`1`}}, how was your<br/>{{1.`4`}} itinerary?\n                    </div>\n                    <div style=\"font-size:14px;color:#6b5fa0;line-height:1.75;\">\n                      You've had a day with it — and your honest take means everything to us. Whether it was outstanding or just okay, one minute of feedback helps us make the next itinerary better for every traveler after you.\n                    </div>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- STAR RATING -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:24px 40px 0;\">\n                    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;\">\n                      <tr>\n                        <td align=\"center\" style=\"padding:24px 20px;\">\n                          <div style=\"font-size:14px;font-weight:bold;color:#1a1640;margin-bottom:6px;\">Rate your itinerary</div>\n                          <div style=\"font-size:13px;color:#6b5fa0;margin-bottom:20px;\">Tap a star — opens your pre-filled review in one click</div>\n\n                          <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 auto;\">\n                            <tr>\n                              <td style=\"padding:0 5px;\"><a href=\"https://travel.builtwithspring.com/review?name={{1.`1`}}&amp;country={{1.`4`}}&amp;rating=1&amp;email={{1.`3`}}\" style=\"text-decoration:none;display:block;font-size:34px;line-height:1.2;\">&#11088;</a></td>\n                              <td style=\"padding:0 5px;\"><a href=\"https://travel.builtwithspring.com/review?name={{1.`1`}}&amp;country={{1.`4`}}&amp;rating=2&amp;email={{1.`3`}}\" style=\"text-decoration:none;display:block;font-size:34px;line-height:1.2;\">&#11088;</a></td>\n                              <td style=\"padding:0 5px;\"><a href=\"https://travel.builtwithspring.com/review?name={{1.`1`}}&amp;country={{1.`4`}}&amp;rating=3&amp;email={{1.`3`}}\" style=\"text-decoration:none;display:block;font-size:34px;line-height:1.2;\">&#11088;</a></td>\n                              <td style=\"padding:0 5px;\"><a href=\"https://travel.builtwithspring.com/review?name={{1.`1`}}&amp;country={{1.`4`}}&amp;rating=4&amp;email={{1.`3`}}\" style=\"text-decoration:none;display:block;font-size:34px;line-height:1.2;\">&#11088;</a></td>\n                              <td style=\"padding:0 5px;\"><a href=\"https://travel.builtwithspring.com/review?name={{1.`1`}}&amp;country={{1.`4`}}&amp;rating=5&amp;email={{1.`3`}}\" style=\"text-decoration:none;display:block;font-size:34px;line-height:1.2;\">&#11088;</a></td>\n                            </tr>\n                            <tr>\n                              <td align=\"center\" style=\"font-size:12px;color:#9b87d4;padding-top:6px;\">&#128577;</td>\n                              <td></td>\n                              <td align=\"center\" style=\"font-size:12px;color:#9b87d4;padding-top:6px;\">&#128528;</td>\n                              <td></td>\n                              <td align=\"center\" style=\"font-size:12px;color:#9b87d4;padding-top:6px;\">&#129321;</td>\n                            </tr>\n                          </table>\n\n                          <div style=\"font-size:12px;color:#6b5fa0;margin-top:16px;\">Opens your review page — takes less than a minute</div>\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- PERSONAL NOTE -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:24px 40px 0;\">\n                    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#faf9ff;border-radius:10px;\">\n                      <tr>\n                        <td width=\"4\" style=\"background-color:#7c3aed;border-radius:10px 0 0 10px;font-size:0;line-height:0;\">&nbsp;</td>\n                        <td style=\"padding:16px 20px;\">\n                          <div style=\"font-size:13px;color:#1a1640;line-height:1.75;margin-bottom:10px;\">\n                            I built this because planning trips used to take me hours — and I knew AI could do it in seconds. Every piece of feedback you share makes the next itinerary sharper for every traveler after you.\n                          </div>\n                          <div style=\"font-size:13px;color:#1a1640;line-height:1.6;\">\n                            Thank you for being one of the first. It genuinely means a lot. &#128591;\n                          </div>\n                          <div style=\"font-size:13px;color:#6b5fa0;margin-top:8px;\">&#8212; Spring, founder of BuiltWithSpring</div>\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- SHARE -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:20px 40px 0;\">\n                    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f7f5ff;border:1px solid #e4e0f5;border-radius:10px;\">\n                      <tr>\n                        <td style=\"padding:16px 20px;\">\n                          <div style=\"font-size:13px;font-weight:bold;color:#1a1640;margin-bottom:5px;\">Know someone planning a trip?</div>\n                          <div style=\"font-size:12px;color:#6b5fa0;line-height:1.6;margin-bottom:14px;\">Every itinerary is built from scratch — no two are the same. Send them the free preview link.</div>\n                          <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                            <tr>\n                              <td style=\"background-color:#7c3aed;border-radius:8px;\">\n                                <a href=\"https://travel.builtwithspring.com\" target=\"_blank\" style=\"display:inline-block;padding:10px 22px;font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;\">\n                                  Share the free preview &#8594;\n                                </a>\n                              </td>\n                            </tr>\n                          </table>\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- Divider -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"padding:24px 40px 0;\">\n                    <div style=\"border-top:1px solid #e4e0f5;font-size:0;line-height:0;\">&nbsp;</div>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- FOOTER -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td align=\"center\" style=\"padding:20px 40px 28px;\">\n                    <div style=\"font-size:13px;color:#6b5fa0;margin-bottom:14px;\">\n                      <a href=\"https://www.instagram.com/BuiltWithSpring\" target=\"_blank\" style=\"color:#7c3aed;text-decoration:none;font-weight:bold;\">&#128248; Instagram</a>\n                      &nbsp;&middot;&nbsp;\n                      <a href=\"https://www.linkedin.com/in/springlam/\" target=\"_blank\" style=\"color:#7c3aed;text-decoration:none;font-weight:bold;\">&#128188; LinkedIn</a>\n                      &nbsp;&middot;&nbsp;\n                      <a href=\"https://www.youtube.com/@BuiltWithSpring\" target=\"_blank\" style=\"color:#7c3aed;text-decoration:none;font-weight:bold;\">&#9654; YouTube</a>\n                    </div>\n                    <div style=\"font-size:12px;color:#6b5fa0;margin-bottom:5px;\">Questions about your itinerary?</div>\n                    <a href=\"mailto:hello@builtwithspring.com\" style=\"font-size:12px;color:#7c3aed;font-weight:bold;text-decoration:none;\">hello@builtwithspring.com</a>\n                    <div style=\"font-size:11px;color:#9b87d4;margin-top:14px;\">\n                      &copy; 2026 BuiltWithSpring &middot;\n                      <a href=\"https://builtwithspring.com\" style=\"color:#9b87d4;text-decoration:none;\">builtwithspring.com</a>\n                      &middot; Austin, TX\n                    </div>\n                  </td>\n                </tr>\n              </table>\n\n              <!-- Bottom accent bar -->\n              <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                <tr>\n                  <td style=\"background:#7c3aed;height:4px;font-size:0;line-height:0;border-radius:0 0 12px 12px;\">&nbsp;</td>\n                </tr>\n              </table>\n\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n\n</body>\n</html>",
+                "subject": "How's your {{1.`4`}} itinerary? ✨",
+                "sendEmailAs": "html"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 308,
+                    "y": 8
+                },
+                "restore": {
+                    "expect": {
+                        "cc": {
+                            "mode": "chose"
+                        },
+                        "to": {
+                            "mode": "chose",
+                            "items": [
+                                null
+                            ]
+                        },
+                        "bcc": {
+                            "mode": "chose"
+                        },
+                        "tags": {
+                            "mode": "chose"
+                        },
+                        "headers": {
+                            "mode": "chose"
+                        },
+                        "replyTo": {
+                            "mode": "chose"
+                        },
+                        "attachments": {
+                            "mode": "chose"
+                        },
+                        "sendEmailAs": {
+                            "mode": "chose",
+                            "label": "HTML"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "resend"
+                            },
+                            "label": "My Resend connection"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:resend",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "from",
+                        "type": "text",
+                        "label": "From",
+                        "required": true
+                    },
+                    {
+                        "name": "to",
+                        "spec": {
+                            "name": "value",
+                            "type": "email"
+                        },
+                        "type": "array",
+                        "label": "To",
+                        "required": true
+                    },
+                    {
+                        "name": "bcc",
+                        "spec": {
+                            "name": "value",
+                            "type": "email"
+                        },
+                        "type": "array",
+                        "label": "BCC"
+                    },
+                    {
+                        "name": "cc",
+                        "spec": {
+                            "name": "value",
+                            "type": "email"
+                        },
+                        "type": "array",
+                        "label": "CC"
+                    },
+                    {
+                        "name": "replyTo",
+                        "spec": {
+                            "name": "value",
+                            "type": "email"
+                        },
+                        "type": "array",
+                        "label": "Reply-To"
+                    },
+                    {
+                        "name": "subject",
+                        "type": "text",
+                        "label": "Subject",
+                        "required": true
+                    },
+                    {
+                        "name": "scheduled_at",
+                        "time": true,
+                        "type": "date",
+                        "label": "Schedule For"
+                    },
+                    {
+                        "name": "sendEmailAs",
+                        "type": "select",
+                        "label": "Send Email As",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "html",
+                                "text"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "spec": [
+                            {
+                                "name": "name",
+                                "type": "text",
+                                "label": "Name"
+                            },
+                            {
+                                "name": "value",
+                                "type": "text",
+                                "label": "Value"
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Tags"
+                    },
+                    {
+                        "name": "attachments",
+                        "spec": [
+                            {
+                                "name": "filename",
+                                "type": "filename",
+                                "label": "File name"
+                            },
+                            {
+                                "name": "path",
+                                "type": "text",
+                                "label": "Path"
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Attachments"
+                    },
+                    {
+                        "name": "headers",
+                        "spec": {
+                            "name": "value",
+                            "spec": [
+                                {
+                                    "name": "key",
+                                    "type": "text",
+                                    "label": "Key"
+                                },
+                                {
+                                    "name": "value",
+                                    "type": "text",
+                                    "label": "Value"
+                                }
+                            ],
+                            "type": "collection",
+                            "label": "Header"
+                        },
+                        "type": "array",
+                        "label": "Custom Headers"
+                    },
+                    {
+                        "name": "html",
+                        "type": "text",
+                        "label": "HTML Content"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "module": "google-sheets:updateRow",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 8859797
+            },
+            "mapper": {
+                "from": "drive",
+                "mode": "select",
+                "values": {
+                    "Feedback Sent": "Yes",
+                    "Feedback Sent At": "{{now}}"
+                },
+                "sheetId": "BWS Customer Tracker",
+                "rowNumber": "{{1.`__ROW_NUMBER__`}}",
+                "spreadsheetId": "/1fBj-vcr42YjsioYWK0Xk_7GR2ZZy_6bj/1YIyN4y26-WBJTA0FluHeDrFI6rkMmgzA18kU5ijnx6Q",
+                "includesHeaders": true,
+                "useColumnHeaders": true,
+                "valueInputOption": "USER_ENTERED"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "My Drive"
+                        },
+                        "mode": {
+                            "label": "Search by path"
+                        },
+                        "sheetId": {
+                            "label": "BWS Customer Tracker"
+                        },
+                        "spreadsheetId": {
+                            "path": [
+                                "Travel Planner AI",
+                                "BWS Customer Tracker"
+                            ]
+                        },
+                        "includesHeaders": {
+                            "label": "Yes"
+                        },
+                        "useColumnHeaders": {
+                            "label": "Yes",
+                            "nested": [
+                                {
+                                    "name": "values",
+                                    "spec": [
+                                        {
+                                            "name": "Created Date",
+                                            "type": "text",
+                                            "label": "Created Date (A)"
+                                        },
+                                        {
+                                            "name": "First Name",
+                                            "type": "text",
+                                            "label": "First Name (B)"
+                                        },
+                                        {
+                                            "name": "Last Name",
+                                            "type": "text",
+                                            "label": "Last Name (C)"
+                                        },
+                                        {
+                                            "name": "Email",
+                                            "type": "text",
+                                            "label": "Email (D)"
+                                        },
+                                        {
+                                            "name": "Country",
+                                            "type": "text",
+                                            "label": "Country (E)"
+                                        },
+                                        {
+                                            "name": "Stripe Session ID",
+                                            "type": "text",
+                                            "label": "Stripe Session ID (F)"
+                                        },
+                                        {
+                                            "name": "Amount Paid",
+                                            "type": "text",
+                                            "label": "Amount Paid (G)"
+                                        },
+                                        {
+                                            "name": "Sheet Link",
+                                            "type": "text",
+                                            "label": "Sheet Link (H)"
+                                        },
+                                        {
+                                            "name": "Delivery Status",
+                                            "type": "text",
+                                            "label": "Delivery Status (I)"
+                                        },
+                                        {
+                                            "name": "Delivered At",
+                                            "type": "text",
+                                            "label": "Delivered At (J)"
+                                        },
+                                        {
+                                            "name": "Send Feedback After",
+                                            "type": "text",
+                                            "label": "Send Feedback After (K)"
+                                        },
+                                        {
+                                            "name": "Feedback Sent",
+                                            "type": "text",
+                                            "label": "Feedback Sent (L)"
+                                        },
+                                        {
+                                            "name": "Feedback Sent At",
+                                            "type": "text",
+                                            "label": "Feedback Sent At (M)"
+                                        },
+                                        {
+                                            "name": "Star Rating",
+                                            "type": "text",
+                                            "label": "Star Rating (N)"
+                                        },
+                                        {
+                                            "name": "Review Text",
+                                            "type": "text",
+                                            "label": "Review Text (O)"
+                                        },
+                                        {
+                                            "name": "Recommended",
+                                            "type": "text",
+                                            "label": "Recommended (P)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(Q)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(R)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(S)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(T)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(U)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(V)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(W)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(X)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(Y)"
+                                        },
+                                        {
+                                            "name": "undefined",
+                                            "type": "text",
+                                            "label": "(Z)"
+                                        }
+                                    ],
+                                    "type": "collection",
+                                    "label": "Values in columns",
+                                    "metadata": [
+                                        [
+                                            [
+                                                "Created Date",
+                                                "First Name",
+                                                "Last Name",
+                                                "Email",
+                                                "Country",
+                                                "Stripe Session ID",
+                                                "Amount Paid",
+                                                "Sheet Link",
+                                                "Delivery Status",
+                                                "Delivered At",
+                                                "Send Feedback After",
+                                                "Feedback Sent",
+                                                "Feedback Sent At",
+                                                "Star Rating",
+                                                "Review Text",
+                                                "Recommended"
+                                            ]
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        "valueInputOption": {
+                            "mode": "chose",
+                            "label": "User entered"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            },
+                            "label": "Google Sheets  (springlam.co@gmail.com)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "mode",
+                        "type": "select",
+                        "label": "Search Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "select",
+                                "fromAll",
+                                "map"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "valueInputOption",
+                        "type": "select",
+                        "label": "Value input option",
+                        "validate": {
+                            "enum": [
+                                "USER_ENTERED",
+                                "RAW"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "Drive",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "spreadsheetId",
+                        "type": "file",
+                        "label": "Spreadsheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "sheetId",
+                        "type": "select",
+                        "label": "Sheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "rowNumber",
+                        "type": "uinteger",
+                        "label": "Row number",
+                        "required": true
+                    },
+                    {
+                        "name": "includesHeaders",
+                        "type": "select",
+                        "label": "Table contains headers",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                true,
+                                false
+                            ]
+                        }
+                    },
+                    {
+                        "name": "useColumnHeaders",
+                        "type": "select",
+                        "label": "Use column headers as IDs of the columns",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                true,
+                                false
+                            ]
+                        }
+                    },
+                    {
+                        "name": "values",
+                        "spec": [
+                            {
+                                "name": "Created Date",
+                                "type": "text",
+                                "label": "Created Date (A)"
+                            },
+                            {
+                                "name": "First Name",
+                                "type": "text",
+                                "label": "First Name (B)"
+                            },
+                            {
+                                "name": "Last Name",
+                                "type": "text",
+                                "label": "Last Name (C)"
+                            },
+                            {
+                                "name": "Email",
+                                "type": "text",
+                                "label": "Email (D)"
+                            },
+                            {
+                                "name": "Country",
+                                "type": "text",
+                                "label": "Country (E)"
+                            },
+                            {
+                                "name": "Stripe Session ID",
+                                "type": "text",
+                                "label": "Stripe Session ID (F)"
+                            },
+                            {
+                                "name": "Amount Paid",
+                                "type": "text",
+                                "label": "Amount Paid (G)"
+                            },
+                            {
+                                "name": "Sheet Link",
+                                "type": "text",
+                                "label": "Sheet Link (H)"
+                            },
+                            {
+                                "name": "Delivery Status",
+                                "type": "text",
+                                "label": "Delivery Status (I)"
+                            },
+                            {
+                                "name": "Delivered At",
+                                "type": "text",
+                                "label": "Delivered At (J)"
+                            },
+                            {
+                                "name": "Send Feedback After",
+                                "type": "text",
+                                "label": "Send Feedback After (K)"
+                            },
+                            {
+                                "name": "Feedback Sent",
+                                "type": "text",
+                                "label": "Feedback Sent (L)"
+                            },
+                            {
+                                "name": "Feedback Sent At",
+                                "type": "text",
+                                "label": "Feedback Sent At (M)"
+                            },
+                            {
+                                "name": "Star Rating",
+                                "type": "text",
+                                "label": "Star Rating (N)"
+                            },
+                            {
+                                "name": "Review Text",
+                                "type": "text",
+                                "label": "Review Text (O)"
+                            },
+                            {
+                                "name": "Recommended",
+                                "type": "text",
+                                "label": "Recommended (P)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(Q)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(R)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(S)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(T)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(U)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(V)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(W)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(X)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(Y)"
+                            },
+                            {
+                                "name": "undefined",
+                                "type": "text",
+                                "label": "(Z)"
+                            }
+                        ],
+                        "type": "collection",
+                        "label": "Values in columns",
+                        "metadata": [
+                            [
+                                [
+                                    "Created Date",
+                                    "First Name",
+                                    "Last Name",
+                                    "Email",
+                                    "Country",
+                                    "Stripe Session ID",
+                                    "Amount Paid",
+                                    "Sheet Link",
+                                    "Delivery Status",
+                                    "Delivered At",
+                                    "Send Feedback After",
+                                    "Feedback Sent",
+                                    "Feedback Sent At",
+                                    "Star Rating",
+                                    "Review Text",
+                                    "Recommended"
+                                ]
+                            ]
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "instant": false,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "us2.make.com",
+        "notes": []
+    }
+}

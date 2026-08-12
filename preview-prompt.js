@@ -42,6 +42,21 @@ ${perplexityResearch}
     const normAirport = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const isRoundTrip = d.arrivalAirport && d.departureAirport
       && normAirport(d.arrivalAirport) === normAirport(d.departureAirport);
+
+    // Multi-country trips (Eurotrip etc.) — d.countries is the array source of truth;
+    // d.country (display string) is kept as a fallback for older/test callers.
+    const countriesArr = Array.isArray(d.countries) && d.countries.length ? d.countries : (d.country ? [d.country] : []);
+    const countriesList = countriesArr.join(', ');
+    const isMultiCountry = countriesArr.length > 1;
+    const multiCountryRoutingDirective = isMultiCountry ? `
+MULTI-COUNTRY ROUTING (CRITICAL — this trip spans ${countriesArr.length} countries: ${countriesList}):
+- Treat the country list as ONE itinerary, not separate trips per country. Order cities into a single logical geographic path across the submitted countries.
+- Group all nights within a country together before crossing into the next — do not zigzag back into a country already left, unless the traveler's notes explicitly request it.
+- Choose a border-crossing order that minimizes total backtracking (e.g. for France → Italy → Switzerland, route west-to-east-ish through adjacent cities near each border, not Paris → Zurich → Milan → Nice).
+- Every submitted country should appear with at least 1 city unless the trip length can't support it (see HARD CAP in Step 2) or the traveler's notes say to skip a country.
+- Cross-border legs (train/flight/drive) are evaluated the same as any other leg under STEP 3 — Europe's Eurostar/TGV/ICE/Frecciarossa etc. already run across these borders, so prefer them over flying under the same time thresholds.
+- KNOWN-CITIES MODE GAP RULE (cityPlanningMode "know" only — outranks the "every country appears" rule above): if the traveler's city list has zero cities in one or more submitted countries, do NOT invent cities there and do NOT silently drop the country either. Plan only the countries that have at least one listed city (plus the arrival/departure city rules, which still apply regardless of country). Then state plainly in the overview which submitted countries were left out and why, e.g. "You added Portugal, Spain, and Switzerland but didn't list any cities there, so this trip covers France and Italy only — add cities for the others if you'd like them included." Never leave this unexplained.
+` : '';
     const roundTripCityPlanDirective = isRoundTrip ? `
 ROUND-TRIP ROUTING (CRITICAL — arrival and departure airport are the SAME: ${d.departureAirport}):
 This trip departs from the same airport it arrived into. The city route MUST form a loop. The LAST city in the plan (where the traveler spends their final night before departure) must be the airport city itself or another city within ~90 minutes ground transport of ${d.departureAirport}.
@@ -58,11 +73,15 @@ Rules:
 
     return `You are an expert travel planner. Generate a quick trip preview only.
 Return ONLY valid JSON starting with { and ending with }. No markdown. No code fences.
-${roundTripCityPlanDirective}
+${roundTripCityPlanDirective}${multiCountryRoutingDirective}
 
 STEP 1 — CITY SELECTION
 Calculate total trip days from arrival to departure date. Select cities FIRST, then allocate nights in Step 2.
-- All cities must be within the submitted country unless traveler explicitly listed others.
+- All cities must be within one of the submitted countries (${countriesList}) unless traveler explicitly listed others in must-see or extra notes.
+- SAFETY EXCLUSIONS — LEVEL 4 (DO NOT TRAVEL): Never recommend any destination classified as US State Department Travel Advisory Level 4. These are hard blocks — never suggest them as overnight destinations regardless of what the traveler requests. Current Level 4 countries (verified July 2026): Afghanistan, Belarus, Burkina Faso, Burma (Myanmar), Central African Republic, Chad, Democratic Republic of the Congo, Haiti, Iran, Iraq, Lebanon, Libya, Mali, Niger, North Korea, Russia, Somalia, South Sudan, Sudan, Syria, Uganda, Ukraine, Yemen. If any of the submitted countries (${countriesList}) is on this list, exclude it from city selection entirely and say so plainly in the overview: "We're unable to generate an itinerary for [country] due to a current US State Department Level 4 (Do Not Travel) advisory. Please check travel.state.gov for the latest guidance." If other submitted countries are unaffected, still plan those normally. Even when applying this exclusion, do NOT write any reasoning, explanation, or commentary before the JSON — put the explanation inside the "overview" field of the JSON itself. Your entire response must still start with { and end with }, with zero text before or after, exactly like every other case.
+- SAFETY WARNINGS — LEVEL 3 (RECONSIDER TRAVEL): For any submitted country classified as Level 3, do not block city selection — many are popular tourist destinations with specific regional risks. Instead, add one sentence to the overview: "Note: [Country] is currently under a US State Department Level 3 (Reconsider Travel) advisory — review travel.state.gov before booking." Current Level 3 countries (verified July 2026): Azerbaijan, Bahrain, Bangladesh, Burundi, Colombia, Ethiopia, Guatemala, Guinea-Bissau, Guyana, Honduras, Israel/West Bank/Gaza, Kuwait, Mauritania, Nicaragua, Nigeria, Oman, Pakistan, Papua New Guinea, Qatar, Rwanda, São Tomé and Príncipe, Saudi Arabia, Tanzania, Trinidad and Tobago, United Arab Emirates, Venezuela.
+- MEXICO STATE-LEVEL EXCLUSIONS: if Mexico is one of the submitted countries — it's Level 2 overall but specific states carry Level 3/4. Never recommend these as overnight destinations: Guerrero state (including Acapulco), Sinaloa state (including Culiacán and Mazatlán areas outside designated tourist hotel zones), Tamaulipas state, Zacatecas state, Colima state, Michoacán state interior (excluding Morelia, which may be included with a caution note). If the traveler explicitly requests one of these in mustSee or extraNotes, add a note in the overview: "We've routed around [location] due to current travel advisories; please check the latest US State Department guidance before traveling." Suggest a safe alternative in the same region where possible.
+- ADVISORY ACCURACY: Advisory levels change. The lists above reflect July 2026 data. If there is any reason to believe a destination's status may have changed, note in the overview that the traveler should verify current advisories at travel.state.gov before booking.
 - Always consider arrival and departure airport cities as candidates.
 - ARRIVAL CITY RULE (outranks every other selection rule EXCEPT traveler notes): The arrival airport city${d.arrivalCityName ? ` — ${d.arrivalCityName} —` : ''} MUST appear in the city list with at least 1 night. Omitting it is a prompt violation. THE ONE OVERRIDE: any clear instruction in mustSee or extraNotes that the traveler does not want to stay there — "skip Hong Kong", "no overnight in HK", "don't want to stay in HK", "go straight to Guilin" all count, exact wording irrelevant. When the traveler opts out, honor it fully: route them onward on arrival day and do not allocate the city any nights.
 - DEPARTURE CITY RULE (outranks every other selection rule EXCEPT traveler notes): The departure airport city${d.departureCityName ? ` — ${d.departureCityName} —` : ''} MUST appear in the city list with at least 1 night. Never route a traveler home from a city they haven't slept in. Same traveler-notes override as above — if they opted out, honor it and note the airport transfer implications in the overview.
@@ -129,21 +148,26 @@ Select 2–3 genuinely non-tourist finds relevant to this trip. Must be specific
 ${researchBlock}
 VISA: visa_badge is a short generic visa reminder — do NOT assume the traveler's nationality or whether they need a visa. Always use a neutral format like "🛂 Visa may be required — check requirements for your passport before travel". Never say "no visa required" or reference a specific passport type.
 TONE: Always second person. Never traveler's name or "the couple/group/traveler".
-HARD INSTRUCTIONS: mustSee and extraNotes are the traveler's direct voice. They override EVERY rule in this prompt — arrival/departure city rules, night allocation, city selection, routing. If a note conflicts with any rule above, the note wins. Never ignore them.
+HARD INSTRUCTIONS: mustSee and extraNotes are the traveler's direct voice. They override EVERY rule in this prompt — arrival/departure city rules, night allocation, city selection, routing — with ONE exception: the SAFETY EXCLUSIONS (Level 4 hard blocks) above can never be overridden by notes. If a note conflicts with any other rule above, the note wins. Never ignore them.
 
 FINAL CHECK — verify before outputting, fix any violation silently:
 1. ${d.arrivalCityName ? `The arrival city (${d.arrivalCityName})` : 'The arrival airport city'} appears in cities with at least 1 night${d.departureCityName && d.arrivalCityName !== d.departureCityName ? `, and the departure city (${d.departureCityName}) appears with at least 1 night` : ''} — unless the traveler's notes say not to stay there, in which case verify you honored the notes instead.
 2. Nights across all cities sum exactly to the total trip nights (departure date minus arrival date).
 3. On round-trips, the final city satisfies ROUND-TRIP ROUTING above, and a world-class airport city's COMBINED nights across its stays meet its size-classification recommendation (GATEWAY NIGHTS) — never 1+1.
 4. A world-class or must-visit arrival or departure city on a one-way trip has its recommended nights for its size and pace — not the bare 1-night minimum.
+5. Every city is within one of the submitted countries (${countriesList}) — unless the traveler's notes explicitly requested a city elsewhere. On multi-country trips, cities are grouped by country with no backtracking into a country already left.
+6. No submitted country is on the Level 4 (Do Not Travel) list above — if one is, it's excluded from city selection and flagged plainly in the overview, with other unaffected countries still planned normally.
+7. In "know" mode with multiple submitted countries: if any submitted country has zero cities in the traveler's list (and isn't Level 4-excluded), it's left out of the plan AND the overview plainly says which countries were left out and why — never silently dropped.
+
+"country" on each city = the REAL, factually accurate country that city is actually located in (e.g. Tokyo → Japan, Kyoto → Japan, Paris → France) — a genuine geographic fact, never simply copied from the submitted country list. If you followed the city-selection rules above it should match one of the submitted countries (${countriesList}); if your own answer doesn't, that means a rule above was violated — go back and fix the city selection, don't just relabel it.
 
 Return exactly this JSON:
-{"overview":"max 3 sentences","cities":[{"city":"string","nights":0,"why_recommended":"string"}],"local_picks":[{"emoji":"string","title":"string","description":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"visa_badge":"string"}
+{"overview":"max 3 sentences","cities":[{"city":"string","country":"string","nights":0,"why_recommended":"string"}],"local_picks":[{"emoji":"string","title":"string","description":"string"}],"teaser_day":{"city":"string","day_label":"string","morning":"string","afternoon":"string","evening":"string","restaurant_suggestion":"string"},"visa_badge":"string"}
 
 TRAVELER:
 First name: ${d.firstName}
 Last name: ${d.lastName}
-Country: ${d.country}
+Countries (in the order entered — a hint for routing direction): ${countriesList}
 Arrival airport: ${d.arrivalAirport}${d.arrivalCityName ? ` (city: ${d.arrivalCityName})` : ''}
 Departure airport: ${d.departureAirport}${d.departureCityName ? ` (city: ${d.departureCityName})` : ''}
 Arrival date: ${d.arrivalDate}

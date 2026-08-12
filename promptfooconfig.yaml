@@ -1,0 +1,262 @@
+# promptfoo config for the BWS Travel Planner preview-generation prompt.
+# Calls the REAL production prompt (preview-prompt.js, via promptfoo-prompt.js wrapper)
+# against Claude Sonnet 4.6 — same model worker.js uses in production.
+#
+# Run with:
+#   promptfoo eval
+#   promptfoo view      (opens a browser UI to compare outputs side by side)
+
+description: "BWS Travel Planner — preview prompt eval"
+
+# Without this, promptfoo silently splits any array-valued var (citiesToVisit,
+# anchorCities) into one test case per element instead of passing the whole
+# list through — which breaks multi-city test cases like these.
+defaultTest:
+  options:
+    disableVarExpansion: true
+
+prompts:
+  - file://promptfoo-prompt.js
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 8000
+      temperature: 0.4
+
+tests:
+  - description: "Multi-country one-way trip (France + Italy), user-picked cities, moderate pace — NOTE: this fixture previously said country: USA while feeding it Paris/Florence/Rome, a leftover from the single-country form; fixed to match and now doubles as the multi-country test."
+    vars:
+      firstName: "Alex"
+      lastName: "Rivera"
+      country: "France & Italy"
+      countries: ["France", "Italy"]
+      travelParty: "couple"
+      groupSize: "2"
+      budget: "mid"
+      arrivalDate: "2026-09-10"
+      departureDate: "2026-09-20"
+      arrivalAirport: "CDG"
+      departureAirport: "FCO"
+      tripStructure: ""
+      paceOfTravel: "moderate"
+      citiesToVisit: ["Paris", "Florence", "Rome"]
+      anchorCities: []
+      cityPlanningMode: "know"
+      aiCityRecommendation: false
+      extraNotes: "Anniversary trip, want a nice dinner in each city."
+      mustSee: "Eiffel Tower, Colosseum"
+      travelStyle: "explorer"
+      interests:
+        Food & Drink: 5
+        Culture & History: 4
+        Adventure: 1
+        Nature: 1
+        Nightlife: 2
+        Shopping: 2
+    assert:
+      - type: javascript
+        value: |
+          // Mirrors index.html's parsePreviewJson — strips code fences, then falls
+          // back to the first {...} block, since Sonnet occasionally adds a stray
+          // preamble even when told not to. Testing against a strict JSON.parse
+          // would fail cases the real app handles fine.
+          function extract(o) {
+            let c = String(o || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            try { return JSON.parse(c); } catch (e) {}
+            const m = c.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+            return null;
+          }
+          const data = extract(output);
+          if (!data) return { pass: false, score: 0, reason: 'Could not extract JSON even with forgiving parser: ' + String(output).slice(0, 200) };
+          const submitted = ['france', 'italy'];
+          const bad = (data.cities || []).filter(c => !c.country || !submitted.some(w => c.country.toLowerCase().includes(w)));
+          if (bad.length) {
+            return { pass: false, score: 0, reason: 'Cities missing/outside submitted countries: ' + bad.map(c => (c.city || '?') + ' (' + (c.country || 'no country field') + ')').join(', ') };
+          }
+          return { pass: true, score: 1, reason: 'All cities tagged with a submitted country' };
+
+  - description: "Single Level 4 country (Ukraine) — must be excluded from city selection, not silently planned"
+    vars:
+      firstName: "Casey"
+      lastName: "Nguyen"
+      country: "Ukraine"
+      countries: ["Ukraine"]
+      travelParty: "solo"
+      groupSize: "1"
+      budget: "mid"
+      arrivalDate: "2026-10-05"
+      departureDate: "2026-10-12"
+      arrivalAirport: "KBP"
+      departureAirport: "KBP"
+      tripStructure: ""
+      paceOfTravel: "moderate"
+      citiesToVisit: []
+      anchorCities: []
+      cityPlanningMode: "ai"
+      aiCityRecommendation: true
+      extraNotes: ""
+      mustSee: ""
+      travelStyle: "explorer"
+      interests:
+        Food & Drink: 3
+        Culture & History: 3
+        Adventure: 1
+        Nature: 1
+        Nightlife: 1
+        Shopping: 1
+    assert:
+      - type: javascript
+        value: |
+          // Mirrors index.html's parsePreviewJson (see comment on the France/Italy test).
+          function extract(o) {
+            let c = String(o || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            try { return JSON.parse(c); } catch (e) {}
+            const m = c.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+            return null;
+          }
+          const data = extract(output);
+          if (!data) return { pass: false, score: 0, reason: 'Could not extract JSON even with forgiving parser: ' + String(output).slice(0, 200) };
+          const overview = (data.overview || '').toLowerCase();
+          const flagged = overview.includes('level 4') || overview.includes('unable to generate');
+          if (!flagged) {
+            return { pass: false, score: 0, reason: 'Overview does not mention the Level 4 advisory exclusion: "' + (data.overview || '') + '"' };
+          }
+          return { pass: true, score: 1, reason: 'Level 4 exclusion correctly flagged in overview' };
+
+  - description: "Round trip, same arrival/departure airport, AI picks cities (tests round-trip routing directive) — NOTE: fixture also previously said country: USA for an all-Japan (NRT) trip; fixed."
+    vars:
+      firstName: "Jordan"
+      lastName: "Lee"
+      country: "Japan"
+      countries: ["Japan"]
+      travelParty: "solo"
+      groupSize: "1"
+      budget: "budget"
+      arrivalDate: "2026-11-01"
+      departureDate: "2026-11-10"
+      arrivalAirport: "NRT"
+      departureAirport: "NRT"
+      tripStructure: ""
+      paceOfTravel: "fast"
+      citiesToVisit: []
+      anchorCities: []
+      cityPlanningMode: "ai"
+      aiCityRecommendation: true
+      extraNotes: "First time in Japan, loves ramen and temples."
+      mustSee: ""
+      travelStyle: "explorer"
+      interests:
+        Food & Drink: 5
+        Culture & History: 5
+        Adventure: 2
+        Nature: 3
+        Nightlife: 1
+        Shopping: 2
+    assert:
+      - type: javascript
+        value: |
+          // Mirrors index.html's parsePreviewJson (see comment on the France/Italy test).
+          function extract(o) {
+            let c = String(o || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            try { return JSON.parse(c); } catch (e) {}
+            const m = c.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+            return null;
+          }
+          const data = extract(output);
+          if (!data) return { pass: false, score: 0, reason: 'Could not extract JSON even with forgiving parser: ' + String(output).slice(0, 200) };
+          const submitted = ['japan'];
+          const bad = (data.cities || []).filter(c => !c.country || !submitted.some(w => c.country.toLowerCase().includes(w)));
+          if (bad.length) {
+            return { pass: false, score: 0, reason: 'Cities with wrong/missing country field: ' + bad.map(c => (c.city || '?') + ' (' + (c.country || 'no country field') + ')').join(', ') };
+          }
+          return { pass: true, score: 1, reason: 'All cities correctly tagged Japan' };
+
+  - description: "5 countries selected, know-mode cities given for only 2 (France, Italy) — tests the country-gap rule: drop unlisted countries, explain why, never invent cities there"
+    vars:
+      firstName: "Morgan"
+      lastName: "Diaz"
+      country: "France, Italy, Spain, Switzerland & Portugal"
+      countries: ["France", "Italy", "Spain", "Switzerland", "Portugal"]
+      travelParty: "solo"
+      groupSize: "1"
+      budget: "mid"
+      arrivalDate: "2026-09-05"
+      departureDate: "2026-09-17"
+      arrivalAirport: "CDG"
+      departureAirport: "FCO"
+      tripStructure: ""
+      paceOfTravel: "moderate"
+      citiesToVisit: ["Paris", "Rome"]
+      anchorCities: []
+      cityPlanningMode: "know"
+      aiCityRecommendation: false
+      extraNotes: ""
+      mustSee: ""
+      travelStyle: "explorer"
+      interests:
+        Food & Drink: 3
+        Culture & History: 4
+        Adventure: 2
+        Nature: 2
+        Nightlife: 1
+        Shopping: 1
+    assert:
+      - type: javascript
+        value: |
+          // Mirrors index.html's parsePreviewJson (see comment on the France/Italy test).
+          function extract(o) {
+            let c = String(o || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+            try { return JSON.parse(c); } catch (e) {}
+            const m = c.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+            return null;
+          }
+          const data = extract(output);
+          if (!data) return { pass: false, score: 0, reason: 'Could not extract JSON even with forgiving parser: ' + String(output).slice(0, 200) };
+          const covered = ['france', 'italy'];
+          const uncovered = ['spain', 'switzerland', 'portugal'];
+          const invented = (data.cities || []).filter(c => !c.country || !covered.some(w => c.country.toLowerCase().includes(w)));
+          if (invented.length) {
+            return { pass: false, score: 0, reason: 'Invented cities in unlisted countries: ' + invented.map(c => (c.city || '?') + ' (' + (c.country || 'no country field') + ')').join(', ') };
+          }
+          const overview = (data.overview || '').toLowerCase();
+          const explained = uncovered.some(w => overview.includes(w));
+          if (!explained) {
+            return { pass: false, score: 0, reason: 'Overview does not explain the dropped countries (Spain/Switzerland/Portugal): "' + (data.overview || '') + '"' };
+          }
+          return { pass: true, score: 1, reason: 'Only covered countries planned, gap explained in overview' };
+
+  - description: "Road trip, family, relaxed pace (tests ROAD TRIP OVERRIDE directive)"
+    vars:
+      firstName: "Sam"
+      lastName: "Chen"
+      country: "USA"
+      travelParty: "family"
+      groupSize: "4"
+      budget: "mid"
+      arrivalDate: "2026-07-01"
+      departureDate: "2026-07-08"
+      arrivalAirport: "LAX"
+      departureAirport: "LAX"
+      tripStructure: "road_trip"
+      paceOfTravel: "relaxed"
+      citiesToVisit: ["Los Angeles", "Santa Barbara", "San Francisco"]
+      anchorCities: []
+      cityPlanningMode: "know"
+      aiCityRecommendation: false
+      extraNotes: "Traveling with two kids, need family-friendly stops."
+      mustSee: ""
+      travelStyle: "planner"
+      interests:
+        Food & Drink: 3
+        Culture & History: 2
+        Adventure: 3
+        Nature: 4
+        Nightlife: 0
+        Shopping: 1
+    assert:
+      - type: is-json

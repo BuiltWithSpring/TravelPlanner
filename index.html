@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="https://travel.builtwithspring.com/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com/">
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-  <link href="./BuiltWithSpring · AI Travel Planner_files/css2" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --ink: #0f0c1e;
@@ -611,13 +611,13 @@
       <div class="step-sub">Your destination, airports, dates, and travel style.</div>
 
       <div class="fg">
-        <label class="fl">Country you're visiting <span class="req">*</span></label>
+        <label class="fl">Countries you're visiting <span class="req">*</span></label>
         <div class="tag-wrap" id="countryWrap" onclick="document.getElementById(&#39;countryInp&#39;).focus()" style="position: relative;">
           <input type="text" id="countryInp" class="tag-inp" placeholder="Type a country and press Enter…" autocomplete="new-password" onkeydown="addCountryTag(event)" onblur="autoSaveCountryTag()">
         <div class="ac-list"></div></div>
-        <div class="hint">One country per itinerary — press Enter to confirm.</div>
-        <div class="error-msg" id="err-country">Please enter a country</div>
-        <div class="error-msg" id="err-country-max" style="display:none;">One country only — remove it first to change.</div>
+        <div class="hint">Add up to 5 countries — press Enter after each. Perfect for a Eurotrip.</div>
+        <div class="error-msg" id="err-country">Please enter at least one country</div>
+        <div class="error-msg" id="err-country-max" style="display:none;">Up to 5 countries — remove one to add another.</div>
       </div>
 
       <div class="r2">
@@ -636,7 +636,7 @@
           <div class="ac-list"></div></div>
           <div class="hint">Can be same as arrival.</div>
           <div class="error-msg" id="err-departureAirport">Please enter your departure airport</div>
-          <div class="error-msg" id="err-airport-country">Heads up — your arrival and departure airports are in different countries. This planner covers one country per trip, so it'll focus on your arrival country. You can continue if that's intended.</div>
+          <div class="error-msg" id="err-airport-country">Heads up — one of your airports is outside the countries you've selected. You can continue if that's intended.</div>
         </div>
       </div>
 
@@ -1049,40 +1049,51 @@
   anchorInp.addEventListener('blur', () => { if (anchorInp.value.trim()) addTag(anchorInp.value, anchorTags, anchorWrap, anchorInp, 3); });
   anchorInp.addEventListener('input', () => { if (anchorInp.value.endsWith(',')) addTag(anchorInp.value, anchorTags, anchorWrap, anchorInp, 3); });
 
-  // ── COUNTRY TAG ────────────────────────────────────
-  let countryTag = null;
+  // ── COUNTRY TAGS ────────────────────────────────────
+  // Multi-country trips (Eurotrips etc.) — up to MAX_COUNTRIES, order preserved
+  // as entered (used later as a routing hint). 14-night trip cap is enforced
+  // separately in validateStep2 and is independent of country count.
+  const countryTags = [];
+  const MAX_COUNTRIES = 5;
   function addCountryTag(e) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     const inp = document.getElementById('countryInp');
     const val = inp.value.trim();
     if (!val) return;
-    if (countryTag) { document.getElementById('err-country-max').style.display='block'; inp.value=''; return; }
-    countryTag = val;
-    inp.value = ''; inp.placeholder = '';
+    if (countryTags.includes(val)) { inp.value = ''; return; }
+    if (countryTags.length >= MAX_COUNTRIES) { document.getElementById('err-country-max').style.display='block'; inp.value=''; return; }
+    countryTags.push(val);
+    inp.value = '';
     document.getElementById('err-country-max').style.display='none';
     document.getElementById('err-country').classList.remove('on');
     const wrap = document.getElementById('countryWrap');
     const tag = document.createElement('span');
     tag.className = 'tag';
-    tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag()">&times;</span>';
+    tag.innerHTML = val + '<span class="tag-x" onclick="removeCountryTag(this,\'' + val.replace(/'/g,"\\'") + '\')">&times;</span>';
     wrap.insertBefore(tag, inp);
     refreshStep2Validity(); // re-check the airport-vs-country warning if airports already chosen
   }
-  function removeCountryTag() {
-    countryTag = null;
-    const wrap = document.getElementById('countryWrap');
-    const ex = wrap.querySelector('.tag'); if (ex) ex.remove();
-    const inp = document.getElementById('countryInp');
-    inp.placeholder = 'Type a country and press Enter…'; inp.focus();
+  function removeCountryTag(el, val) {
+    const i = countryTags.indexOf(val); if (i > -1) countryTags.splice(i, 1);
+    el.parentElement.remove();
     document.getElementById('err-country-max').style.display='none';
     refreshStep2Validity();
   }
   function autoSaveCountryTag() {
     const inp = document.getElementById('countryInp');
     const val = inp.value.trim(); if (!val) return;
-    if (countryTag) { inp.value=''; document.getElementById('err-country-max').style.display='block'; return; }
+    if (countryTags.includes(val)) { inp.value=''; return; }
+    if (countryTags.length >= MAX_COUNTRIES) { inp.value=''; document.getElementById('err-country-max').style.display='block'; return; }
     addCountryTag({ key:'Enter', preventDefault:()=>{} });
+  }
+  // "France & Italy" / "France, Italy & Switzerland" — display-friendly join used
+  // wherever a single "country" string is still rendered (page titles, emails, etc.)
+  function joinCountries(arr) {
+    if (!arr || !arr.length) return '';
+    if (arr.length === 1) return arr[0];
+    if (arr.length === 2) return arr[0] + ' & ' + arr[1];
+    return arr.slice(0, -1).join(', ') + ' & ' + arr[arr.length - 1];
   }
 
   // ── SECTION SELECTION ──────────────────────────────
@@ -1215,7 +1226,7 @@
   }
   function validateStep2() {
     clearErrors(); let ok = true;
-    if (!countryTag) { showError('err-country','countryWrap'); ok=false; }
+    if (!countryTags.length) { showError('err-country','countryWrap'); ok=false; }
     const today = new Date().toISOString().split('T')[0];
     const arr = document.getElementById('arrDate').value;
     const dep = document.getElementById('depDate').value;
@@ -1348,7 +1359,8 @@
     return {
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
-      country: countryTag,
+      country: joinCountries(countryTags), // display-friendly label — see countries for the real list
+      countries: countryTags.slice(),
       arrivalAirport: document.getElementById('arrivalAirport').value,
       departureAirport: document.getElementById('departureAirport').value,
       // Resolved city names (null when the airport is free-typed / unrecognized).
@@ -1837,6 +1849,7 @@
     q = q.toLowerCase();
     const starts = [], contains = [];
     for (const n of COUNTRIES) {
+      if (countryTags.includes(n)) continue; // already added
       const l = n.toLowerCase();
       if (l.indexOf(q) < 0) continue;
       const item = { main: n, value: n };
@@ -1845,9 +1858,9 @@
     return starts.concat(contains).slice(0, 8);
   }
 
-  // ── CITY AUTOCOMPLETE (dynamic, per selected country) ──
-  // Cities are fetched on demand from countriesnow.space for the Step 1 country and
-  // cached for the session. Cache value per country key:
+  // ── CITY AUTOCOMPLETE (dynamic, per selected countries) ──
+  // Cities are fetched on demand from countriesnow.space, once per selected country,
+  // and merged. Cache value per country key:
   //   undefined = not fetched · 'loading' · 'none' (failed/empty → free-type) · string[]
   const cityCache = {};
 
@@ -1882,30 +1895,38 @@
   }
 
   // Build a matcher for the autocomplete engine, bound to one input so it can show
-  // the loading placeholder and re-render the dropdown once the fetch resolves.
+  // the loading placeholder and re-render the dropdown once fetches resolve. Fetches
+  // and merges cities across ALL selected countries (multi-country trips).
   function makeCityMatcher(inp) {
     return function (q) {
       if (q.length < 2) return [];          // minimum 2 characters
-      const country = countryTag;
-      if (!country) return [];              // no country selected yet — free-type
-      const key = country.toLowerCase();
-      const cached = cityCache[key];
+      if (!countryTags.length) return [];   // no country selected yet — free-type
 
-      if (cached === undefined) {
-        // First lookup for this country this session — fetch once, show loading state.
-        cityCache[key] = 'loading';
+      const missing = countryTags.filter(c => cityCache[c.toLowerCase()] === undefined);
+      if (missing.length) {
+        // First lookup this session for one or more of the selected countries.
         const original = inp.placeholder;
         inp.placeholder = 'Loading cities…';
-        fetchCitiesForCountry(country).then(list => {
-          cityCache[key] = (list && list.length) ? list : 'none';
-          if (inp.placeholder === 'Loading cities…') inp.placeholder = original;
-          if (document.activeElement === inp) inp.dispatchEvent(new Event('input')); // re-render
+        missing.forEach(country => {
+          const key = country.toLowerCase();
+          cityCache[key] = 'loading';
+          fetchCitiesForCountry(country).then(list => {
+            cityCache[key] = (list && list.length) ? list : 'none';
+            if (inp.placeholder === 'Loading cities…') inp.placeholder = original;
+            if (document.activeElement === inp) inp.dispatchEvent(new Event('input')); // re-render
+          });
         });
         return [];
       }
-      if (cached === 'loading') return [];
-      if (cached === 'none') return [];     // failed/empty — free-type silently
-      return filterCityNames(cached, q);
+      if (countryTags.some(c => cityCache[c.toLowerCase()] === 'loading')) return [];
+
+      const merged = [];
+      countryTags.forEach(c => {
+        const cached = cityCache[c.toLowerCase()];
+        if (Array.isArray(cached)) merged.push(...cached);
+      });
+      if (!merged.length) return [];        // all failed/empty — free-type silently
+      return filterCityNames(Array.from(new Set(merged)), q);
     };
   }
 
@@ -1949,11 +1970,11 @@
     return a ? a.city : null;
   }
 
-  // Arrival vs departure airport. Non-blocking WARNING when they're in different
-  // regions — the traveler may intentionally be planning a multi-country trip, so we
-  // surface the red text but never disable Continue. Known gateway pairs
-  // (Hong Kong/Macau ↔ China, Vatican ↔ Italy, Monaco ↔ France, Gibraltar ↔ Spain)
-  // count as the same region.
+  // Arrival/departure airports vs the selected countries. Non-blocking WARNING only —
+  // for a multi-country trip it's completely normal for arrival and departure to be in
+  // different (selected) countries, so we only warn when an airport is OUTSIDE the
+  // whole selected list. Known gateway pairs (Hong Kong/Macau ↔ China, Vatican ↔ Italy,
+  // Monaco ↔ France, Gibraltar ↔ Spain) count as the same region.
   function checkAirportCountries() {
     const arrV = (document.getElementById('arrivalAirport').value || '').trim();
     const depV = (document.getElementById('departureAirport').value || '').trim();
@@ -1963,29 +1984,21 @@
     err.classList.remove('on'); arrInp.classList.remove('field-error'); depInp.classList.remove('field-error');
     // Airports may be hidden if neither Day-by-Day nor Transportation is selected.
     if (arrInp.closest('.fg').classList.contains('hidden')) return;
+    if (!countryTags.length) return;
     const ca = airportCountryOf(arrV), cd = airportCountryOf(depV);
 
-    // Airport(s) outside the selected country — non-blocking heads-up. regionOf() reconciles
-    // dataset aliases (USA↔United States) and gateway pairs (Hong Kong↔China, etc.).
-    if (countryTag) {
-      const want = regionOf(countryTag);
-      const arrOutside = arrV && ca && regionOf(ca) !== want;
-      const depOutside = depV && cd && regionOf(cd) !== want;
-      if (arrOutside || depOutside) {
-        err.textContent = `This airport is outside ${countryTag} — no problem, we'll plan your itinerary for ${countryTag} only.`;
-        err.classList.add('on');
-        if (arrOutside) arrInp.classList.add('field-error');
-        if (depOutside) depInp.classList.add('field-error');
-        return;
-      }
+    // Airport(s) outside every selected country — non-blocking heads-up. regionOf()
+    // reconciles dataset aliases (USA↔United States) and gateway pairs.
+    const wantSet = countryTags.map(regionOf);
+    const arrOutside = arrV && ca && !wantSet.includes(regionOf(ca));
+    const depOutside = depV && cd && !wantSet.includes(regionOf(cd));
+    if (arrOutside || depOutside) {
+      const list = joinCountries(countryTags);
+      err.textContent = `This airport is outside ${list} — no problem, we'll plan your itinerary for ${list} only.`;
+      err.classList.add('on');
+      if (arrOutside) arrInp.classList.add('field-error');
+      if (depOutside) depInp.classList.add('field-error');
     }
-
-    // Existing warning: arrival vs departure in different regions.
-    if (!arrV || !depV) return;                  // only once both have a value
-    if (!ca || !cd) return;                       // unknown code(s) — can't determine
-    if (regionOf(ca) === regionOf(cd)) return;    // same region (incl. gateway exceptions)
-    err.textContent = "Heads up — your arrival and departure airports are in different countries. This planner covers one country per trip, so it'll focus on your arrival country. You can continue if that's intended.";
-    err.classList.add('on'); depInp.classList.add('field-error'); // warn only — do not block
   }
 
   // Kept as the Step 2 refresh hook for the airport field listeners. Warning only —

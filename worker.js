@@ -2636,7 +2636,7 @@ TEMPORAL ACCURACY — before assigning any venue or event, verify it actually op
 - Time of year: seasonal venues/events must run during the travel dates. Examples: summer festivals, outdoor summer dances, winter-only attractions, holiday markets, harvest events, seasonal park programs. Common pitfall: outdoor summer events (Memorial Day through Labor Day) placed on autumn, winter, or spring dates.
 
 Treat mustSee and extraNotes as hard instructions, not suggestions. They are the traveler's direct voice and override EVERY rule in this prompt — arrival/departure city rules, night allocation, city selection, routing — with ONE exception: the SAFETY EXCLUSIONS in Step 2 can never be overridden by notes. Apply the notes before generating any output. If the traveler mentions existing bookings, flights, or accommodation — include them in book_before_you_go as already confirmed and reflect them in the day-by-day.
-Cross-country airports: if arrival and departure airports are in different countries, note this in the overview and clarify which country the itinerary covers. Never plan activities or cities outside the submitted country.
+Cross-country airports/trips: if arrival and departure airports are in different countries, or the trip spans multiple submitted countries (${(Array.isArray(d.countries) && d.countries.length ? d.countries : [d.country || '']).join(', ')}), note the full route in the overview. Never plan activities or cities outside the submitted country/countries — the APPROVED CITY PLAN above (when present) is ground truth for exactly which cities and countries are included.
 
 OUTPUT — return exactly this JSON:
 {
@@ -4267,6 +4267,23 @@ function validateAndRepairCityPlan(cities, formData) {
     } else if (changed) {
       notes.push('rebalanced nights to sum to ' + totalNights);
     }
+  }
+
+  // ── Rule 4: every city should belong to one of the submitted countries ──
+  // Log only — unlike Rules 1-3, code has no gazetteer to know the "correct"
+  // replacement city for a hallucinated country, so this can't be safely
+  // auto-repaired. Surfaces in wrangler tail / order notes for manual review.
+  const cpvCountriesArr = Array.isArray(fd.countries) && fd.countries.length ? fd.countries
+    : (fd.country ? [fd.country] : []);
+  if (cpvCountriesArr.length) {
+    cities.forEach(c => {
+      const cCountry = c.country || null;
+      if (!cCountry) return; // model omitted the field — nothing to check
+      const inList = cpvCountriesArr.some(want => cpvCityMatch(cCountry, want));
+      if (!inList) {
+        notes.push('warning: city "' + nameOf(c) + '" has country "' + cCountry + '" not in submitted list (' + cpvCountriesArr.join(', ') + ') — verify traveler notes requested it');
+      }
+    });
   }
 
   return { changed, notes };
